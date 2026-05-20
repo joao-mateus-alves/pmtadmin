@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Veículos</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="topo">
+    <a href="index.html">⬅ Voltar</a>
+    <h1>Cadastro de Veículos</h1>
+  </div>
+
+  <div class="card">
+
+    <input type="text" id="unidade" placeholder="Unidade">
+
+    <input type="text" id="viatura" placeholder="Viatura">
+
+    <input type="text" id="placa" placeholder="Placa">
+
+    <input type="text" id="modelo" placeholder="Modelo">
+
+    <input type="number" id="odometro" placeholder="Odômetro">
+
+    <input type="text" id="combustivel" placeholder="Combustível">
+
+    <select id="statusViatura">
+      <option>Disponível</option>
+      <option>Em serviço</option>
+      <option>Em manutenção</option>
+      <option>Restrita</option>
+      <option>Baixada</option>
+    </select>
+
+    <button onclick="salvarVeiculo()">Salvar</button>
+
+    <ul id="listaVeiculos"></ul>
+
+  </div>
+
+  <script type="module" src="app.js"></script>
+
+</body>
+</html>

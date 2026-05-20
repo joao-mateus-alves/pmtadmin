@@ -1,0 +1,288 @@
+body {
+  font-family: "Segoe UI", SegoeUI, Arial, sans-serif;
+  background: #f3f3f3;
+  margin: 0;
+  color: #1f2937;
+}
+
+.menu {
+  max-width: none;
+  margin: 0;
+  text-align: left;
+}
+
+.menu a {
+  display: block;
+  background: #0d6efd;
+  color: white;
+  padding: 15px;
+  margin-top: 10px;
+  text-decoration: none;
+  border-radius: 5px;
+}
+
+.topo {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  margin-top: 20px;
+}
+
+input, select {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  box-sizing: border-box;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  border: none;
+  background: #0d6efd;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+ul {
+  padding: 0;
+}
+
+li {
+  list-style: none;
+  background: #eee;
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 5px;
+}
+
+.main-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 260px;
+  min-height: 100vh;
+  padding: 22px 18px;
+  color: #1f2937;
+  background: #ffffff;
+  border-right: 1px solid #d9d9d9;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5);
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+}
+
+.sidebar-brand {
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.sidebar-brand .label {
+  display: inline-block;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #0078d4;
+  margin-bottom: 8px;
+}
+
+.sidebar-brand h1 {
+  margin: 0;
+  font-size: 23px;
+  line-height: 1.1;
+  color: #111827;
+}
+
+.sidebar-brand p {
+  margin: 10px 0 0;
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  color: #1f2937;
+  text-decoration: none;
+  border-radius: 4px;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  font-size: 14px;
+}
+
+.sidebar-nav a::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: #c7c7c7;
+}
+
+.sidebar-nav a:hover {
+  background: #f2f2f2;
+  border-color: #e5e5e5;
+}
+
+.sidebar-nav a:focus-visible,
+.sidebar-nav a:active {
+  outline: none;
+  background: #eaf3fc;
+  border-color: #cfe6fb;
+  color: #005a9e;
+}
+
+.sidebar-nav a:hover::before,
+.sidebar-nav a:focus-visible::before {
+  background: #0078d4;
+}
+
+.content {
+  flex: 1;
+  padding: 24px;
+}
+
+.content-header {
+  background: #ffffff;
+  padding: 18px 22px;
+  border-radius: 6px;
+  border: 1px solid #e5e5e5;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  margin-bottom: 24px;
+}
+
+.content-header h1 {
+  margin: 0;
+  color: #111827;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.content-header p {
+  margin: 6px 0 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.dashboard {
+  padding: 0;
+  background: transparent;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 18px 18px 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e5e5e5;
+  border-left-width: 4px;
+}
+
+.card h3 {
+  margin: 0 0 10px 0;
+  color: #1f2937;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.card .numero {
+  font-size: 34px;
+  font-weight: 600;
+  color: #0078d4;
+  margin: 8px 0 10px;
+}
+
+.card.veiculos { border-left-color: #107c10; }
+.card.veiculos .numero { color: #107c10; }
+
+.card.condutores { border-left-color: #ff8c00; }
+.card.condutores .numero { color: #ff8c00; }
+
+.card.os { border-left-color: #0078d4; }
+.card.os .numero { color: #0078d4; }
+
+.card.manutencao { border-left-color: #d13438; }
+.card.manutencao .numero { color: #d13438; }
+
+.card .detalhes {
+  font-size: 12px;
+  color: #4b5563;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #ededed;
+}
+
+.card .detalhes p {
+  margin: 6px 0;
+  display: flex;
+  justify-content: space-between;
+}
+
+.icone {
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 900px) {
+  .main-container {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: auto;
+    min-height: auto;
+    position: static;
+    border-right: 0;
+    box-shadow: none;
+    border-bottom: 1px solid #d9d9d9;
+  }
+
+  .content {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 560px) {
+  .sidebar {
+    padding: 22px 16px;
+  }
+
+  .content {
+    padding: 14px;
+  }
+
+  .content-header {
+    padding: 18px 16px;
+    border-radius: 16px;
+  }
+
+  .content-header h1 {
+    font-size: 20px;
+  }
+
+  .card .numero {
+    font-size: 30px;
+  }
+}

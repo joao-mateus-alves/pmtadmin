@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>PMT Admin</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="main-container">
+    <aside class="menu sidebar">
+      <div class="sidebar-brand">
+        <span class="label">Sistema PMT</span>
+        <h1>PMT Admin</h1>
+        <p>Atalhos rápidos para os módulos principais.</p>
+      </div>
+
+      <nav class="sidebar-nav" aria-label="Navegação principal">
+        <a href="veiculos.html">Veículos</a>
+        <a href="condutores.html">Condutores</a>
+        <a href="os.html">Ordem de Serviço</a>
+        <a href="manutencao.html">Manutenção</a>
+      </nav>
+    </aside>
+
+    <div class="content">
+      <div class="content-header">
+        <h1>Dashboard</h1>
+        <p>Visão geral das operações</p>
+      </div>
+
+      <div class="dashboard">
+        <!-- Card Veículos -->
+        <div class="card veiculos">
+          <div class="icone">🚗</div>
+          <h3>Veículos</h3>
+          <div class="numero" id="totalVeiculos">0</div>
+          <div class="detalhes">
+            <p>
+              <span>Ativos:</span>
+              <span id="veiculosAtivos">0</span>
+            </p>
+            <p>
+              <span>Em Manutenção:</span>
+              <span id="veiculosManutencao">0</span>
+            </p>
+            <p>
+              <span>Inativos:</span>
+              <span id="veiculosInativos">0</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Card Condutores -->
+        <div class="card condutores">
+          <div class="icone">👨</div>
+          <h3>Condutores</h3>
+          <div class="numero" id="totalCondutores">0</div>
+          <div class="detalhes">
+            <p>
+              <span>Ativos:</span>
+              <span id="condutoresAtivos">0</span>
+            </p>
+            <p>
+              <span>Inativos:</span>
+              <span id="condutoresInativos">0</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Card Ordens de Serviço -->
+        <div class="card os">
+          <div class="icone">📋</div>
+          <h3>Ordens de Serviço</h3>
+          <div class="numero" id="totalOS">0</div>
+          <div class="detalhes">
+            <p>
+              <span>Últimas 7 dias:</span>
+              <span id="osRecentes">0</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Card Manutenção -->
+        <div class="card manutencao">
+          <div class="icone">🔧</div>
+          <h3>Manutenções</h3>
+          <div class="numero" id="totalManutencao">0</div>
+          <div class="detalhes">
+            <p>
+              <span>Pendentes:</span>
+              <span id="manutencaoPendente">0</span>
+            </p>
+            <p>
+              <span>Concluídas:</span>
+              <span id="manutencaoConcluida">0</span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC58ES7uRIfO8Cf6etnZ54H6aGTHJAG1Uw",
+      authDomain: "mypmtadmin-16308.firebaseapp.com",
+      databaseURL: "https://mypmtadmin-16308-default-rtdb.firebaseio.com",
+      projectId: "mypmtadmin-16308",
+      storageBucket: "mypmtadmin-16308.firebasestorage.app",
+      messagingSenderId: "74155713812",
+      appId: "1:74155713812:web:7a560cbd6847b1a7700e01"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Veículos
+    const veiculosRef = ref(db, "veiculos");
+    onValue(veiculosRef, (snapshot) => {
+      let total = 0, ativos = 0, manutencao = 0, inativos = 0;
+      snapshot.forEach((item) => {
+        const dados = item.val();
+        total++;
+        if (dados.status === "Ativo") ativos++;
+        else if (dados.status === "Manutenção") manutencao++;
+        else inativos++;
+      });
+      document.getElementById("totalVeiculos").textContent = total;
+      document.getElementById("veiculosAtivos").textContent = ativos;
+      document.getElementById("veiculosManutencao").textContent = manutencao;
+      document.getElementById("veiculosInativos").textContent = inativos;
+    });
+
+    // Condutores
+    const condutoresRef = ref(db, "condutores");
+    onValue(condutoresRef, (snapshot) => {
+      let total = 0, ativos = 0, inativos = 0;
+      snapshot.forEach((item) => {
+        const dados = item.val();
+        total++;
+        if (dados.situacao === "Ativo" || dados.situacao === "ativo") ativos++;
+        else inativos++;
+      });
+      document.getElementById("totalCondutores").textContent = total;
+      document.getElementById("condutoresAtivos").textContent = ativos;
+      document.getElementById("condutoresInativos").textContent = inativos;
+    });
+
+    // Ordens de Serviço
+    const osRef = ref(db, "ordens_servico");
+    onValue(osRef, (snapshot) => {
+      let total = 0, recentes = 0;
+      const setelDiasAtras = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      snapshot.forEach((item) => {
+        const dados = item.val();
+        total++;
+        if (dados.saida) {
+          const dataSaida = new Date(dados.saida);
+          if (dataSaida > setelDiasAtras) recentes++;
+        }
+      });
+      document.getElementById("totalOS").textContent = total;
+      document.getElementById("osRecentes").textContent = recentes;
+    });
+
+    // Manutenção
+    const manutencaoRef = ref(db, "manutencao");
+    onValue(manutencaoRef, (snapshot) => {
+      let total = 0, pendente = 0, concluida = 0;
+      snapshot.forEach((item) => {
+        const dados = item.val();
+        total++;
+        if (!dados.saida) pendente++;
+        else concluida++;
+      });
+      document.getElementById("totalManutencao").textContent = total;
+      document.getElementById("manutencaoPendente").textContent = pendente;
+      document.getElementById("manutencaoConcluida").textContent = concluida;
+    });
+  </script>
+
+</body>
+</html>

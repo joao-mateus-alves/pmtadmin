@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Manutenção</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="topo">
+    <a href="index.html">⬅ Voltar</a>
+    <h1>Manutenção</h1>
+  </div>
+
+  <div class="card">
+
+    <input type="text" id="veiculoManutencao" placeholder="Veículo">
+
+    <input type="text" id="tipoManutencao" placeholder="Tipo manutenção">
+
+    <input type="date" id="entrada">
+
+    <input type="date" id="saidaManutencao">
+
+    <button onclick="salvarManutencao()">Salvar</button>
+
+    <ul id="listaManutencao"></ul>
+
+  </div>
+
+  <script type="module" src="app.js"></script>
+
+</body>
+</html>
