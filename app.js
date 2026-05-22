@@ -69,7 +69,9 @@ function formatVehicleLabel(vehicle) {
 
 function formatDriverLabel(driver) {
   if (!driver) return "Não definido";
-  return driver.name || "Sem nome";
+  const role = driver.role ? `${driver.role} - ` : "";
+  const name = driver.name || "Sem nome";
+  return `${role}${name}`.trim();
 }
 
 function setFormMode(form, isEditing) {
@@ -129,7 +131,7 @@ function renderVehiclesTable() {
   const tbody = document.getElementById("vehiclesTableBody");
   if (!tbody) return;
   if (!state.vehicles.length) {
-    renderEmptyRow(tbody, 6, "Nenhum veículo cadastrado.");
+    renderEmptyRow(tbody, 7, "Nenhum veículo cadastrado.");
     return;
   }
   tbody.innerHTML = state.vehicles
@@ -137,8 +139,9 @@ function renderVehiclesTable() {
       (vehicle) => `<tr class="border-t border-slate-100">
         <td class="py-3 pr-4">${vehicle.plate || "-"}</td>
         <td class="py-3 pr-4">${vehicle.model || "-"}</td>
-        <td class="py-3 pr-4">${vehicle.brand || "-"}</td>
         <td class="py-3 pr-4">${vehicle.year || "-"}</td>
+        <td class="py-3 pr-4">${vehicle.odometer || "-"}</td>
+        <td class="py-3 pr-4">${vehicle.fuel || "-"}</td>
         <td class="py-3 pr-4">${vehicle.status || "-"}</td>
         <td class="py-3">
           <button class="text-accent mr-3" data-action="edit" data-id="${vehicle.id}">Editar</button>
@@ -153,14 +156,13 @@ function renderDriversTable() {
   const tbody = document.getElementById("driversTableBody");
   if (!tbody) return;
   if (!state.drivers.length) {
-    renderEmptyRow(tbody, 5, "Nenhum condutor cadastrado.");
+    renderEmptyRow(tbody, 4, "Nenhum condutor cadastrado.");
     return;
   }
   tbody.innerHTML = state.drivers
     .map(
       (driver) => `<tr class="border-t border-slate-100">
-        <td class="py-3 pr-4">${driver.name || "-"}</td>
-        <td class="py-3 pr-4">${driver.license || "-"}</td>
+        <td class="py-3 pr-4">${formatDriverLabel(driver)}</td>
         <td class="py-3 pr-4">${driver.phone || "-"}</td>
         <td class="py-3 pr-4">${driver.status || "-"}</td>
         <td class="py-3">
@@ -201,7 +203,7 @@ function renderWorkOrdersTable() {
   const tbody = document.getElementById("workOrdersTableBody");
   if (!tbody) return;
   if (!state.workOrders.length) {
-    renderEmptyRow(tbody, 5, "Nenhuma ordem cadastrada.");
+    renderEmptyRow(tbody, 7, "Nenhuma ordem cadastrada.");
     return;
   }
   tbody.innerHTML = state.workOrders
@@ -211,8 +213,10 @@ function renderWorkOrdersTable() {
       return `<tr class="border-t border-slate-100">
         <td class="py-3 pr-4">${formatVehicleLabel(vehicle)}</td>
         <td class="py-3 pr-4">${formatDriverLabel(driver)}</td>
+        <td class="py-3 pr-4">${item.destination || "-"}</td>
+        <td class="py-3 pr-4">${item.departureDate || "-"}</td>
+        <td class="py-3 pr-4">${item.arrivalDate || "-"}</td>
         <td class="py-3 pr-4">${item.status || "-"}</td>
-        <td class="py-3 pr-4">${item.scheduledDate || "-"}</td>
         <td class="py-3">
           <button class="text-accent mr-3" data-action="edit" data-id="${item.id}">Editar</button>
           <button class="text-red-600" data-action="delete" data-id="${item.id}">Excluir</button>
@@ -227,6 +231,41 @@ function updateDashboard() {
   document.getElementById("countDrivers").textContent = String(state.drivers.length);
   document.getElementById("countMaintenance").textContent = String(state.maintenance.length);
   document.getElementById("countWorkOrders").textContent = String(state.workOrders.length);
+
+  const totalVehicles = state.vehicles.length;
+  const availableVehicles = state.vehicles.filter((vehicle) => vehicle.status === "Disponível").length;
+  const inServiceVehicles = state.vehicles.filter((vehicle) => vehicle.status === "Em serviço").length;
+  const maintenanceVehicles = state.vehicles.filter((vehicle) => vehicle.status === "Em manutenção").length;
+  const inactiveVehicles = state.vehicles.filter((vehicle) => vehicle.status === "Baixada").length;
+  const availabilityPercent = totalVehicles
+    ? Math.round((availableVehicles / totalVehicles) * 100)
+    : 0;
+
+  const fleetAvailabilityPercent = document.getElementById("fleetAvailabilityPercent");
+  const fleetAvailabilityBar = document.getElementById("fleetAvailabilityBar");
+  const fleetAvailable = document.getElementById("fleetAvailable");
+  const fleetInService = document.getElementById("fleetInService");
+  const fleetMaintenance = document.getElementById("fleetMaintenance");
+  const fleetInactive = document.getElementById("fleetInactive");
+
+  if (fleetAvailabilityPercent) {
+    fleetAvailabilityPercent.textContent = `${availabilityPercent}%`;
+  }
+  if (fleetAvailabilityBar) {
+    fleetAvailabilityBar.style.width = `${availabilityPercent}%`;
+  }
+  if (fleetAvailable) {
+    fleetAvailable.textContent = String(availableVehicles);
+  }
+  if (fleetInService) {
+    fleetInService.textContent = String(inServiceVehicles);
+  }
+  if (fleetMaintenance) {
+    fleetMaintenance.textContent = String(maintenanceVehicles);
+  }
+  if (fleetInactive) {
+    fleetInactive.textContent = String(inactiveVehicles);
+  }
 
   const latestWorkOrders = document.getElementById("latestWorkOrders");
   const latestMaintenance = document.getElementById("latestMaintenance");
@@ -243,9 +282,9 @@ function updateDashboard() {
       return `<div class="flex items-center justify-between border border-slate-100 rounded-md p-3">
         <div>
           <p class="font-medium">${order.status || "Aberta"}</p>
-          <p class="text-xs text-slate-500">${formatVehicleLabel(vehicle)} • ${formatDriverLabel(driver)}</p>
+          <p class="text-xs text-slate-500">${formatVehicleLabel(vehicle)} • ${formatDriverLabel(driver)} • ${order.destination || "-"}</p>
         </div>
-        <span class="text-xs text-slate-500">${order.scheduledDate || "-"}</span>
+        <span class="text-xs text-slate-500">${order.departureDate || "-"}</span>
       </div>`;
     }).join("");
   }
@@ -314,8 +353,9 @@ vehicleForm?.addEventListener("submit", async (event) => {
   const payload = {
     plate: document.getElementById("vehiclePlate").value.trim(),
     model: document.getElementById("vehicleModel").value.trim(),
-    brand: document.getElementById("vehicleBrand").value.trim(),
     year: document.getElementById("vehicleYear").value.trim(),
+    odometer: document.getElementById("vehicleOdometer").value.trim(),
+    fuel: document.getElementById("vehicleFuel").value.trim(),
     status: document.getElementById("vehicleStatus").value
   };
   const editId = vehicleForm.dataset.editId;
@@ -331,8 +371,8 @@ vehicleForm?.addEventListener("submit", async (event) => {
 driverForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const payload = {
+    role: document.getElementById("driverRole").value.trim(),
     name: document.getElementById("driverName").value.trim(),
-    license: document.getElementById("driverLicense").value.trim(),
     phone: document.getElementById("driverPhone").value.trim(),
     status: document.getElementById("driverStatus").value
   };
@@ -370,9 +410,11 @@ workOrderForm?.addEventListener("submit", async (event) => {
   const payload = {
     vehicleId: document.getElementById("workOrderVehicle").value,
     driverId: document.getElementById("workOrderDriver").value,
+    destination: document.getElementById("workOrderDestination").value.trim(),
     description: document.getElementById("workOrderDescription").value.trim(),
     status: document.getElementById("workOrderStatus").value,
-    scheduledDate: document.getElementById("workOrderDate").value
+    departureDate: document.getElementById("workOrderDepartureDate").value,
+    arrivalDate: document.getElementById("workOrderArrivalDate").value
   };
   const editId = workOrderForm.dataset.editId;
   if (editId) {
@@ -403,9 +445,10 @@ document.getElementById("vehiclesTableBody")?.addEventListener("click", async (e
     if (!vehicle) return;
     document.getElementById("vehiclePlate").value = vehicle.plate || "";
     document.getElementById("vehicleModel").value = vehicle.model || "";
-    document.getElementById("vehicleBrand").value = vehicle.brand || "";
     document.getElementById("vehicleYear").value = vehicle.year || "";
-    document.getElementById("vehicleStatus").value = vehicle.status || "Ativo";
+    document.getElementById("vehicleOdometer").value = vehicle.odometer || "";
+    document.getElementById("vehicleFuel").value = vehicle.fuel || "";
+    document.getElementById("vehicleStatus").value = vehicle.status || "Disponível";
     vehicleForm.dataset.editId = id;
     setFormMode(vehicleForm, true);
     vehicleForm.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -425,10 +468,10 @@ document.getElementById("driversTableBody")?.addEventListener("click", async (ev
   if (button.dataset.action === "edit") {
     const driver = state.drivers.find((item) => item.id === id);
     if (!driver) return;
+    document.getElementById("driverRole").value = driver.role || "";
     document.getElementById("driverName").value = driver.name || "";
-    document.getElementById("driverLicense").value = driver.license || "";
     document.getElementById("driverPhone").value = driver.phone || "";
-    document.getElementById("driverStatus").value = driver.status || "Ativo";
+    document.getElementById("driverStatus").value = driver.status || "Ocioso";
     driverForm.dataset.editId = id;
     setFormMode(driverForm, true);
     driverForm.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -474,9 +517,11 @@ document.getElementById("workOrdersTableBody")?.addEventListener("click", async 
     if (!item) return;
     document.getElementById("workOrderVehicle").value = item.vehicleId || "";
     document.getElementById("workOrderDriver").value = item.driverId || "";
+    document.getElementById("workOrderDestination").value = item.destination || "";
     document.getElementById("workOrderDescription").value = item.description || "";
     document.getElementById("workOrderStatus").value = item.status || "Aberta";
-    document.getElementById("workOrderDate").value = item.scheduledDate || "";
+    document.getElementById("workOrderDepartureDate").value = item.departureDate || "";
+    document.getElementById("workOrderArrivalDate").value = item.arrivalDate || "";
     workOrderForm.dataset.editId = id;
     setFormMode(workOrderForm, true);
     workOrderForm.scrollIntoView({ behavior: "smooth", block: "start" });

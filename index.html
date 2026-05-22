@@ -145,17 +145,40 @@
                 </div>
               </div>
               <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
-                <h2 class="text-lg font-semibold mb-4">Estrutura do banco</h2>
-                <pre class="text-xs bg-slate-50 border border-slate-200 rounded-md p-3 text-slate-600 overflow-auto">
-/vehicles/{id}
-  - plate, model, brand, year, status
-/drivers/{id}
-  - name, license, phone, status
-/maintenance/{id}
-  - vehicleId, type, date, cost, notes
-/workOrders/{id}
-  - vehicleId, driverId, description, status, scheduledDate
-                </pre>
+                <h2 class="text-lg font-semibold mb-4">Indicadores da frota</h2>
+                <div class="space-y-4 text-sm text-slate-600">
+                  <div>
+                    <div class="flex items-center justify-between">
+                      <span>Disponibilidade</span>
+                      <span id="fleetAvailabilityPercent" class="font-semibold">0%</span>
+                    </div>
+                    <div class="h-2 mt-2 rounded-full bg-slate-100 overflow-hidden">
+                      <div
+                        id="fleetAvailabilityBar"
+                        class="h-full bg-accent rounded-full"
+                        style="width: 0%"
+                      ></div>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-3 text-xs">
+                    <div class="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2">
+                      <span>Disponíveis</span>
+                      <span id="fleetAvailable" class="font-semibold">0</span>
+                    </div>
+                    <div class="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2">
+                      <span>Em serviço</span>
+                      <span id="fleetInService" class="font-semibold">0</span>
+                    </div>
+                    <div class="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2">
+                      <span>Em manutenção</span>
+                      <span id="fleetMaintenance" class="font-semibold">0</span>
+                    </div>
+                    <div class="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2">
+                      <span>Baixadas</span>
+                      <span id="fleetInactive" class="font-semibold">0</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -203,15 +226,6 @@
                     />
                   </div>
                   <div>
-                    <label class="text-sm text-slate-600">Marca</label>
-                    <input
-                      id="vehicleBrand"
-                      required
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                      placeholder="Marca"
-                    />
-                  </div>
-                  <div>
                     <label class="text-sm text-slate-600">Ano</label>
                     <input
                       id="vehicleYear"
@@ -223,14 +237,35 @@
                     />
                   </div>
                   <div>
-                    <label class="text-sm text-slate-600">Status</label>
+                    <label class="text-sm text-slate-600">Odômetro</label>
+                    <input
+                      id="vehicleOdometer"
+                      type="number"
+                      min="0"
+                      required
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                      placeholder="00000"
+                    />
+                  </div>
+                  <div>
+                    <label class="text-sm text-slate-600">Combustível</label>
+                    <input
+                      id="vehicleFuel"
+                      required
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                      placeholder="Diesel, Gasolina, Etanol..."
+                    />
+                  </div>
+                  <div>
+                    <label class="text-sm text-slate-600">Status da viatura</label>
                     <select
                       id="vehicleStatus"
                       class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
                     >
-                      <option value="Ativo">Ativo</option>
+                      <option value="Disponível">Disponível</option>
+                      <option value="Em serviço">Em serviço</option>
                       <option value="Em manutenção">Em manutenção</option>
-                      <option value="Inativo">Inativo</option>
+                      <option value="Baixada">Baixada</option>
                     </select>
                   </div>
                   <div class="flex flex-wrap gap-3">
@@ -261,9 +296,10 @@
                       <tr>
                         <th class="pb-2">Placa</th>
                         <th class="pb-2">Modelo</th>
-                        <th class="pb-2">Marca</th>
                         <th class="pb-2">Ano</th>
-                        <th class="pb-2">Status</th>
+                        <th class="pb-2">Odômetro</th>
+                        <th class="pb-2">Combustível</th>
+                        <th class="pb-2">Status da viatura</th>
                         <th class="pb-2">Ações</th>
                       </tr>
                     </thead>
@@ -286,21 +322,21 @@
                 <h3 class="text-lg font-semibold mb-4">Cadastrar / editar</h3>
                 <form id="driverForm" class="space-y-4">
                   <div>
+                    <label class="text-sm text-slate-600">Cargo</label>
+                    <input
+                      id="driverRole"
+                      required
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                      placeholder="Cargo militar"
+                    />
+                  </div>
+                  <div>
                     <label class="text-sm text-slate-600">Nome</label>
                     <input
                       id="driverName"
                       required
                       class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
                       placeholder="Nome do condutor"
-                    />
-                  </div>
-                  <div>
-                    <label class="text-sm text-slate-600">CNH</label>
-                    <input
-                      id="driverLicense"
-                      required
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                      placeholder="Número da CNH"
                     />
                   </div>
                   <div>
@@ -312,14 +348,14 @@
                     />
                   </div>
                   <div>
-                    <label class="text-sm text-slate-600">Status</label>
+                    <label class="text-sm text-slate-600">Situação</label>
                     <select
                       id="driverStatus"
                       class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
                     >
-                      <option value="Ativo">Ativo</option>
-                      <option value="Em serviço">Em serviço</option>
-                      <option value="Inativo">Inativo</option>
+                      <option value="Em missão">Em missão</option>
+                      <option value="Ocioso">Ocioso</option>
+                      <option value="Indisponível">Indisponível</option>
                     </select>
                   </div>
                   <div class="flex flex-wrap gap-3">
@@ -345,13 +381,12 @@
               <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm xl:col-span-2">
                 <h3 class="text-lg font-semibold mb-4">Gerenciar condutores</h3>
                 <div class="overflow-auto">
-                  <table class="min-w-full text-sm">
+                      <table class="min-w-full text-sm">
                     <thead class="text-left text-slate-500">
                       <tr>
-                        <th class="pb-2">Nome</th>
-                        <th class="pb-2">CNH</th>
+                        <th class="pb-2">Condutor</th>
                         <th class="pb-2">Telefone</th>
-                        <th class="pb-2">Status</th>
+                        <th class="pb-2">Situação</th>
                         <th class="pb-2">Ações</th>
                       </tr>
                     </thead>
@@ -495,6 +530,15 @@
                     </select>
                   </div>
                   <div>
+                    <label class="text-sm text-slate-600">Destino</label>
+                    <input
+                      id="workOrderDestination"
+                      required
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                      placeholder="Destino da missão"
+                    />
+                  </div>
+                  <div>
                     <label class="text-sm text-slate-600">Descrição</label>
                     <textarea
                       id="workOrderDescription"
@@ -517,11 +561,19 @@
                     </select>
                   </div>
                   <div>
-                    <label class="text-sm text-slate-600">Data prevista</label>
+                    <label class="text-sm text-slate-600">Data de saída</label>
                     <input
-                      id="workOrderDate"
+                      id="workOrderDepartureDate"
                       type="date"
                       required
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label class="text-sm text-slate-600">Data de chegada</label>
+                    <input
+                      id="workOrderArrivalDate"
+                      type="date"
                       class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
                     />
                   </div>
@@ -548,13 +600,15 @@
               <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm xl:col-span-2">
                 <h3 class="text-lg font-semibold mb-4">Gerenciar ordens</h3>
                 <div class="overflow-auto">
-                  <table class="min-w-full text-sm">
+                      <table class="min-w-full text-sm">
                     <thead class="text-left text-slate-500">
                       <tr>
                         <th class="pb-2">Veículo</th>
                         <th class="pb-2">Condutor</th>
+                        <th class="pb-2">Destino</th>
+                        <th class="pb-2">Saída</th>
+                        <th class="pb-2">Chegada</th>
                         <th class="pb-2">Status</th>
-                        <th class="pb-2">Data</th>
                         <th class="pb-2">Ações</th>
                       </tr>
                     </thead>
