@@ -1,188 +1,573 @@
 <!DOCTYPE html>
-<html lang="pt-br">
-<head>
-  <meta charset="UTF-8">
-  <title>PMT Admin</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-  <div class="main-container">
-    <aside class="menu sidebar">
-      <div class="sidebar-brand">
-        <span class="label">Sistema PMT</span>
-        <h1>PMT Admin</h1>
-        <p>Atalhos rápidos para os módulos principais.</p>
-      </div>
-
-      <nav class="sidebar-nav" aria-label="Navegação principal">
-        <a href="veiculos.html">Veículos</a>
-        <a href="condutores.html">Condutores</a>
-        <a href="os.html">Ordem de Serviço</a>
-        <a href="manutencao.html">Manutenção</a>
-      </nav>
-    </aside>
-
-    <div class="content">
-      <div class="content-header">
-        <h1>Dashboard</h1>
-        <p>Visão geral das operações</p>
-      </div>
-
-      <div class="dashboard">
-        <!-- Card Veículos -->
-        <div class="card veiculos">
-          <div class="icone">🚗</div>
-          <h3>Veículos</h3>
-          <div class="numero" id="totalVeiculos">0</div>
-          <div class="detalhes">
-            <p>
-              <span>Ativos:</span>
-              <span id="veiculosAtivos">0</span>
-            </p>
-            <p>
-              <span>Em Manutenção:</span>
-              <span id="veiculosManutencao">0</span>
-            </p>
-            <p>
-              <span>Inativos:</span>
-              <span id="veiculosInativos">0</span>
-            </p>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PMT Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              accent: "#0078D4",
+              "accent-dark": "#106EBE"
+            }
+          }
+        }
+      };
+    </script>
+    <style>
+      body {
+        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-50 text-slate-900">
+    <div class="min-h-screen flex">
+      <div
+        id="sidebarOverlay"
+        class="fixed inset-0 bg-slate-900/30 hidden z-20 md:hidden"
+      ></div>
+      <aside
+        id="sidebar"
+        class="fixed inset-y-0 left-0 w-72 bg-white border-r border-slate-200 z-30 transform -translate-x-full transition md:translate-x-0 md:static md:inset-auto"
+      >
+        <div class="px-6 py-6 border-b border-slate-200">
+          <div class="flex items-center gap-3">
+            <div
+              class="h-10 w-10 rounded-lg bg-accent text-white flex items-center justify-center font-semibold"
+            >
+              PMT
+            </div>
+            <div>
+              <p class="text-sm text-slate-500">Administração</p>
+              <p class="text-lg font-semibold">Painel PMT</p>
+            </div>
           </div>
         </div>
-
-        <!-- Card Condutores -->
-        <div class="card condutores">
-          <div class="icone">👨</div>
-          <h3>Condutores</h3>
-          <div class="numero" id="totalCondutores">0</div>
-          <div class="detalhes">
-            <p>
-              <span>Ativos:</span>
-              <span id="condutoresAtivos">0</span>
-            </p>
-            <p>
-              <span>Inativos:</span>
-              <span id="condutoresInativos">0</span>
-            </p>
-          </div>
+        <nav class="px-4 py-4 space-y-1">
+          <button
+            class="nav-item"
+            data-target="dashboard"
+            data-title="Dashboard"
+          >
+            Dashboard
+          </button>
+          <button class="nav-item" data-target="vehicles" data-title="Veículos">
+            Veículos
+          </button>
+          <button
+            class="nav-item"
+            data-target="drivers"
+            data-title="Condutores"
+          >
+            Condutores
+          </button>
+          <button
+            class="nav-item"
+            data-target="maintenance"
+            data-title="Manutenções"
+          >
+            Manutenções
+          </button>
+          <button
+            class="nav-item"
+            data-target="workOrders"
+            data-title="Ordens de serviço"
+          >
+            Ordens de serviço
+          </button>
+        </nav>
+        <div class="px-6 py-6 text-xs text-slate-400">
+          Sistema administrativo interno.
         </div>
+      </aside>
 
-        <!-- Card Ordens de Serviço -->
-        <div class="card os">
-          <div class="icone">📋</div>
-          <h3>Ordens de Serviço</h3>
-          <div class="numero" id="totalOS">0</div>
-          <div class="detalhes">
-            <p>
-              <span>Últimas 7 dias:</span>
-              <span id="osRecentes">0</span>
-            </p>
+      <div class="flex-1 flex flex-col md:ml-0">
+        <header
+          class="flex items-center justify-between px-6 py-4 bg-white border-b border-slate-200 sticky top-0 z-10"
+        >
+          <div class="flex items-center gap-3">
+            <button
+              id="sidebarToggle"
+              class="md:hidden inline-flex items-center justify-center h-10 w-10 rounded-md border border-slate-200"
+              aria-label="Abrir menu"
+            >
+              ☰
+            </button>
+            <div>
+              <p class="text-sm text-slate-500">PMT</p>
+              <h1 id="pageTitle" class="text-xl font-semibold">Dashboard</h1>
+            </div>
           </div>
-        </div>
+        </header>
 
-        <!-- Card Manutenção -->
-        <div class="card manutencao">
-          <div class="icone">🔧</div>
-          <h3>Manutenções</h3>
-          <div class="numero" id="totalManutencao">0</div>
-          <div class="detalhes">
-            <p>
-              <span>Pendentes:</span>
-              <span id="manutencaoPendente">0</span>
-            </p>
-            <p>
-              <span>Concluídas:</span>
-              <span id="manutencaoConcluida">0</span>
-            </p>
-          </div>
-        </div>
+        <main class="flex-1 p-6 space-y-8">
+          <section id="dashboard" data-section>
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+              <div class="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+                <p class="text-sm text-slate-500">Veículos</p>
+                <p id="countVehicles" class="text-2xl font-semibold">0</p>
+              </div>
+              <div class="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+                <p class="text-sm text-slate-500">Condutores</p>
+                <p id="countDrivers" class="text-2xl font-semibold">0</p>
+              </div>
+              <div class="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+                <p class="text-sm text-slate-500">Manutenções</p>
+                <p id="countMaintenance" class="text-2xl font-semibold">0</p>
+              </div>
+              <div class="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+                <p class="text-sm text-slate-500">Ordens de serviço</p>
+                <p id="countWorkOrders" class="text-2xl font-semibold">0</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
+              <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm xl:col-span-2">
+                <div class="flex items-center justify-between mb-4">
+                  <h2 class="text-lg font-semibold">Atalhos rápidos</h2>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <button class="quick-link" data-target="vehicles">
+                    Cadastrar veículo
+                  </button>
+                  <button class="quick-link" data-target="drivers">
+                    Cadastrar condutor
+                  </button>
+                  <button class="quick-link" data-target="maintenance">
+                    Registrar manutenção
+                  </button>
+                  <button class="quick-link" data-target="workOrders">
+                    Abrir ordem
+                  </button>
+                </div>
+              </div>
+              <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
+                <h2 class="text-lg font-semibold mb-4">Estrutura do banco</h2>
+                <pre class="text-xs bg-slate-50 border border-slate-200 rounded-md p-3 text-slate-600 overflow-auto">
+/vehicles/{id}
+  - plate, model, brand, year, status
+/drivers/{id}
+  - name, license, phone, status
+/maintenance/{id}
+  - vehicleId, type, date, cost, notes
+/workOrders/{id}
+  - vehicleId, driverId, description, status, scheduledDate
+                </pre>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
+              <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
+                <h2 class="text-lg font-semibold mb-4">Últimas ordens de serviço</h2>
+                <div id="latestWorkOrders" class="space-y-3 text-sm text-slate-600"></div>
+              </div>
+              <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
+                <h2 class="text-lg font-semibold mb-4">Manutenções recentes</h2>
+                <div id="latestMaintenance" class="space-y-3 text-sm text-slate-600"></div>
+              </div>
+            </div>
+          </section>
+
+          <section id="vehicles" data-section class="hidden">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
+              <div>
+                <h2 class="text-2xl font-semibold">Veículos</h2>
+                <p class="text-sm text-slate-500">
+                  Cadastre e gerencie veículos do PMT.
+                </p>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
+              <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+                <h3 class="text-lg font-semibold mb-4">Cadastrar / editar</h3>
+                <form id="vehicleForm" class="space-y-4">
+                  <div>
+                    <label class="text-sm text-slate-600">Placa</label>
+                    <input
+                      id="vehiclePlate"
+                      required
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                      placeholder="ABC-1234"
+                    />
+                  </div>
+                  <div>
+                    <label class="text-sm text-slate-600">Modelo</label>
+                    <input
+                      id="vehicleModel"
+                      required
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                      placeholder="Modelo do veículo"
+                    />
+                  </div>
+                  <div>
+                    <label class="text-sm text-slate-600">Marca</label>
+                    <input
+                      id="vehicleBrand"
+                      required
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                      placeholder="Marca"
+                    />
+                  </div>
+                  <div>
+                    <label class="text-sm text-slate-600">Ano</label>
+                    <input
+                      id="vehicleYear"
+                      type="number"
+                      min="1990"
+                      max="2100"
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                      placeholder="2024"
+                    />
+                  </div>
+                  <div>
+                    <label class="text-sm text-slate-600">Status</label>
+                    <select
+                      id="vehicleStatus"
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                    >
+                      <option value="Ativo">Ativo</option>
+                      <option value="Em manutenção">Em manutenção</option>
+                      <option value="Inativo">Inativo</option>
+                    </select>
+                  </div>
+                  <div class="flex flex-wrap gap-3">
+                    <button
+                      type="submit"
+                      data-submit
+                      data-default-text="Cadastrar veículo"
+                      data-edit-text="Salvar alterações"
+                      class="px-4 py-2 rounded-md bg-accent text-white hover:bg-accent-dark"
+                    >
+                      Cadastrar veículo
+                    </button>
+                    <button
+                      type="button"
+                      data-cancel
+                      class="px-4 py-2 rounded-md border border-slate-200 text-slate-600 hidden"
+                    >
+                      Cancelar edição
+                    </button>
+                  </div>
+                </form>
+              </div>
+              <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm xl:col-span-2">
+                <h3 class="text-lg font-semibold mb-4">Gerenciar veículos</h3>
+                <div class="overflow-auto">
+                  <table class="min-w-full text-sm">
+                    <thead class="text-left text-slate-500">
+                      <tr>
+                        <th class="pb-2">Placa</th>
+                        <th class="pb-2">Modelo</th>
+                        <th class="pb-2">Marca</th>
+                        <th class="pb-2">Ano</th>
+                        <th class="pb-2">Status</th>
+                        <th class="pb-2">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody id="vehiclesTableBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="drivers" data-section class="hidden">
+            <div>
+              <h2 class="text-2xl font-semibold">Condutores</h2>
+              <p class="text-sm text-slate-500">
+                Cadastre e gerencie condutores.
+              </p>
+            </div>
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
+              <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+                <h3 class="text-lg font-semibold mb-4">Cadastrar / editar</h3>
+                <form id="driverForm" class="space-y-4">
+                  <div>
+                    <label class="text-sm text-slate-600">Nome</label>
+                    <input
+                      id="driverName"
+                      required
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                      placeholder="Nome do condutor"
+                    />
+                  </div>
+                  <div>
+                    <label class="text-sm text-slate-600">CNH</label>
+                    <input
+                      id="driverLicense"
+                      required
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                      placeholder="Número da CNH"
+                    />
+                  </div>
+                  <div>
+                    <label class="text-sm text-slate-600">Telefone</label>
+                    <input
+                      id="driverPhone"
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                      placeholder="(00) 00000-0000"
+                    />
+                  </div>
+                  <div>
+                    <label class="text-sm text-slate-600">Status</label>
+                    <select
+                      id="driverStatus"
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                    >
+                      <option value="Ativo">Ativo</option>
+                      <option value="Em serviço">Em serviço</option>
+                      <option value="Inativo">Inativo</option>
+                    </select>
+                  </div>
+                  <div class="flex flex-wrap gap-3">
+                    <button
+                      type="submit"
+                      data-submit
+                      data-default-text="Cadastrar condutor"
+                      data-edit-text="Salvar alterações"
+                      class="px-4 py-2 rounded-md bg-accent text-white hover:bg-accent-dark"
+                    >
+                      Cadastrar condutor
+                    </button>
+                    <button
+                      type="button"
+                      data-cancel
+                      class="px-4 py-2 rounded-md border border-slate-200 text-slate-600 hidden"
+                    >
+                      Cancelar edição
+                    </button>
+                  </div>
+                </form>
+              </div>
+              <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm xl:col-span-2">
+                <h3 class="text-lg font-semibold mb-4">Gerenciar condutores</h3>
+                <div class="overflow-auto">
+                  <table class="min-w-full text-sm">
+                    <thead class="text-left text-slate-500">
+                      <tr>
+                        <th class="pb-2">Nome</th>
+                        <th class="pb-2">CNH</th>
+                        <th class="pb-2">Telefone</th>
+                        <th class="pb-2">Status</th>
+                        <th class="pb-2">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody id="driversTableBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="maintenance" data-section class="hidden">
+            <div>
+              <h2 class="text-2xl font-semibold">Manutenções</h2>
+              <p class="text-sm text-slate-500">
+                Registre e acompanhe manutenções.
+              </p>
+            </div>
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
+              <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+                <h3 class="text-lg font-semibold mb-4">Cadastrar / editar</h3>
+                <form id="maintenanceForm" class="space-y-4">
+                  <div>
+                    <label class="text-sm text-slate-600">Veículo</label>
+                    <select
+                      id="maintenanceVehicle"
+                      data-vehicle-select
+                      required
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                    >
+                      <option value="">Selecione um veículo</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="text-sm text-slate-600">Tipo</label>
+                    <input
+                      id="maintenanceType"
+                      required
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                      placeholder="Preventiva, corretiva..."
+                    />
+                  </div>
+                  <div>
+                    <label class="text-sm text-slate-600">Data</label>
+                    <input
+                      id="maintenanceDate"
+                      type="date"
+                      required
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label class="text-sm text-slate-600">Custo (R$)</label>
+                    <input
+                      id="maintenanceCost"
+                      type="number"
+                      step="0.01"
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                      placeholder="0,00"
+                    />
+                  </div>
+                  <div>
+                    <label class="text-sm text-slate-600">Observações</label>
+                    <textarea
+                      id="maintenanceNotes"
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                      rows="3"
+                      placeholder="Detalhes da manutenção"
+                    ></textarea>
+                  </div>
+                  <div class="flex flex-wrap gap-3">
+                    <button
+                      type="submit"
+                      data-submit
+                      data-default-text="Registrar manutenção"
+                      data-edit-text="Salvar alterações"
+                      class="px-4 py-2 rounded-md bg-accent text-white hover:bg-accent-dark"
+                    >
+                      Registrar manutenção
+                    </button>
+                    <button
+                      type="button"
+                      data-cancel
+                      class="px-4 py-2 rounded-md border border-slate-200 text-slate-600 hidden"
+                    >
+                      Cancelar edição
+                    </button>
+                  </div>
+                </form>
+              </div>
+              <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm xl:col-span-2">
+                <h3 class="text-lg font-semibold mb-4">Gerenciar manutenções</h3>
+                <div class="overflow-auto">
+                  <table class="min-w-full text-sm">
+                    <thead class="text-left text-slate-500">
+                      <tr>
+                        <th class="pb-2">Veículo</th>
+                        <th class="pb-2">Tipo</th>
+                        <th class="pb-2">Data</th>
+                        <th class="pb-2">Custo</th>
+                        <th class="pb-2">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody id="maintenanceTableBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="workOrders" data-section class="hidden">
+            <div>
+              <h2 class="text-2xl font-semibold">Ordens de serviço</h2>
+              <p class="text-sm text-slate-500">
+                Abra e acompanhe ordens de serviço.
+              </p>
+            </div>
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
+              <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+                <h3 class="text-lg font-semibold mb-4">Cadastrar / editar</h3>
+                <form id="workOrderForm" class="space-y-4">
+                  <div>
+                    <label class="text-sm text-slate-600">Veículo</label>
+                    <select
+                      id="workOrderVehicle"
+                      data-vehicle-select
+                      required
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                    >
+                      <option value="">Selecione um veículo</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="text-sm text-slate-600">Condutor</label>
+                    <select
+                      id="workOrderDriver"
+                      data-driver-select
+                      required
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                    >
+                      <option value="">Selecione um condutor</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="text-sm text-slate-600">Descrição</label>
+                    <textarea
+                      id="workOrderDescription"
+                      required
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                      rows="3"
+                      placeholder="Resumo da ordem de serviço"
+                    ></textarea>
+                  </div>
+                  <div>
+                    <label class="text-sm text-slate-600">Status</label>
+                    <select
+                      id="workOrderStatus"
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                    >
+                      <option value="Aberta">Aberta</option>
+                      <option value="Em execução">Em execução</option>
+                      <option value="Concluída">Concluída</option>
+                      <option value="Cancelada">Cancelada</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="text-sm text-slate-600">Data prevista</label>
+                    <input
+                      id="workOrderDate"
+                      type="date"
+                      required
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                    />
+                  </div>
+                  <div class="flex flex-wrap gap-3">
+                    <button
+                      type="submit"
+                      data-submit
+                      data-default-text="Cadastrar ordem"
+                      data-edit-text="Salvar alterações"
+                      class="px-4 py-2 rounded-md bg-accent text-white hover:bg-accent-dark"
+                    >
+                      Cadastrar ordem
+                    </button>
+                    <button
+                      type="button"
+                      data-cancel
+                      class="px-4 py-2 rounded-md border border-slate-200 text-slate-600 hidden"
+                    >
+                      Cancelar edição
+                    </button>
+                  </div>
+                </form>
+              </div>
+              <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm xl:col-span-2">
+                <h3 class="text-lg font-semibold mb-4">Gerenciar ordens</h3>
+                <div class="overflow-auto">
+                  <table class="min-w-full text-sm">
+                    <thead class="text-left text-slate-500">
+                      <tr>
+                        <th class="pb-2">Veículo</th>
+                        <th class="pb-2">Condutor</th>
+                        <th class="pb-2">Status</th>
+                        <th class="pb-2">Data</th>
+                        <th class="pb-2">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody id="workOrdersTableBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
       </div>
     </div>
-  </div>
 
-  <script type="module" src="app.js"></script>
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyC58ES7uRIfO8Cf6etnZ54H6aGTHJAG1Uw",
-      authDomain: "mypmtadmin-16308.firebaseapp.com",
-      databaseURL: "https://mypmtadmin-16308-default-rtdb.firebaseio.com",
-      projectId: "mypmtadmin-16308",
-      storageBucket: "mypmtadmin-16308.firebasestorage.app",
-      messagingSenderId: "74155713812",
-      appId: "1:74155713812:web:7a560cbd6847b1a7700e01"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    // Veículos
-    const veiculosRef = ref(db, "veiculos");
-    onValue(veiculosRef, (snapshot) => {
-      let total = 0, ativos = 0, manutencao = 0, inativos = 0;
-      snapshot.forEach((item) => {
-        const dados = item.val();
-        total++;
-        if (dados.status === "Ativo") ativos++;
-        else if (dados.status === "Manutenção") manutencao++;
-        else inativos++;
-      });
-      document.getElementById("totalVeiculos").textContent = total;
-      document.getElementById("veiculosAtivos").textContent = ativos;
-      document.getElementById("veiculosManutencao").textContent = manutencao;
-      document.getElementById("veiculosInativos").textContent = inativos;
-    });
-
-    // Condutores
-    const condutoresRef = ref(db, "condutores");
-    onValue(condutoresRef, (snapshot) => {
-      let total = 0, ativos = 0, inativos = 0;
-      snapshot.forEach((item) => {
-        const dados = item.val();
-        total++;
-        if (dados.situacao === "Ativo" || dados.situacao === "ativo") ativos++;
-        else inativos++;
-      });
-      document.getElementById("totalCondutores").textContent = total;
-      document.getElementById("condutoresAtivos").textContent = ativos;
-      document.getElementById("condutoresInativos").textContent = inativos;
-    });
-
-    // Ordens de Serviço
-    const osRef = ref(db, "ordens_servico");
-    onValue(osRef, (snapshot) => {
-      let total = 0, recentes = 0;
-      const setelDiasAtras = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      snapshot.forEach((item) => {
-        const dados = item.val();
-        total++;
-        if (dados.saida) {
-          const dataSaida = new Date(dados.saida);
-          if (dataSaida > setelDiasAtras) recentes++;
-        }
-      });
-      document.getElementById("totalOS").textContent = total;
-      document.getElementById("osRecentes").textContent = recentes;
-    });
-
-    // Manutenção
-    const manutencaoRef = ref(db, "manutencao");
-    onValue(manutencaoRef, (snapshot) => {
-      let total = 0, pendente = 0, concluida = 0;
-      snapshot.forEach((item) => {
-        const dados = item.val();
-        total++;
-        if (!dados.saida) pendente++;
-        else concluida++;
-      });
-      document.getElementById("totalManutencao").textContent = total;
-      document.getElementById("manutencaoPendente").textContent = pendente;
-      document.getElementById("manutencaoConcluida").textContent = concluida;
-    });
-  </script>
-
-</body>
+    <script type="module" src="./app.js"></script>
+  </body>
 </html>
