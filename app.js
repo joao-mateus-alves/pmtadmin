@@ -131,7 +131,7 @@ function renderVehiclesTable() {
   const tbody = document.getElementById("vehiclesTableBody");
   if (!tbody) return;
   if (!state.vehicles.length) {
-    renderEmptyRow(tbody, 7, "Nenhum veículo cadastrado.");
+    renderEmptyRow(tbody, 6, "Nenhum veículo cadastrado.");
     return;
   }
   tbody.innerHTML = state.vehicles
@@ -141,7 +141,6 @@ function renderVehiclesTable() {
         <td class="py-3 pr-4">${vehicle.model || "-"}</td>
         <td class="py-3 pr-4">${vehicle.year || "-"}</td>
         <td class="py-3 pr-4">${vehicle.odometer || "-"}</td>
-        <td class="py-3 pr-4">${vehicle.fuel || "-"}</td>
         <td class="py-3 pr-4">${vehicle.status || "-"}</td>
         <td class="py-3">
           <button class="text-accent mr-3" data-action="edit" data-id="${vehicle.id}">Editar</button>
@@ -295,10 +294,11 @@ function updateDashboard() {
     latestMaintenance.innerHTML = sortedMaintenance.slice(0, 5).map((item) => {
       const vehicle = state.vehicles.find((v) => v.id === item.vehicleId);
       const cost = item.cost ? currencyFormatter.format(Number(item.cost)) : "-";
+      const notes = item.notes ? ` • ${item.notes}` : "";
       return `<div class="flex items-center justify-between border border-slate-100 rounded-md p-3">
         <div>
           <p class="font-medium">${item.type || "Manutenção"}</p>
-          <p class="text-xs text-slate-500">${formatVehicleLabel(vehicle)} • ${item.date || "-"}</p>
+          <p class="text-xs text-slate-500">${formatVehicleLabel(vehicle)} • ${item.date || "-"}${notes}</p>
         </div>
         <span class="text-xs text-slate-500">${cost}</span>
       </div>`;
@@ -355,12 +355,15 @@ vehicleForm?.addEventListener("submit", async (event) => {
     model: document.getElementById("vehicleModel").value.trim(),
     year: document.getElementById("vehicleYear").value.trim(),
     odometer: document.getElementById("vehicleOdometer").value.trim(),
-    fuel: document.getElementById("vehicleFuel").value.trim(),
     status: document.getElementById("vehicleStatus").value
   };
   const editId = vehicleForm.dataset.editId;
   if (editId) {
-    await update(ref(db, `vehicles/${editId}`), { ...payload, updatedAt: Date.now() });
+    await update(ref(db, `vehicles/${editId}`), {
+      ...payload,
+      fuel: null,
+      updatedAt: Date.now()
+    });
     setFormMode(vehicleForm, false);
   } else {
     await push(ref(db, "vehicles"), { ...payload, createdAt: Date.now() });
@@ -447,7 +450,6 @@ document.getElementById("vehiclesTableBody")?.addEventListener("click", async (e
     document.getElementById("vehicleModel").value = vehicle.model || "";
     document.getElementById("vehicleYear").value = vehicle.year || "";
     document.getElementById("vehicleOdometer").value = vehicle.odometer || "";
-    document.getElementById("vehicleFuel").value = vehicle.fuel || "";
     document.getElementById("vehicleStatus").value = vehicle.status || "Disponível";
     vehicleForm.dataset.editId = id;
     setFormMode(vehicleForm, true);
