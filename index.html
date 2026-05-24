@@ -54,6 +54,9 @@
           >
             Dashboard
           </button>
+          <button class="nav-item" data-target="search" data-title="Pesquisa geral">
+            Pesquisa geral
+          </button>
           <button class="nav-item" data-target="vehicles" data-title="Veículos">
             Veículos
           </button>
@@ -198,6 +201,58 @@
                 <h2 class="text-lg font-semibold mb-4">Manutenções recentes</h2>
                 <div id="latestMaintenance" class="space-y-3 text-sm text-slate-600"></div>
               </div>
+            </div>
+          </section>
+
+          <section id="search" data-section class="hidden">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
+              <div>
+                <h2 class="text-2xl font-semibold">Pesquisa geral</h2>
+                <p class="text-sm text-slate-500">
+                  Filtre e pesquise dados gerais do sistema.
+                </p>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm mt-6">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label class="text-sm text-slate-600">Pesquisar</label>
+                  <input
+                    id="generalSearchInput"
+                    class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                    placeholder="Digite para pesquisar"
+                  />
+                </div>
+                <div>
+                  <label class="text-sm text-slate-600">Tipo de dado</label>
+                  <select
+                    id="generalSearchType"
+                    class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                  >
+                    <option value="all">Todos</option>
+                    <option value="vehicles">Veículos</option>
+                    <option value="drivers">Condutores</option>
+                    <option value="maintenance">Manutenções</option>
+                    <option value="workOrders">Ordens de serviço</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="text-sm text-slate-600">Status</label>
+                  <select
+                    id="generalSearchStatus"
+                    class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                  >
+                    <option value="all">Todos</option>
+                  </select>
+                </div>
+              </div>
+              <p id="generalSearchSummary" class="text-xs text-slate-500 mt-4"></p>
+            </div>
+
+            <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm mt-6">
+              <h3 class="text-lg font-semibold mb-4">Resultados</h3>
+              <div id="generalSearchResults" class="space-y-3 text-sm text-slate-600"></div>
             </div>
           </section>
 

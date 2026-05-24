@@ -14,9 +14,10 @@ const state = {
   workOrders: []
 };
 
-const sectionIds = ["dashboard", "vehicles", "drivers", "maintenance", "workOrders"];
+const sectionIds = ["dashboard", "search", "vehicles", "drivers", "maintenance", "workOrders"];
 const sectionTitles = {
   dashboard: "Dashboard",
+  search: "Pesquisa geral",
   vehicles: "Veículos",
   drivers: "Condutores",
   maintenance: "Manutenções",
@@ -31,6 +32,11 @@ const vehicleHistorySelect = document.getElementById("vehicleHistorySelect");
 const driverHistorySelect = document.getElementById("driverHistorySelect");
 const vehicleHistoryList = document.getElementById("vehicleHistoryList");
 const driverHistoryList = document.getElementById("driverHistoryList");
+const generalSearchInput = document.getElementById("generalSearchInput");
+const generalSearchType = document.getElementById("generalSearchType");
+const generalSearchStatus = document.getElementById("generalSearchStatus");
+const generalSearchResults = document.getElementById("generalSearchResults");
+const generalSearchSummary = document.getElementById("generalSearchSummary");
 
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -76,6 +82,31 @@ function formatDriverLabel(driver) {
   const role = driver.role ? `${driver.role} - ` : "";
   const name = driver.name || "Sem nome";
   return `${role}${name}`.trim();
+}
+
+function normalizeText(value) {
+  return (value || "")
+    .toString()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+const closedWorkOrderStatuses = new Set(["Concluída", "Cancelada"]);
+
+function isWorkOrderOpen(order) {
+  const status = (order?.status || "Aberta").trim();
+  return !closedWorkOrderStatuses.has(status);
+}
+
+function isDriverOnMission(driverId) {
+  return state.workOrders.some((order) => order.driverId === driverId && isWorkOrderOpen(order));
+}
+
+function getDriverStatusLabel(driver) {
+  if (!driver) return "-";
+  return isDriverOnMission(driver.id) ? "Em missão" : driver.status || "Ocioso";
 }
 
 function formatDateTime(dateValue, timeValue) {
@@ -221,7 +252,7 @@ function renderDriversTable() {
       (driver) => `<tr class="border-t border-slate-100">
         <td class="py-3 pr-4">${formatDriverLabel(driver)}</td>
         <td class="py-3 pr-4">${driver.phone || "-"}</td>
-        <td class="py-3 pr-4">${driver.status || "-"}</td>
+        <td class="py-3 pr-4">${getDriverStatusLabel(driver)}</td>
         <td class="py-3">
           <button class="text-accent mr-3" data-action="edit" data-id="${driver.id}">Editar</button>
           <button class="text-red-600" data-action="delete" data-id="${driver.id}">Excluir</button>
@@ -545,6 +576,152 @@ function updateDashboard() {
   renderTopVehicles();
 }
 
+const statusOptionsByType = {
+  all: [{ value: "all", label: "Todos" }],
+  vehicles: [
+    { value: "all", label: "Todos" },
+    { value: "Disponível", label: "Disponível" },
+    { value: "Em serviço", label: "Em serviço" },
+    { value: "Em manutenção", label: "Em manutenção" },
+    { value: "Baixada", label: "Baixada" }
+  ],
+  drivers: [
+    { value: "all", label: "Todos" },
+    { value: "Em missão", label: "Em missão" },
+    { value: "Ocioso", label: "Ocioso" },
+    { value: "Indisponível", label: "Indisponível" }
+  ],
+  maintenance: [{ value: "all", label: "Todos" }],
+  workOrders: [
+    { value: "all", label: "Todos" },
+    { value: "Aberta", label: "Aberta" },
+    { value: "Concluída", label: "Concluída" },
+    { value: "Cancelada", label: "Cancelada" }
+  ]
+};
+
+function updateSearchStatusOptions(type) {
+  if (!generalSearchStatus) return;
+  const options = statusOptionsByType[type] || statusOptionsByType.all;
+  const current = generalSearchStatus.value;
+  generalSearchStatus.innerHTML = "";
+  options.forEach((optionItem) => {
+    const option = document.createElement("option");
+    option.value = optionItem.value;
+    option.textContent = optionItem.label;
+    generalSearchStatus.appendChild(option);
+  });
+  if (options.some((option) => option.value === current)) {
+    generalSearchStatus.value = current;
+  }
+}
+
+function buildSearchItems() {
+  const items = [];
+
+  state.vehicles.forEach((vehicle) => {
+    const details = [];
+    if (vehicle.year) details.push(`Ano ${vehicle.year}`);
+    if (vehicle.odometer) details.push(`Odômetro ${vehicle.odometer}`);
+    items.push({
+      typeId: "vehicles",
+      typeLabel: "Veículo",
+      title: formatVehicleLabel(vehicle),
+      description: details.join(" • "),
+      status: vehicle.status || "Disponível"
+    });
+  });
+
+  state.drivers.forEach((driver) => {
+    items.push({
+      typeId: "drivers",
+      typeLabel: "Condutor",
+      title: formatDriverLabel(driver),
+      description: driver.phone ? `Telefone: ${driver.phone}` : "",
+      status: getDriverStatusLabel(driver)
+    });
+  });
+
+  state.maintenance.forEach((item) => {
+    const vehicle = state.vehicles.find((v) => v.id === item.vehicleId);
+    const cost = item.cost ? currencyFormatter.format(Number(item.cost)) : "";
+    const details = [formatVehicleLabel(vehicle), item.date || "-"].filter(Boolean);
+    if (cost) details.push(cost);
+    items.push({
+      typeId: "maintenance",
+      typeLabel: "Manutenção",
+      title: item.type || "Manutenção registrada",
+      description: details.join(" • "),
+      status: ""
+    });
+  });
+
+  state.workOrders.forEach((order) => {
+    const vehicle = state.vehicles.find((v) => v.id === order.vehicleId);
+    const driver = state.drivers.find((d) => d.id === order.driverId);
+    const departureDateTime = formatDateTime(order.departureDate, order.departureTime);
+    items.push({
+      typeId: "workOrders",
+      typeLabel: "Ordem de serviço",
+      title: order.destination || "Ordem de serviço",
+      description: `${formatVehicleLabel(vehicle)} • ${formatDriverLabel(driver)} • ${departureDateTime}`,
+      status: order.status || "Aberta"
+    });
+  });
+
+  return items;
+}
+
+function renderGeneralSearch() {
+  if (!generalSearchResults) return;
+  const query = normalizeText(generalSearchInput?.value || "");
+  const typeFilter = generalSearchType?.value || "all";
+  const statusFilter = generalSearchStatus?.value || "all";
+
+  let items = buildSearchItems();
+  if (typeFilter !== "all") {
+    items = items.filter((item) => item.typeId === typeFilter);
+  }
+  if (statusFilter !== "all") {
+    items = items.filter(
+      (item) => normalizeText(item.status) === normalizeText(statusFilter)
+    );
+  }
+  if (query) {
+    items = items.filter((item) => {
+      const haystack = normalizeText(
+        [item.typeLabel, item.title, item.description, item.status].filter(Boolean).join(" ")
+      );
+      return haystack.includes(query);
+    });
+  }
+
+  if (generalSearchSummary) {
+    generalSearchSummary.textContent = `${items.length} resultado(s) encontrado(s).`;
+  }
+
+  if (!items.length) {
+    generalSearchResults.innerHTML = '<p class="text-slate-500">Nenhum resultado encontrado.</p>';
+    return;
+  }
+
+  generalSearchResults.innerHTML = items
+    .map((item) => {
+      const statusBadge = item.status
+        ? `<span class="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600">${item.status}</span>`
+        : "";
+      const details = item.description ? ` • ${item.description}` : "";
+      return `<div class="flex items-start justify-between gap-3 border border-slate-100 rounded-md p-3">
+        <div>
+          <p class="font-medium">${item.title}</p>
+          <p class="text-xs text-slate-500">${item.typeLabel}${details}</p>
+        </div>
+        ${statusBadge}
+      </div>`;
+    })
+    .join("");
+}
+
 document.querySelectorAll(".nav-item").forEach((item) => {
   item.classList.add(
     "w-full",
@@ -564,8 +741,11 @@ document.querySelectorAll(".quick-link").forEach((button) => {
     "px-4",
     "py-3",
     "rounded-md",
+    "bg-slate-50",
     "border",
     "border-slate-200",
+    "text-slate-700",
+    "hover:bg-slate-100",
     "hover:border-accent",
     "hover:text-accent",
     "transition",
@@ -576,6 +756,12 @@ document.querySelectorAll(".quick-link").forEach((button) => {
 
 vehicleHistorySelect?.addEventListener("change", renderVehicleHistory);
 driverHistorySelect?.addEventListener("change", renderDriverHistory);
+generalSearchInput?.addEventListener("input", renderGeneralSearch);
+generalSearchType?.addEventListener("change", () => {
+  updateSearchStatusOptions(generalSearchType.value);
+  renderGeneralSearch();
+});
+generalSearchStatus?.addEventListener("change", renderGeneralSearch);
 
 const latestWorkOrdersContainer = document.getElementById("latestWorkOrders");
 latestWorkOrdersContainer?.addEventListener("click", async (event) => {
@@ -810,6 +996,7 @@ onValue(ref(db, "vehicles"), (snapshot) => {
   updateVehicleSelects();
   renderVehicleHistory();
   updateDashboard();
+  renderGeneralSearch();
 });
 
 onValue(ref(db, "drivers"), (snapshot) => {
@@ -818,6 +1005,7 @@ onValue(ref(db, "drivers"), (snapshot) => {
   updateDriverSelects();
   renderDriverHistory();
   updateDashboard();
+  renderGeneralSearch();
 });
 
 onValue(ref(db, "maintenance"), (snapshot) => {
@@ -825,6 +1013,7 @@ onValue(ref(db, "maintenance"), (snapshot) => {
   renderMaintenanceTable();
   updateDashboard();
   renderVehicleHistory();
+  renderGeneralSearch();
 });
 
 onValue(ref(db, "workOrders"), (snapshot) => {
@@ -833,6 +1022,9 @@ onValue(ref(db, "workOrders"), (snapshot) => {
   updateDashboard();
   renderVehicleHistory();
   renderDriverHistory();
+  renderGeneralSearch();
 });
 
+updateSearchStatusOptions(generalSearchType?.value || "all");
+renderGeneralSearch();
 setActiveSection("dashboard");
