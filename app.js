@@ -624,6 +624,7 @@ function buildSearchItems() {
     if (vehicle.year) details.push(`Ano ${vehicle.year}`);
     if (vehicle.odometer) details.push(`Odômetro ${vehicle.odometer}`);
     items.push({
+      id: vehicle.id,
       typeId: "vehicles",
       typeLabel: "Veículo",
       title: formatVehicleLabel(vehicle),
@@ -634,6 +635,7 @@ function buildSearchItems() {
 
   state.drivers.forEach((driver) => {
     items.push({
+      id: driver.id,
       typeId: "drivers",
       typeLabel: "Condutor",
       title: formatDriverLabel(driver),
@@ -648,6 +650,7 @@ function buildSearchItems() {
     const details = [formatVehicleLabel(vehicle), item.date || "-"].filter(Boolean);
     if (cost) details.push(cost);
     items.push({
+      id: item.id,
       typeId: "maintenance",
       typeLabel: "Manutenção",
       title: item.type || "Manutenção registrada",
@@ -661,6 +664,7 @@ function buildSearchItems() {
     const driver = state.drivers.find((d) => d.id === order.driverId);
     const departureDateTime = formatDateTime(order.departureDate, order.departureTime);
     items.push({
+      id: order.id,
       typeId: "workOrders",
       typeLabel: "Ordem de serviço",
       title: order.destination || "Ordem de serviço",
@@ -711,12 +715,14 @@ function renderGeneralSearch() {
         ? `<span class="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600">${item.status}</span>`
         : "";
       const details = item.description ? ` • ${item.description}` : "";
+      const editButton = `<button class="text-accent text-xs font-medium" data-action="edit" data-type="${item.typeId}" data-id="${item.id}">Editar</button>`;
+      const actions = `<div class="flex items-center gap-2">${statusBadge}${editButton}</div>`;
       return `<div class="flex items-start justify-between gap-3 border border-slate-100 rounded-md p-3">
         <div>
           <p class="font-medium">${item.title}</p>
           <p class="text-xs text-slate-500">${item.typeLabel}${details}</p>
         </div>
-        ${statusBadge}
+        ${actions}
       </div>`;
     })
     .join("");
@@ -762,6 +768,30 @@ generalSearchType?.addEventListener("change", () => {
   renderGeneralSearch();
 });
 generalSearchStatus?.addEventListener("change", renderGeneralSearch);
+generalSearchResults?.addEventListener("click", (event) => {
+  const button = event.target.closest("button");
+  if (!button) return;
+  if (button.dataset.action !== "edit") return;
+  const id = button.dataset.id;
+  const type = button.dataset.type;
+  if (!id || !type) return;
+  if (type === "vehicles") {
+    setActiveSection("vehicles");
+    startEditVehicle(id);
+  }
+  if (type === "drivers") {
+    setActiveSection("drivers");
+    startEditDriver(id);
+  }
+  if (type === "maintenance") {
+    setActiveSection("maintenance");
+    startEditMaintenance(id);
+  }
+  if (type === "workOrders") {
+    setActiveSection("workOrders");
+    startEditWorkOrder(id);
+  }
+});
 
 const latestWorkOrdersContainer = document.getElementById("latestWorkOrders");
 latestWorkOrdersContainer?.addEventListener("click", async (event) => {
@@ -797,6 +827,62 @@ const vehicleForm = document.getElementById("vehicleForm");
 const driverForm = document.getElementById("driverForm");
 const maintenanceForm = document.getElementById("maintenanceForm");
 const workOrderForm = document.getElementById("workOrderForm");
+
+function startEditVehicle(id) {
+  const vehicle = state.vehicles.find((item) => item.id === id);
+  if (!vehicle || !vehicleForm) return;
+  document.getElementById("vehiclePlate").value = vehicle.plate || "";
+  document.getElementById("vehicleModel").value = vehicle.model || "";
+  document.getElementById("vehicleYear").value = vehicle.year || "";
+  document.getElementById("vehicleOdometer").value = vehicle.odometer || "";
+  document.getElementById("vehicleFuel").value = vehicle.fuel || "";
+  document.getElementById("vehicleStatus").value = vehicle.status || "Disponível";
+  vehicleForm.dataset.editId = id;
+  setFormMode(vehicleForm, true);
+  vehicleForm.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function startEditDriver(id) {
+  const driver = state.drivers.find((item) => item.id === id);
+  if (!driver || !driverForm) return;
+  document.getElementById("driverRole").value = driver.role || "";
+  document.getElementById("driverName").value = driver.name || "";
+  document.getElementById("driverPhone").value = driver.phone || "";
+  document.getElementById("driverStatus").value = driver.status || "Ocioso";
+  driverForm.dataset.editId = id;
+  setFormMode(driverForm, true);
+  driverForm.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function startEditMaintenance(id) {
+  const item = state.maintenance.find((entry) => entry.id === id);
+  if (!item || !maintenanceForm) return;
+  document.getElementById("maintenanceVehicle").value = item.vehicleId || "";
+  document.getElementById("maintenanceType").value = item.type || "";
+  document.getElementById("maintenanceDate").value = item.date || "";
+  document.getElementById("maintenanceCost").value = item.cost || "";
+  document.getElementById("maintenanceNotes").value = item.notes || "";
+  maintenanceForm.dataset.editId = id;
+  setFormMode(maintenanceForm, true);
+  maintenanceForm.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function startEditWorkOrder(id) {
+  const item = state.workOrders.find((entry) => entry.id === id);
+  if (!item || !workOrderForm) return;
+  document.getElementById("workOrderVehicle").value = item.vehicleId || "";
+  document.getElementById("workOrderDriver").value = item.driverId || "";
+  document.getElementById("workOrderDestination").value = item.destination || "";
+  document.getElementById("workOrderDescription").value = item.description || "";
+  document.getElementById("workOrderStatus").value = item.status || "Aberta";
+  document.getElementById("workOrderDepartureDate").value = item.departureDate || "";
+  document.getElementById("workOrderDepartureTime").value = item.departureTime || "";
+  document.getElementById("workOrderArrivalDate").value = item.arrivalDate || "";
+  document.getElementById("workOrderArrivalTime").value = item.arrivalTime || "";
+  workOrderForm.dataset.editId = id;
+  setFormMode(workOrderForm, true);
+  workOrderForm.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 
 vehicleForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -896,17 +982,7 @@ document.getElementById("vehiclesTableBody")?.addEventListener("click", async (e
   const id = button.dataset.id;
   if (!id) return;
   if (button.dataset.action === "edit") {
-    const vehicle = state.vehicles.find((item) => item.id === id);
-    if (!vehicle) return;
-    document.getElementById("vehiclePlate").value = vehicle.plate || "";
-    document.getElementById("vehicleModel").value = vehicle.model || "";
-    document.getElementById("vehicleYear").value = vehicle.year || "";
-    document.getElementById("vehicleOdometer").value = vehicle.odometer || "";
-    document.getElementById("vehicleFuel").value = vehicle.fuel || "";
-    document.getElementById("vehicleStatus").value = vehicle.status || "Disponível";
-    vehicleForm.dataset.editId = id;
-    setFormMode(vehicleForm, true);
-    vehicleForm.scrollIntoView({ behavior: "smooth", block: "start" });
+    startEditVehicle(id);
   }
   if (button.dataset.action === "delete") {
     if (confirm("Deseja excluir este veículo?")) {
@@ -921,15 +997,7 @@ document.getElementById("driversTableBody")?.addEventListener("click", async (ev
   const id = button.dataset.id;
   if (!id) return;
   if (button.dataset.action === "edit") {
-    const driver = state.drivers.find((item) => item.id === id);
-    if (!driver) return;
-    document.getElementById("driverRole").value = driver.role || "";
-    document.getElementById("driverName").value = driver.name || "";
-    document.getElementById("driverPhone").value = driver.phone || "";
-    document.getElementById("driverStatus").value = driver.status || "Ocioso";
-    driverForm.dataset.editId = id;
-    setFormMode(driverForm, true);
-    driverForm.scrollIntoView({ behavior: "smooth", block: "start" });
+    startEditDriver(id);
   }
   if (button.dataset.action === "delete") {
     if (confirm("Deseja excluir este condutor?")) {
@@ -944,16 +1012,7 @@ document.getElementById("maintenanceTableBody")?.addEventListener("click", async
   const id = button.dataset.id;
   if (!id) return;
   if (button.dataset.action === "edit") {
-    const item = state.maintenance.find((entry) => entry.id === id);
-    if (!item) return;
-    document.getElementById("maintenanceVehicle").value = item.vehicleId || "";
-    document.getElementById("maintenanceType").value = item.type || "";
-    document.getElementById("maintenanceDate").value = item.date || "";
-    document.getElementById("maintenanceCost").value = item.cost || "";
-    document.getElementById("maintenanceNotes").value = item.notes || "";
-    maintenanceForm.dataset.editId = id;
-    setFormMode(maintenanceForm, true);
-    maintenanceForm.scrollIntoView({ behavior: "smooth", block: "start" });
+    startEditMaintenance(id);
   }
   if (button.dataset.action === "delete") {
     if (confirm("Deseja excluir esta manutenção?")) {
@@ -968,20 +1027,7 @@ document.getElementById("workOrdersTableBody")?.addEventListener("click", async 
   const id = button.dataset.id;
   if (!id) return;
   if (button.dataset.action === "edit") {
-    const item = state.workOrders.find((entry) => entry.id === id);
-    if (!item) return;
-    document.getElementById("workOrderVehicle").value = item.vehicleId || "";
-    document.getElementById("workOrderDriver").value = item.driverId || "";
-    document.getElementById("workOrderDestination").value = item.destination || "";
-    document.getElementById("workOrderDescription").value = item.description || "";
-    document.getElementById("workOrderStatus").value = item.status || "Aberta";
-    document.getElementById("workOrderDepartureDate").value = item.departureDate || "";
-    document.getElementById("workOrderDepartureTime").value = item.departureTime || "";
-    document.getElementById("workOrderArrivalDate").value = item.arrivalDate || "";
-    document.getElementById("workOrderArrivalTime").value = item.arrivalTime || "";
-    workOrderForm.dataset.editId = id;
-    setFormMode(workOrderForm, true);
-    workOrderForm.scrollIntoView({ behavior: "smooth", block: "start" });
+    startEditWorkOrder(id);
   }
   if (button.dataset.action === "delete") {
     if (confirm("Deseja excluir esta ordem de serviço?")) {
