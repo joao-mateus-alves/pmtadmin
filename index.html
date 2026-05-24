@@ -735,6 +735,34 @@
       </div>
     </div>
 
+    <script>
+      // máscara simples para telefone (00) 00000-0000 ou (00) 0000-0000
+      (function(){
+        function maskPhone(value){
+          const digits = value.replace(/\D/g,'');
+          if(digits.length > 10){
+            return digits.replace(/^(\d{2})(\d{5})(\d{4}).*/,'($1) $2-$3');
+          }
+          return digits.replace(/^(\d{2})(\d{4})(\d{0,4}).*/,'($1) $2-$3').replace(/-$/,'');
+        }
+        function onInput(e){
+          const el = e.target;
+          const start = el.selectionStart;
+          const formatted = maskPhone(el.value);
+          el.value = formatted;
+          // try to keep caret at end
+          el.selectionStart = el.selectionEnd = el.value.length;
+        }
+        document.addEventListener('DOMContentLoaded', function(){
+          const phone = document.getElementById('driverPhone');
+          if(phone){
+            phone.setAttribute('inputmode','tel');
+            phone.addEventListener('input', onInput);
+            phone.addEventListener('blur', onInput);
+          }
+        });
+      })();
+    </script>
     <script type="module" src="./app.js"></script>
   </body>
 </html>
