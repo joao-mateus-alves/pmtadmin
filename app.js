@@ -27,6 +27,10 @@ const sidebar = document.getElementById("sidebar");
 const sidebarOverlay = document.getElementById("sidebarOverlay");
 const pageTitle = document.getElementById("pageTitle");
 const sidebarToggle = document.getElementById("sidebarToggle");
+const vehicleHistorySelect = document.getElementById("vehicleHistorySelect");
+const driverHistorySelect = document.getElementById("driverHistorySelect");
+const vehicleHistoryList = document.getElementById("vehicleHistoryList");
+const driverHistoryList = document.getElementById("driverHistoryList");
 
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -72,6 +76,59 @@ function formatDriverLabel(driver) {
   const role = driver.role ? `${driver.role} - ` : "";
   const name = driver.name || "Sem nome";
   return `${role}${name}`.trim();
+}
+
+function formatDateTime(dateValue, timeValue) {
+  if (!dateValue && !timeValue) return "-";
+  if (dateValue && timeValue) return `${dateValue} ${timeValue}`;
+  return dateValue || timeValue;
+}
+
+function getCurrentDateTime() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  return { date: `${year}-${month}-${day}`, time: `${hours}:${minutes}` };
+}
+
+function formatTimestamp(timestamp) {
+  if (!timestamp) return "-";
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleString("pt-BR");
+}
+
+function toTimestamp(dateValue, timeValue) {
+  if (dateValue) {
+    const iso = timeValue ? `${dateValue}T${timeValue}` : `${dateValue}T00:00`;
+    const parsed = Date.parse(iso);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  return null;
+}
+
+function renderTimeline(container, events, emptyMessage) {
+  if (!container) return;
+  if (!events.length) {
+    container.innerHTML = `<p class="text-slate-500">${emptyMessage}</p>`;
+    return;
+  }
+  container.innerHTML = events
+    .map(
+      (event) => `<div class="flex gap-3">
+        <div class="mt-2 h-2 w-2 rounded-full bg-accent"></div>
+        <div>
+          <p class="font-medium">${event.title}</p>
+          <p class="text-xs text-slate-500">${event.meta}</p>
+        </div>
+      </div>`
+    )
+    .join("");
 }
 
 function setFormMode(form, isEditing) {
@@ -131,7 +188,7 @@ function renderVehiclesTable() {
   const tbody = document.getElementById("vehiclesTableBody");
   if (!tbody) return;
   if (!state.vehicles.length) {
-    renderEmptyRow(tbody, 6, "Nenhum veículo cadastrado.");
+    renderEmptyRow(tbody, 7, "Nenhum veículo cadastrado.");
     return;
   }
   tbody.innerHTML = state.vehicles
@@ -141,6 +198,7 @@ function renderVehiclesTable() {
         <td class="py-3 pr-4">${vehicle.model || "-"}</td>
         <td class="py-3 pr-4">${vehicle.year || "-"}</td>
         <td class="py-3 pr-4">${vehicle.odometer || "-"}</td>
+        <td class="py-3 pr-4">${vehicle.fuel || "-"}</td>
         <td class="py-3 pr-4">${vehicle.status || "-"}</td>
         <td class="py-3">
           <button class="text-accent mr-3" data-action="edit" data-id="${vehicle.id}">Editar</button>
@@ -209,12 +267,14 @@ function renderWorkOrdersTable() {
     .map((item) => {
       const vehicle = state.vehicles.find((v) => v.id === item.vehicleId);
       const driver = state.drivers.find((d) => d.id === item.driverId);
+      const departureDateTime = formatDateTime(item.departureDate, item.departureTime);
+      const arrivalDateTime = formatDateTime(item.arrivalDate, item.arrivalTime);
       return `<tr class="border-t border-slate-100">
         <td class="py-3 pr-4">${formatVehicleLabel(vehicle)}</td>
         <td class="py-3 pr-4">${formatDriverLabel(driver)}</td>
         <td class="py-3 pr-4">${item.destination || "-"}</td>
-        <td class="py-3 pr-4">${item.departureDate || "-"}</td>
-        <td class="py-3 pr-4">${item.arrivalDate || "-"}</td>
+        <td class="py-3 pr-4">${departureDateTime}</td>
+        <td class="py-3 pr-4">${arrivalDateTime}</td>
         <td class="py-3 pr-4">${item.status || "-"}</td>
         <td class="py-3">
           <button class="text-accent mr-3" data-action="edit" data-id="${item.id}">Editar</button>
@@ -223,6 +283,177 @@ function renderWorkOrdersTable() {
       </tr>`;
     })
     .join("");
+}
+
+function buildVehicleTimeline(vehicleId) {
+  const events = [];
+  const vehicle = state.vehicles.find((item) => item.id === vehicleId);
+  if (vehicle?.createdAt) {
+    events.push({
+      sortKey: vehicle.createdAt,
+      title: "Veículo cadastrado",
+      meta: `${formatVehicleLabel(vehicle)} • ${formatTimestamp(vehicle.createdAt)}`
+    });
+  }
+  if (vehicle?.updatedAt) {
+    events.push({
+      sortKey: vehicle.updatedAt,
+      title: "Veículo atualizado",
+      meta: `${formatVehicleLabel(vehicle)} • ${formatTimestamp(vehicle.updatedAt)}`
+    });
+  }
+
+  state.maintenance
+    .filter((item) => item.vehicleId === vehicleId)
+    .forEach((item) => {
+      const timestamp = toTimestamp(item.date) || item.createdAt || item.updatedAt || 0;
+      const cost = item.cost ? currencyFormatter.format(Number(item.cost)) : "";
+      const dateLabel = item.date || "-";
+      const costLabel = cost ? ` • ${cost}` : "";
+      events.push({
+        sortKey: timestamp,
+        title: "Manutenção registrada",
+        meta: `${dateLabel} • ${item.type || "Manutenção"}${costLabel}`
+      });
+    });
+
+  state.workOrders
+    .filter((item) => item.vehicleId === vehicleId)
+    .forEach((item) => {
+      const driver = state.drivers.find((entry) => entry.id === item.driverId);
+      const departureLabel = formatDateTime(item.departureDate, item.departureTime);
+      const timestamp = toTimestamp(item.departureDate, item.departureTime) || item.createdAt || item.updatedAt || 0;
+      events.push({
+        sortKey: timestamp,
+        title: "Ordem de serviço aberta",
+        meta: `${departureLabel} • ${item.destination || "-"} • ${formatDriverLabel(driver)} • ${item.status || "Aberta"}`
+      });
+
+      if (item.status === "Concluída" && (item.arrivalDate || item.arrivalTime)) {
+        const arrivalLabel = formatDateTime(item.arrivalDate, item.arrivalTime);
+        const arrivalTimestamp =
+          toTimestamp(item.arrivalDate, item.arrivalTime) || item.updatedAt || timestamp;
+        events.push({
+          sortKey: arrivalTimestamp,
+          title: "Ordem de serviço concluída",
+          meta: `${arrivalLabel} • ${item.destination || "-"} • ${formatDriverLabel(driver)}`
+        });
+      }
+    });
+
+  return events.sort((a, b) => (b.sortKey || 0) - (a.sortKey || 0));
+}
+
+function buildDriverTimeline(driverId) {
+  const events = [];
+  const driver = state.drivers.find((item) => item.id === driverId);
+  if (driver?.createdAt) {
+    events.push({
+      sortKey: driver.createdAt,
+      title: "Condutor cadastrado",
+      meta: `${formatDriverLabel(driver)} • ${formatTimestamp(driver.createdAt)}`
+    });
+  }
+  if (driver?.updatedAt) {
+    events.push({
+      sortKey: driver.updatedAt,
+      title: "Condutor atualizado",
+      meta: `${formatDriverLabel(driver)} • ${formatTimestamp(driver.updatedAt)}`
+    });
+  }
+
+  state.workOrders
+    .filter((item) => item.driverId === driverId)
+    .forEach((item) => {
+      const vehicle = state.vehicles.find((entry) => entry.id === item.vehicleId);
+      const departureLabel = formatDateTime(item.departureDate, item.departureTime);
+      const timestamp = toTimestamp(item.departureDate, item.departureTime) || item.createdAt || item.updatedAt || 0;
+      events.push({
+        sortKey: timestamp,
+        title: "Ordem de serviço atribuída",
+        meta: `${departureLabel} • ${item.destination || "-"} • ${formatVehicleLabel(vehicle)} • ${item.status || "Aberta"}`
+      });
+
+      if (item.status === "Concluída" && (item.arrivalDate || item.arrivalTime)) {
+        const arrivalLabel = formatDateTime(item.arrivalDate, item.arrivalTime);
+        const arrivalTimestamp =
+          toTimestamp(item.arrivalDate, item.arrivalTime) || item.updatedAt || timestamp;
+        events.push({
+          sortKey: arrivalTimestamp,
+          title: "Ordem de serviço concluída",
+          meta: `${arrivalLabel} • ${item.destination || "-"} • ${formatVehicleLabel(vehicle)}`
+        });
+      }
+    });
+
+  return events.sort((a, b) => (b.sortKey || 0) - (a.sortKey || 0));
+}
+
+function getOrderReferenceTimestamp(order) {
+  return order.createdAt || toTimestamp(order.departureDate, order.departureTime) || 0;
+}
+
+function buildTopVehicles() {
+  const map = new Map();
+  state.workOrders.forEach((order) => {
+    if (!order.vehicleId) return;
+    const current = map.get(order.vehicleId) || {
+      count: 0,
+      lastTimestamp: 0
+    };
+    const referenceTimestamp = getOrderReferenceTimestamp(order);
+    current.count += 1;
+    current.lastTimestamp = Math.max(current.lastTimestamp, referenceTimestamp);
+    map.set(order.vehicleId, current);
+  });
+
+  return [...map.entries()]
+    .map(([vehicleId, info]) => ({
+      vehicle: state.vehicles.find((item) => item.id === vehicleId),
+      count: info.count,
+      lastTimestamp: info.lastTimestamp
+    }))
+    .sort((a, b) => b.count - a.count || b.lastTimestamp - a.lastTimestamp);
+}
+
+function renderVehicleHistory() {
+  const vehicleId = vehicleHistorySelect?.value;
+  if (!vehicleId) {
+    renderTimeline(vehicleHistoryList, [], "Selecione um veículo para visualizar o histórico.");
+    return;
+  }
+  const events = buildVehicleTimeline(vehicleId);
+  renderTimeline(vehicleHistoryList, events, "Sem eventos registrados para este veículo.");
+}
+
+function renderDriverHistory() {
+  const driverId = driverHistorySelect?.value;
+  if (!driverId) {
+    renderTimeline(driverHistoryList, [], "Selecione um condutor para visualizar o histórico.");
+    return;
+  }
+  const events = buildDriverTimeline(driverId);
+  renderTimeline(driverHistoryList, events, "Sem eventos registrados para este condutor.");
+}
+
+function renderTopVehicles() {
+  const topVehiclesList = document.getElementById("topVehiclesList");
+  if (!topVehiclesList) return;
+  const topVehicles = buildTopVehicles();
+  if (!topVehicles.length) {
+    topVehiclesList.innerHTML = '<p class="text-slate-500">Sem dados suficientes.</p>';
+    return;
+  }
+  topVehiclesList.innerHTML = topVehicles.slice(0, 5).map((item, index) => {
+    const vehicle = item.vehicle;
+    return `<div class="flex items-center justify-between rounded-md border border-slate-100 px-3 py-2">
+      <div>
+        <p class="font-medium">${index + 1}. ${formatVehicleLabel(vehicle)}</p>
+        <p class="text-xs text-slate-500">Última movimentação: ${formatTimestamp(item.lastTimestamp)}</p>
+      </div>
+      <span class="text-sm font-semibold">${item.count}</span>
+    </div>`;
+  }).join("");
 }
 
 function updateDashboard() {
@@ -278,12 +509,18 @@ function updateDashboard() {
     latestWorkOrders.innerHTML = sortedOrders.slice(0, 5).map((order) => {
       const vehicle = state.vehicles.find((v) => v.id === order.vehicleId);
       const driver = state.drivers.find((d) => d.id === order.driverId);
+      const statusLabel = order.status || "Aberta";
+      const canClose = statusLabel === "Aberta";
+      const departureDateTime = formatDateTime(order.departureDate, order.departureTime);
       return `<div class="flex items-center justify-between border border-slate-100 rounded-md p-3">
         <div>
-          <p class="font-medium">${order.status || "Aberta"}</p>
+          <p class="font-medium">${statusLabel}</p>
           <p class="text-xs text-slate-500">${formatVehicleLabel(vehicle)} • ${formatDriverLabel(driver)} • ${order.destination || "-"}</p>
         </div>
-        <span class="text-xs text-slate-500">${order.departureDate || "-"}</span>
+        <div class="flex flex-col items-end gap-2">
+          <span class="text-xs text-slate-500">${departureDateTime}</span>
+          ${canClose ? `<button class="text-xs px-2 py-1 rounded-md border border-slate-200 text-slate-600 hover:text-accent hover:border-accent transition" data-action="close-work-order" data-id="${order.id}">Fechar ordem</button>` : ""}
+        </div>
       </div>`;
     }).join("");
   }
@@ -304,6 +541,8 @@ function updateDashboard() {
       </div>`;
     }).join("");
   }
+
+  renderTopVehicles();
 }
 
 document.querySelectorAll(".nav-item").forEach((item) => {
@@ -335,9 +574,34 @@ document.querySelectorAll(".quick-link").forEach((button) => {
   button.addEventListener("click", () => setActiveSection(button.dataset.target));
 });
 
+vehicleHistorySelect?.addEventListener("change", renderVehicleHistory);
+driverHistorySelect?.addEventListener("change", renderDriverHistory);
+
+const latestWorkOrdersContainer = document.getElementById("latestWorkOrders");
+latestWorkOrdersContainer?.addEventListener("click", async (event) => {
+  const button = event.target.closest("button");
+  if (!button) return;
+  if (button.dataset.action !== "close-work-order") return;
+  const id = button.dataset.id;
+  if (!id) return;
+  const { date, time } = getCurrentDateTime();
+  await update(ref(db, `workOrders/${id}`), {
+    arrivalDate: date,
+    arrivalTime: time,
+    status: "Concluída",
+    updatedAt: Date.now()
+  });
+});
+
 if (sidebarToggle) {
   sidebarToggle.addEventListener("click", () => toggleSidebar());
 }
+
+document.querySelector("header")?.addEventListener("click", (event) => {
+  if (window.innerWidth >= 768) return;
+  if (event.target.closest("button, a, input, select, textarea")) return;
+  toggleSidebar();
+});
 
 if (sidebarOverlay) {
   sidebarOverlay.addEventListener("click", () => toggleSidebar(false));
@@ -355,13 +619,13 @@ vehicleForm?.addEventListener("submit", async (event) => {
     model: document.getElementById("vehicleModel").value.trim(),
     year: document.getElementById("vehicleYear").value.trim(),
     odometer: document.getElementById("vehicleOdometer").value.trim(),
+    fuel: document.getElementById("vehicleFuel").value.trim(),
     status: document.getElementById("vehicleStatus").value
   };
   const editId = vehicleForm.dataset.editId;
   if (editId) {
     await update(ref(db, `vehicles/${editId}`), {
       ...payload,
-      fuel: null,
       updatedAt: Date.now()
     });
     setFormMode(vehicleForm, false);
@@ -417,7 +681,9 @@ workOrderForm?.addEventListener("submit", async (event) => {
     description: document.getElementById("workOrderDescription").value.trim(),
     status: document.getElementById("workOrderStatus").value,
     departureDate: document.getElementById("workOrderDepartureDate").value,
-    arrivalDate: document.getElementById("workOrderArrivalDate").value
+    departureTime: document.getElementById("workOrderDepartureTime").value,
+    arrivalDate: document.getElementById("workOrderArrivalDate").value,
+    arrivalTime: document.getElementById("workOrderArrivalTime").value
   };
   const editId = workOrderForm.dataset.editId;
   if (editId) {
@@ -450,6 +716,7 @@ document.getElementById("vehiclesTableBody")?.addEventListener("click", async (e
     document.getElementById("vehicleModel").value = vehicle.model || "";
     document.getElementById("vehicleYear").value = vehicle.year || "";
     document.getElementById("vehicleOdometer").value = vehicle.odometer || "";
+    document.getElementById("vehicleFuel").value = vehicle.fuel || "";
     document.getElementById("vehicleStatus").value = vehicle.status || "Disponível";
     vehicleForm.dataset.editId = id;
     setFormMode(vehicleForm, true);
@@ -523,7 +790,9 @@ document.getElementById("workOrdersTableBody")?.addEventListener("click", async 
     document.getElementById("workOrderDescription").value = item.description || "";
     document.getElementById("workOrderStatus").value = item.status || "Aberta";
     document.getElementById("workOrderDepartureDate").value = item.departureDate || "";
+    document.getElementById("workOrderDepartureTime").value = item.departureTime || "";
     document.getElementById("workOrderArrivalDate").value = item.arrivalDate || "";
+    document.getElementById("workOrderArrivalTime").value = item.arrivalTime || "";
     workOrderForm.dataset.editId = id;
     setFormMode(workOrderForm, true);
     workOrderForm.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -539,6 +808,7 @@ onValue(ref(db, "vehicles"), (snapshot) => {
   state.vehicles = toArray(snapshot);
   renderVehiclesTable();
   updateVehicleSelects();
+  renderVehicleHistory();
   updateDashboard();
 });
 
@@ -546,6 +816,7 @@ onValue(ref(db, "drivers"), (snapshot) => {
   state.drivers = toArray(snapshot);
   renderDriversTable();
   updateDriverSelects();
+  renderDriverHistory();
   updateDashboard();
 });
 
@@ -553,12 +824,15 @@ onValue(ref(db, "maintenance"), (snapshot) => {
   state.maintenance = toArray(snapshot);
   renderMaintenanceTable();
   updateDashboard();
+  renderVehicleHistory();
 });
 
 onValue(ref(db, "workOrders"), (snapshot) => {
   state.workOrders = toArray(snapshot);
   renderWorkOrdersTable();
   updateDashboard();
+  renderVehicleHistory();
+  renderDriverHistory();
 });
 
 setActiveSection("dashboard");
