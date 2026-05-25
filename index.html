@@ -205,9 +205,32 @@
                   <h2 id="missionCalendarTitle" class="text-lg font-semibold">Missões do mês</h2>
                   <p id="missionCalendarSummary" class="text-sm text-slate-500"></p>
                 </div>
-                <button class="quick-link" data-target="missions">
-                  Ver missões
-                </button>
+                <div class="flex flex-wrap items-center gap-2">
+                  <button
+                    id="missionCalendarPrev"
+                    type="button"
+                    class="px-3 py-2 rounded-md border border-slate-200 text-slate-600 hover:text-accent hover:border-accent transition text-sm"
+                  >
+                    Mês anterior
+                  </button>
+                  <button
+                    id="missionCalendarToday"
+                    type="button"
+                    class="px-3 py-2 rounded-md border border-slate-200 text-slate-600 hover:text-accent hover:border-accent transition text-sm"
+                  >
+                    Mês atual
+                  </button>
+                  <button
+                    id="missionCalendarNext"
+                    type="button"
+                    class="px-3 py-2 rounded-md border border-slate-200 text-slate-600 hover:text-accent hover:border-accent transition text-sm"
+                  >
+                    Próximo mês
+                  </button>
+                  <button class="quick-link" data-target="missions">
+                    Ver missões
+                  </button>
+                </div>
               </div>
               <div id="missionCalendar" class="grid grid-cols-7 gap-2 text-xs text-slate-600"></div>
             </div>

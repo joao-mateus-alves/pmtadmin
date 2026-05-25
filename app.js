@@ -15,6 +15,9 @@ const state = {
   workOrders: []
 };
 
+let missionCalendarDate = new Date();
+missionCalendarDate.setDate(1);
+
 const sectionIds = ["dashboard", "search", "vehicles", "drivers", "maintenance", "missions", "workOrders"];
 const sectionTitles = {
   dashboard: "Dashboard",
@@ -531,12 +534,26 @@ function renderTopVehicles() {
 }
 
 function getCurrentMonthInfo() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
+  const year = missionCalendarDate.getFullYear();
+  const month = missionCalendarDate.getMonth();
   const monthKey = `${year}-${String(month + 1).padStart(2, "0")}`;
-  const monthName = now.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  const monthName = missionCalendarDate.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
   return { year, month, monthKey, monthName };
+}
+
+function changeMissionCalendarMonth(offset) {
+  missionCalendarDate = new Date(
+    missionCalendarDate.getFullYear(),
+    missionCalendarDate.getMonth() + offset,
+    1
+  );
+  renderMissionCalendar();
+}
+
+function resetMissionCalendarMonth() {
+  missionCalendarDate = new Date();
+  missionCalendarDate.setDate(1);
+  renderMissionCalendar();
 }
 
 function renderMissionCalendar() {
@@ -885,6 +902,18 @@ document.querySelectorAll(".quick-link").forEach((button) => {
     "text-sm"
   );
   button.addEventListener("click", () => setActiveSection(button.dataset.target));
+});
+
+document.getElementById("missionCalendarPrev")?.addEventListener("click", () => {
+  changeMissionCalendarMonth(-1);
+});
+
+document.getElementById("missionCalendarToday")?.addEventListener("click", () => {
+  resetMissionCalendarMonth();
+});
+
+document.getElementById("missionCalendarNext")?.addEventListener("click", () => {
+  changeMissionCalendarMonth(1);
 });
 
 vehicleHistorySelect?.addEventListener("change", renderVehicleHistory);
