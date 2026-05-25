@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PMT Admin</title>
+    <title>PMT Ops</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -41,7 +41,7 @@
               PMT
             </div>
             <div>
-              <p class="text-sm text-slate-500">Administração</p>
+              <p class="text-sm text-slate-500">Operações</p>
               <p class="text-lg font-semibold">Painel PMT</p>
             </div>
           </div>
@@ -77,13 +77,13 @@
           <button
             class="nav-item"
             data-target="workOrders"
-            data-title="Ordens de serviço"
+            data-title="Operações"
           >
-            Ordens de serviço
+            Operações
           </button>
         </nav>
         <div class="px-6 py-6 text-xs text-slate-400">
-          Sistema administrativo interno.
+          Sistema de operações interno.
         </div>
       </aside>
 
@@ -122,7 +122,7 @@
                 <p id="countMaintenance" class="text-2xl font-semibold">0</p>
               </div>
               <div class="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
-                <p class="text-sm text-slate-500">Ordens de serviço</p>
+                <p class="text-sm text-slate-500">Operações</p>
                 <p id="countWorkOrders" class="text-2xl font-semibold">0</p>
               </div>
             </div>
@@ -143,7 +143,7 @@
                     Registrar manutenção
                   </button>
                   <button class="quick-link" data-target="workOrders">
-                    Abrir ordem
+                    Abrir operação
                   </button>
                 </div>
               </div>
@@ -187,14 +187,14 @@
 
             <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
               <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm xl:col-span-3">
-                <h2 class="text-lg font-semibold mb-4">Veículos com mais ordens</h2>
+                <h2 class="text-lg font-semibold mb-4">Veículos com mais operações</h2>
                 <div id="topVehiclesList" class="space-y-3 text-sm text-slate-600"></div>
               </div>
             </div>
 
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
               <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
-                <h2 class="text-lg font-semibold mb-4">Últimas ordens de serviço</h2>
+                <h2 class="text-lg font-semibold mb-4">Últimas operações</h2>
                 <div id="latestWorkOrders" class="space-y-3 text-sm text-slate-600"></div>
               </div>
               <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
@@ -234,7 +234,7 @@
                     <option value="vehicles">Veículos</option>
                     <option value="drivers">Condutores</option>
                     <option value="maintenance">Manutenções</option>
-                    <option value="workOrders">Ordens de serviço</option>
+                    <option value="workOrders">Operações</option>
                   </select>
                 </div>
                 <div>
@@ -594,9 +594,9 @@
           <section id="workOrders" data-section class="hidden">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
               <div>
-                <h2 class="text-2xl font-semibold">Ordens de serviço</h2>
+                <h2 class="text-2xl font-semibold">Operações</h2>
                 <p class="text-sm text-slate-500">
-                  Abra e acompanhe ordens de serviço.
+                  Abra e acompanhe operações.
                 </p>
               </div>
             </div>
@@ -642,7 +642,7 @@
                       required
                       class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
                       rows="3"
-                      placeholder="Resumo da ordem de serviço"
+                      placeholder="Resumo da operação"
                     ></textarea>
                   </div>
                   <div>
@@ -694,11 +694,11 @@
                     <button
                       type="submit"
                       data-submit
-                      data-default-text="Cadastrar ordem"
+                      data-default-text="Cadastrar operação"
                       data-edit-text="Salvar alterações"
                       class="px-4 py-2 rounded-md bg-accent text-white hover:bg-accent-dark"
                     >
-                      Cadastrar ordem
+                      Cadastrar operação
                     </button>
                     <button
                       type="button"
@@ -711,7 +711,7 @@
                 </form>
               </div>
               <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm xl:col-span-2">
-                <h3 class="text-lg font-semibold mb-4">Gerenciar ordens</h3>
+                <h3 class="text-lg font-semibold mb-4">Gerenciar operações</h3>
                 <div class="overflow-auto">
                       <table class="min-w-full text-sm">
                     <thead class="text-left text-slate-500">

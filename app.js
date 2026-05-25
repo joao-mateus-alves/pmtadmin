@@ -21,7 +21,7 @@ const sectionTitles = {
   vehicles: "Veículos",
   drivers: "Condutores",
   maintenance: "Manutenções",
-  workOrders: "Ordens de serviço"
+  workOrders: "Operações"
 };
 
 const sidebar = document.getElementById("sidebar");
@@ -291,7 +291,7 @@ function renderWorkOrdersTable() {
   const tbody = document.getElementById("workOrdersTableBody");
   if (!tbody) return;
   if (!state.workOrders.length) {
-    renderEmptyRow(tbody, 7, "Nenhuma ordem cadastrada.");
+    renderEmptyRow(tbody, 7, "Nenhuma operação cadastrada.");
     return;
   }
   tbody.innerHTML = state.workOrders
@@ -356,7 +356,7 @@ function buildVehicleTimeline(vehicleId) {
       const timestamp = toTimestamp(item.departureDate, item.departureTime) || item.createdAt || item.updatedAt || 0;
       events.push({
         sortKey: timestamp,
-        title: "Ordem de serviço aberta",
+        title: "Operação aberta",
         meta: `${departureLabel} • ${item.destination || "-"} • ${formatDriverLabel(driver)} • ${item.status || "Aberta"}`
       });
 
@@ -366,7 +366,7 @@ function buildVehicleTimeline(vehicleId) {
           toTimestamp(item.arrivalDate, item.arrivalTime) || item.updatedAt || timestamp;
         events.push({
           sortKey: arrivalTimestamp,
-          title: "Ordem de serviço concluída",
+          title: "Operação concluída",
           meta: `${arrivalLabel} • ${item.destination || "-"} • ${formatDriverLabel(driver)}`
         });
       }
@@ -401,7 +401,7 @@ function buildDriverTimeline(driverId) {
       const timestamp = toTimestamp(item.departureDate, item.departureTime) || item.createdAt || item.updatedAt || 0;
       events.push({
         sortKey: timestamp,
-        title: "Ordem de serviço atribuída",
+        title: "Operação atribuída",
         meta: `${departureLabel} • ${item.destination || "-"} • ${formatVehicleLabel(vehicle)} • ${item.status || "Aberta"}`
       });
 
@@ -411,7 +411,7 @@ function buildDriverTimeline(driverId) {
           toTimestamp(item.arrivalDate, item.arrivalTime) || item.updatedAt || timestamp;
         events.push({
           sortKey: arrivalTimestamp,
-          title: "Ordem de serviço concluída",
+          title: "Operação concluída",
           meta: `${arrivalLabel} • ${item.destination || "-"} • ${formatVehicleLabel(vehicle)}`
         });
       }
@@ -535,7 +535,7 @@ function updateDashboard() {
   const sortedMaintenance = [...state.maintenance].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
   if (!sortedOrders.length) {
-    latestWorkOrders.innerHTML = '<p class="text-slate-500">Sem ordens registradas.</p>';
+    latestWorkOrders.innerHTML = '<p class="text-slate-500">Sem operações registradas.</p>';
   } else {
     latestWorkOrders.innerHTML = sortedOrders.slice(0, 5).map((order) => {
       const vehicle = state.vehicles.find((v) => v.id === order.vehicleId);
@@ -550,7 +550,7 @@ function updateDashboard() {
         </div>
         <div class="flex flex-col items-end gap-2">
           <span class="text-xs text-slate-500">${departureDateTime}</span>
-          ${canClose ? `<button class="text-xs px-2 py-1 rounded-md border border-slate-200 text-slate-600 hover:text-accent hover:border-accent transition" data-action="close-work-order" data-id="${order.id}">Fechar ordem</button>` : ""}
+          ${canClose ? `<button class="text-xs px-2 py-1 rounded-md border border-slate-200 text-slate-600 hover:text-accent hover:border-accent transition" data-action="close-work-order" data-id="${order.id}">Fechar operação</button>` : ""}
         </div>
       </div>`;
     }).join("");
@@ -666,8 +666,8 @@ function buildSearchItems() {
     items.push({
       id: order.id,
       typeId: "workOrders",
-      typeLabel: "Ordem de serviço",
-      title: order.destination || "Ordem de serviço",
+      typeLabel: "Operação",
+      title: order.destination || "Operação",
       description: `${formatVehicleLabel(vehicle)} • ${formatDriverLabel(driver)} • ${departureDateTime}`,
       status: order.status || "Aberta"
     });
@@ -1030,7 +1030,7 @@ document.getElementById("workOrdersTableBody")?.addEventListener("click", async 
     startEditWorkOrder(id);
   }
   if (button.dataset.action === "delete") {
-    if (confirm("Deseja excluir esta ordem de serviço?")) {
+    if (confirm("Deseja excluir esta operação?")) {
       await remove(ref(db, `workOrders/${id}`));
     }
   }
