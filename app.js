@@ -63,7 +63,7 @@ function setActiveSection(sectionId) {
   });
 
   document.querySelectorAll(".nav-item").forEach((item) => {
-    item.classList.toggle("bg-slate-100", item.dataset.target === sectionId);
+    item.classList.toggle("bg-blue-50", item.dataset.target === sectionId);
     item.classList.toggle("text-accent", item.dataset.target === sectionId);
   });
 
@@ -574,6 +574,7 @@ function renderMissionCalendar() {
     missionsByDate.set(mission.date, list);
   });
 
+  
   if (title) {
     title.textContent = `Missões de ${monthName}`;
   }
@@ -880,27 +881,30 @@ document.querySelectorAll(".nav-item").forEach((item) => {
     "py-2",
     "rounded-md",
     "text-slate-600",
-    "hover:bg-slate-100",
+    "hover:bg-blue-50",
+    "hover:text-accent",
     "transition"
   );
   item.addEventListener("click", () => setActiveSection(item.dataset.target));
 });
 
 document.querySelectorAll(".quick-link").forEach((button) => {
-  button.classList.add(
-    "px-4",
-    "py-3",
-    "rounded-md",
-    "bg-slate-50",
-    "border",
-    "border-slate-200",
-    "text-slate-700",
-    "hover:bg-slate-100",
-    "hover:border-accent",
-    "hover:text-accent",
-    "transition",
-    "text-sm"
-  );
+  if (!button.classList.contains("calendar-icon-button")) {
+    button.classList.add(
+      "px-4",
+      "py-3",
+      "rounded-md",
+      "bg-blue-50",
+      "border",
+      "border-blue-200",
+      "text-blue-700",
+      "hover:bg-blue-100",
+      "hover:border-accent",
+      "hover:text-accent-dark",
+      "transition",
+      "text-sm"
+    );
+  }
   button.addEventListener("click", () => setActiveSection(button.dataset.target));
 });
 

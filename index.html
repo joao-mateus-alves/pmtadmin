@@ -10,8 +10,8 @@
         theme: {
           extend: {
             colors: {
-              accent: "#0078D4",
-              "accent-dark": "#106EBE"
+              accent: "#006CFF",
+              "accent-dark": "#0057D9"
             }
           }
         }
@@ -20,6 +20,32 @@
     <style>
       body {
         font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      }
+
+      .calendar-icon-button {
+        display: inline-flex;
+        height: 2.5rem;
+        width: 2.5rem;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.375rem;
+        border: 1px solid #bfdbfe;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-size: 0;
+        transition: color 150ms ease, border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+      }
+
+      .calendar-icon-button:hover {
+        border-color: #006cff;
+        background: #dbeafe;
+        color: #0057d9;
+        box-shadow: 0 1px 6px rgb(37 99 235 / 0.18);
+      }
+
+      .calendar-icon-button svg {
+        height: 1rem;
+        width: 1rem;
       }
     </style>
   </head>
@@ -209,25 +235,56 @@
                   <button
                     id="missionCalendarPrev"
                     type="button"
-                    class="px-3 py-2 rounded-md border border-slate-200 text-slate-600 hover:text-accent hover:border-accent transition text-sm"
+                    class="calendar-icon-button"
+                    aria-label="Mes anterior"
+                    title="Mes anterior"
                   >
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="m15 18-6-6 6-6" />
+                    </svg>
                     Mês anterior
                   </button>
                   <button
                     id="missionCalendarToday"
                     type="button"
-                    class="px-3 py-2 rounded-md border border-slate-200 text-slate-600 hover:text-accent hover:border-accent transition text-sm"
+                    class="calendar-icon-button"
+                    aria-label="Mes atual"
+                    title="Mes atual"
                   >
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M8 2v4" />
+                      <path d="M16 2v4" />
+                      <rect width="18" height="18" x="3" y="4" rx="2" />
+                      <path d="M3 10h18" />
+                    </svg>
                     Mês atual
                   </button>
                   <button
                     id="missionCalendarNext"
                     type="button"
-                    class="px-3 py-2 rounded-md border border-slate-200 text-slate-600 hover:text-accent hover:border-accent transition text-sm"
+                    class="calendar-icon-button"
+                    aria-label="Proximo mes"
+                    title="Proximo mes"
                   >
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="m9 18 6-6-6-6" />
+                    </svg>
                     Próximo mês
                   </button>
-                  <button class="quick-link" data-target="missions">
+                  <button
+                    class="quick-link calendar-icon-button"
+                    data-target="missions"
+                    aria-label="Ver missoes"
+                    title="Ver missoes"
+                  >
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M8 6h13" />
+                      <path d="M8 12h13" />
+                      <path d="M8 18h13" />
+                      <path d="M3 6h.01" />
+                      <path d="M3 12h.01" />
+                      <path d="M3 18h.01" />
+                    </svg>
                     Ver missões
                   </button>
                 </div>
@@ -390,7 +447,7 @@
                       data-submit
                       data-default-text="Cadastrar veículo"
                       data-edit-text="Salvar alterações"
-                      class="px-4 py-2 rounded-md bg-accent text-white hover:bg-accent-dark"
+                      class="px-4 py-2 rounded-md bg-accent text-white shadow-sm shadow-blue-500/20 hover:bg-accent-dark transition"
                     >
                       Cadastrar veículo
                     </button>
@@ -495,7 +552,7 @@
                       data-submit
                       data-default-text="Cadastrar condutor"
                       data-edit-text="Salvar alterações"
-                      class="px-4 py-2 rounded-md bg-accent text-white hover:bg-accent-dark"
+                      class="px-4 py-2 rounded-md bg-accent text-white shadow-sm shadow-blue-500/20 hover:bg-accent-dark transition"
                     >
                       Cadastrar condutor
                     </button>
@@ -608,7 +665,7 @@
                       data-submit
                       data-default-text="Registrar manutenção"
                       data-edit-text="Salvar alterações"
-                      class="px-4 py-2 rounded-md bg-accent text-white hover:bg-accent-dark"
+                      class="px-4 py-2 rounded-md bg-accent text-white shadow-sm shadow-blue-500/20 hover:bg-accent-dark transition"
                     >
                       Registrar manutenção
                     </button>
@@ -716,7 +773,7 @@
                       data-submit
                       data-default-text="Cadastrar missão"
                       data-edit-text="Salvar alterações"
-                      class="px-4 py-2 rounded-md bg-accent text-white hover:bg-accent-dark"
+                      class="px-4 py-2 rounded-md bg-accent text-white shadow-sm shadow-blue-500/20 hover:bg-accent-dark transition"
                     >
                       Cadastrar missão
                     </button>
@@ -855,7 +912,7 @@
                       data-submit
                       data-default-text="Cadastrar operação"
                       data-edit-text="Salvar alterações"
-                      class="px-4 py-2 rounded-md bg-accent text-white hover:bg-accent-dark"
+                      class="px-4 py-2 rounded-md bg-accent text-white shadow-sm shadow-blue-500/20 hover:bg-accent-dark transition"
                     >
                       Cadastrar operação
                     </button>
