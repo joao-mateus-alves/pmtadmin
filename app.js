@@ -1,3 +1,6 @@
+//https://to-do.microsoft.com/sharing?InvitationToken=JIIP-oArEEBHBeCGEbQFDQVvDOBdIS04WkiwQSAtvB1waHOFcoaHGKx9r6W0GPK0I 
+//deixa isso aqui kakakaka
+
 import { db } from "./firebase.js";
 import {
   ref,
@@ -231,7 +234,7 @@ function renderVehiclesTable() {
   const tbody = document.getElementById("vehiclesTableBody");
   if (!tbody) return;
   if (!state.vehicles.length) {
-    renderEmptyRow(tbody, 7, "Nenhum veículo cadastrado.");
+    renderEmptyRow(tbody, 6, "Nenhum veículo cadastrado.");
     return;
   }
   tbody.innerHTML = state.vehicles
@@ -241,7 +244,6 @@ function renderVehiclesTable() {
         <td class="py-3 pr-4">${vehicle.model || "-"}</td>
         <td class="py-3 pr-4">${vehicle.year || "-"}</td>
         <td class="py-3 pr-4">${vehicle.odometer || "-"}</td>
-        <td class="py-3 pr-4">${vehicle.fuel || "-"}</td>
         <td class="py-3 pr-4">${vehicle.status || "-"}</td>
         <td class="py-3">
           <button class="text-accent mr-3" data-action="edit" data-id="${vehicle.id}">Editar</button>
@@ -1000,7 +1002,6 @@ function startEditVehicle(id) {
   document.getElementById("vehicleModel").value = vehicle.model || "";
   document.getElementById("vehicleYear").value = vehicle.year || "";
   document.getElementById("vehicleOdometer").value = vehicle.odometer || "";
-  document.getElementById("vehicleFuel").value = vehicle.fuel || "";
   document.getElementById("vehicleStatus").value = vehicle.status || "Disponível";
   vehicleForm.dataset.editId = id;
   setFormMode(vehicleForm, true);
@@ -1070,7 +1071,6 @@ vehicleForm?.addEventListener("submit", async (event) => {
     model: document.getElementById("vehicleModel").value.trim(),
     year: document.getElementById("vehicleYear").value.trim(),
     odometer: document.getElementById("vehicleOdometer").value.trim(),
-    fuel: document.getElementById("vehicleFuel").value.trim(),
     status: document.getElementById("vehicleStatus").value
   };
   const editId = vehicleForm.dataset.editId;
