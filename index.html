@@ -76,6 +76,13 @@
           </button>
           <button
             class="nav-item"
+            data-target="missions"
+            data-title="Missões"
+          >
+            Missões
+          </button>
+          <button
+            class="nav-item"
             data-target="workOrders"
             data-title="Operações"
           >
@@ -108,7 +115,7 @@
 
         <main class="flex-1 p-6 space-y-8">
           <section id="dashboard" data-section>
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
               <div class="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
                 <p class="text-sm text-slate-500">Veículos</p>
                 <p id="countVehicles" class="text-2xl font-semibold">0</p>
@@ -122,6 +129,10 @@
                 <p id="countMaintenance" class="text-2xl font-semibold">0</p>
               </div>
               <div class="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+                <p class="text-sm text-slate-500">Missões</p>
+                <p id="countMissions" class="text-2xl font-semibold">0</p>
+              </div>
+              <div class="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
                 <p class="text-sm text-slate-500">Operações</p>
                 <p id="countWorkOrders" class="text-2xl font-semibold">0</p>
               </div>
@@ -132,7 +143,7 @@
                 <div class="flex items-center justify-between mb-4">
                   <h2 class="text-lg font-semibold">Atalhos rápidos</h2>
                 </div>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
                   <button class="quick-link" data-target="vehicles">
                     Cadastrar veículo
                   </button>
@@ -141,6 +152,9 @@
                   </button>
                   <button class="quick-link" data-target="maintenance">
                     Registrar manutenção
+                  </button>
+                  <button class="quick-link" data-target="missions">
+                    Cadastrar missão
                   </button>
                   <button class="quick-link" data-target="workOrders">
                     Abrir operação
@@ -183,6 +197,19 @@
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm mt-6">
+              <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
+                <div>
+                  <h2 id="missionCalendarTitle" class="text-lg font-semibold">Missões do mês</h2>
+                  <p id="missionCalendarSummary" class="text-sm text-slate-500"></p>
+                </div>
+                <button class="quick-link" data-target="missions">
+                  Ver missões
+                </button>
+              </div>
+              <div id="missionCalendar" class="grid grid-cols-7 gap-2 text-xs text-slate-600"></div>
             </div>
 
             <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
@@ -234,6 +261,7 @@
                     <option value="vehicles">Veículos</option>
                     <option value="drivers">Condutores</option>
                     <option value="maintenance">Manutenções</option>
+                    <option value="missions">Missões</option>
                     <option value="workOrders">Operações</option>
                   </select>
                 </div>
@@ -585,6 +613,114 @@
                       </tr>
                     </thead>
                     <tbody id="maintenanceTableBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="missions" data-section class="hidden">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
+              <div>
+                <h2 class="text-2xl font-semibold">Missões</h2>
+                <p class="text-sm text-slate-500">
+                  Cadastre, acompanhe e conclua missões planejadas.
+                </p>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
+              <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+                <h3 class="text-lg font-semibold mb-4">Cadastrar / editar</h3>
+                <form id="missionForm" class="space-y-4">
+                  <div>
+                    <label class="text-sm text-slate-600">Missão</label>
+                    <input
+                      id="missionTitle"
+                      required
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                      placeholder="Nome da missão"
+                    />
+                  </div>
+                  <div>
+                    <label class="text-sm text-slate-600">Local</label>
+                    <input
+                      id="missionLocation"
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                      placeholder="Local da missão"
+                    />
+                  </div>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label class="text-sm text-slate-600">Data</label>
+                      <input
+                        id="missionDate"
+                        type="date"
+                        required
+                        class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                      />
+                    </div>
+                    <div>
+                      <label class="text-sm text-slate-600">Hora</label>
+                      <input
+                        id="missionTime"
+                        type="time"
+                        class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label class="text-sm text-slate-600">Status</label>
+                    <select
+                      id="missionStatus"
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                    >
+                      <option value="Pendente">Pendente</option>
+                      <option value="Concluída">Concluída</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="text-sm text-slate-600">Observações</label>
+                    <textarea
+                      id="missionNotes"
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                      rows="3"
+                      placeholder="Detalhes importantes"
+                    ></textarea>
+                  </div>
+                  <div class="flex flex-wrap gap-3">
+                    <button
+                      type="submit"
+                      data-submit
+                      data-default-text="Cadastrar missão"
+                      data-edit-text="Salvar alterações"
+                      class="px-4 py-2 rounded-md bg-accent text-white hover:bg-accent-dark"
+                    >
+                      Cadastrar missão
+                    </button>
+                    <button
+                      type="button"
+                      data-cancel
+                      class="px-4 py-2 rounded-md border border-slate-200 text-slate-600 hidden"
+                    >
+                      Cancelar edição
+                    </button>
+                  </div>
+                </form>
+              </div>
+              <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm xl:col-span-2">
+                <h3 class="text-lg font-semibold mb-4">Lista de missões</h3>
+                <div class="overflow-auto">
+                  <table class="min-w-full text-sm">
+                    <thead class="text-left text-slate-500">
+                      <tr>
+                        <th class="pb-2">Missão</th>
+                        <th class="pb-2">Local</th>
+                        <th class="pb-2">Data</th>
+                        <th class="pb-2">Status</th>
+                        <th class="pb-2">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody id="missionsTableBody"></tbody>
                   </table>
                 </div>
               </div>

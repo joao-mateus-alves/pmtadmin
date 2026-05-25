@@ -11,16 +11,18 @@ const state = {
   vehicles: [],
   drivers: [],
   maintenance: [],
+  missions: [],
   workOrders: []
 };
 
-const sectionIds = ["dashboard", "search", "vehicles", "drivers", "maintenance", "workOrders"];
+const sectionIds = ["dashboard", "search", "vehicles", "drivers", "maintenance", "missions", "workOrders"];
 const sectionTitles = {
   dashboard: "Dashboard",
   search: "Pesquisa geral",
   vehicles: "Veículos",
   drivers: "Condutores",
   maintenance: "Manutenções",
+  missions: "Missões",
   workOrders: "Operações"
 };
 
@@ -113,6 +115,13 @@ function formatDateTime(dateValue, timeValue) {
   if (!dateValue && !timeValue) return "-";
   if (dateValue && timeValue) return `${dateValue} ${timeValue}`;
   return dateValue || timeValue;
+}
+
+function formatDate(dateValue) {
+  if (!dateValue) return "-";
+  const [year, month, day] = dateValue.split("-");
+  if (!year || !month || !day) return dateValue;
+  return `${day}/${month}/${year}`;
 }
 
 function getCurrentDateTime() {
@@ -281,6 +290,40 @@ function renderMaintenanceTable() {
         <td class="py-3">
           <button class="text-accent mr-3" data-action="edit" data-id="${item.id}">Editar</button>
           <button class="text-red-600" data-action="delete" data-id="${item.id}">Excluir</button>
+        </td>
+      </tr>`;
+    })
+    .join("");
+}
+
+function renderMissionsTable() {
+  const tbody = document.getElementById("missionsTableBody");
+  if (!tbody) return;
+  if (!state.missions.length) {
+    renderEmptyRow(tbody, 5, "Nenhuma missão cadastrada.");
+    return;
+  }
+  tbody.innerHTML = [...state.missions]
+    .sort((a, b) => (toTimestamp(a.date, a.time) || 0) - (toTimestamp(b.date, b.time) || 0))
+    .map((mission) => {
+      const status = mission.status || "Pendente";
+      const isCompleted = status === "Concluída";
+      const toggleLabel = isCompleted ? "Marcar pendente" : "Concluir";
+      const statusClass = isCompleted ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700";
+      return `<tr class="border-t border-slate-100">
+        <td class="py-3 pr-4">
+          <p class="font-medium">${mission.title || "-"}</p>
+          <p class="text-xs text-slate-500">${mission.notes || ""}</p>
+        </td>
+        <td class="py-3 pr-4">${mission.location || "-"}</td>
+        <td class="py-3 pr-4">${formatDateTime(formatDate(mission.date), mission.time)}</td>
+        <td class="py-3 pr-4">
+          <span class="text-xs px-2 py-1 rounded-full ${statusClass}">${status}</span>
+        </td>
+        <td class="py-3 whitespace-nowrap">
+          <button class="text-accent mr-3" data-action="toggle" data-id="${mission.id}">${toggleLabel}</button>
+          <button class="text-accent mr-3" data-action="edit" data-id="${mission.id}">Editar</button>
+          <button class="text-red-600" data-action="delete" data-id="${mission.id}">Excluir</button>
         </td>
       </tr>`;
     })
@@ -487,10 +530,75 @@ function renderTopVehicles() {
   }).join("");
 }
 
+function getCurrentMonthInfo() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const monthKey = `${year}-${String(month + 1).padStart(2, "0")}`;
+  const monthName = now.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  return { year, month, monthKey, monthName };
+}
+
+function renderMissionCalendar() {
+  const calendar = document.getElementById("missionCalendar");
+  const title = document.getElementById("missionCalendarTitle");
+  const summary = document.getElementById("missionCalendarSummary");
+  if (!calendar) return;
+
+  const { year, month, monthKey, monthName } = getCurrentMonthInfo();
+  const monthMissions = state.missions.filter((mission) => (mission.date || "").startsWith(monthKey));
+  const completed = monthMissions.filter((mission) => mission.status === "Concluída").length;
+  const pending = monthMissions.length - completed;
+  const missionsByDate = new Map();
+
+  monthMissions.forEach((mission) => {
+    const list = missionsByDate.get(mission.date) || [];
+    list.push(mission);
+    missionsByDate.set(mission.date, list);
+  });
+
+  if (title) {
+    title.textContent = `Missões de ${monthName}`;
+  }
+  if (summary) {
+    summary.textContent = `${monthMissions.length} no mês • ${pending} pendente(s) • ${completed} concluída(s).`;
+  }
+
+  const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells = weekDays.map((day) => `<div class="font-semibold text-center text-slate-500">${day}</div>`);
+
+  for (let i = 0; i < firstDay; i += 1) {
+    cells.push('<div class="min-h-24 rounded-md border border-slate-100 bg-slate-50"></div>');
+  }
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const dateKey = `${monthKey}-${String(day).padStart(2, "0")}`;
+    const missions = (missionsByDate.get(dateKey) || []).sort((a, b) => (a.time || "").localeCompare(b.time || ""));
+    const missionItems = missions.slice(0, 3).map((mission) => {
+      const doneClass = mission.status === "Concluída" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700";
+      return `<div class="mt-1 rounded px-2 py-1 ${doneClass}">
+        <p class="truncate font-medium">${mission.title || "Missão"}</p>
+        <p class="truncate">${mission.time || "Sem hora"}</p>
+      </div>`;
+    }).join("");
+    const extra = missions.length > 3 ? `<p class="mt-1 text-slate-500">+${missions.length - 3} missão(ões)</p>` : "";
+    cells.push(`<div class="min-h-24 rounded-md border border-slate-100 bg-white p-2">
+      <p class="font-semibold text-slate-700">${day}</p>
+      ${missionItems || '<p class="mt-2 text-slate-400">-</p>'}
+      ${extra}
+    </div>`);
+  }
+
+  calendar.innerHTML = cells.join("");
+}
+
 function updateDashboard() {
   document.getElementById("countVehicles").textContent = String(state.vehicles.length);
   document.getElementById("countDrivers").textContent = String(state.drivers.length);
   document.getElementById("countMaintenance").textContent = String(state.maintenance.length);
+  document.getElementById("countMissions").textContent = String(state.missions.length);
   document.getElementById("countWorkOrders").textContent = String(state.workOrders.length);
 
   const totalVehicles = state.vehicles.length;
@@ -574,6 +682,7 @@ function updateDashboard() {
   }
 
   renderTopVehicles();
+  renderMissionCalendar();
 }
 
 const statusOptionsByType = {
@@ -592,6 +701,11 @@ const statusOptionsByType = {
     { value: "Indisponível", label: "Indisponível" }
   ],
   maintenance: [{ value: "all", label: "Todos" }],
+  missions: [
+    { value: "all", label: "Todos" },
+    { value: "Pendente", label: "Pendente" },
+    { value: "Concluída", label: "Concluída" }
+  ],
   workOrders: [
     { value: "all", label: "Todos" },
     { value: "Aberta", label: "Aberta" },
@@ -656,6 +770,19 @@ function buildSearchItems() {
       title: item.type || "Manutenção registrada",
       description: details.join(" • "),
       status: ""
+    });
+  });
+
+  state.missions.forEach((mission) => {
+    const details = [mission.location, formatDateTime(formatDate(mission.date), mission.time), mission.notes]
+      .filter(Boolean);
+    items.push({
+      id: mission.id,
+      typeId: "missions",
+      typeLabel: "Missão",
+      title: mission.title || "Missão",
+      description: details.join(" • "),
+      status: mission.status || "Pendente"
     });
   });
 
@@ -787,6 +914,10 @@ generalSearchResults?.addEventListener("click", (event) => {
     setActiveSection("maintenance");
     startEditMaintenance(id);
   }
+  if (type === "missions") {
+    setActiveSection("missions");
+    startEditMission(id);
+  }
   if (type === "workOrders") {
     setActiveSection("workOrders");
     startEditWorkOrder(id);
@@ -826,6 +957,7 @@ if (sidebarOverlay) {
 const vehicleForm = document.getElementById("vehicleForm");
 const driverForm = document.getElementById("driverForm");
 const maintenanceForm = document.getElementById("maintenanceForm");
+const missionForm = document.getElementById("missionForm");
 const workOrderForm = document.getElementById("workOrderForm");
 
 function startEditVehicle(id) {
@@ -865,6 +997,20 @@ function startEditMaintenance(id) {
   maintenanceForm.dataset.editId = id;
   setFormMode(maintenanceForm, true);
   maintenanceForm.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function startEditMission(id) {
+  const mission = state.missions.find((item) => item.id === id);
+  if (!mission || !missionForm) return;
+  document.getElementById("missionTitle").value = mission.title || "";
+  document.getElementById("missionLocation").value = mission.location || "";
+  document.getElementById("missionDate").value = mission.date || "";
+  document.getElementById("missionTime").value = mission.time || "";
+  document.getElementById("missionStatus").value = mission.status || "Pendente";
+  document.getElementById("missionNotes").value = mission.notes || "";
+  missionForm.dataset.editId = id;
+  setFormMode(missionForm, true);
+  missionForm.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function startEditWorkOrder(id) {
@@ -941,6 +1087,26 @@ maintenanceForm?.addEventListener("submit", async (event) => {
   } else {
     await push(ref(db, "maintenance"), { ...payload, createdAt: Date.now() });
     maintenanceForm.reset();
+  }
+});
+
+missionForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const payload = {
+    title: document.getElementById("missionTitle").value.trim(),
+    location: document.getElementById("missionLocation").value.trim(),
+    date: document.getElementById("missionDate").value,
+    time: document.getElementById("missionTime").value,
+    status: document.getElementById("missionStatus").value,
+    notes: document.getElementById("missionNotes").value.trim()
+  };
+  const editId = missionForm.dataset.editId;
+  if (editId) {
+    await update(ref(db, `missions/${editId}`), { ...payload, updatedAt: Date.now() });
+    setFormMode(missionForm, false);
+  } else {
+    await push(ref(db, "missions"), { ...payload, createdAt: Date.now() });
+    missionForm.reset();
   }
 });
 
@@ -1021,6 +1187,29 @@ document.getElementById("maintenanceTableBody")?.addEventListener("click", async
   }
 });
 
+document.getElementById("missionsTableBody")?.addEventListener("click", async (event) => {
+  const button = event.target.closest("button");
+  if (!button) return;
+  const id = button.dataset.id;
+  if (!id) return;
+  if (button.dataset.action === "toggle") {
+    const mission = state.missions.find((item) => item.id === id);
+    const nextStatus = mission?.status === "Concluída" ? "Pendente" : "Concluída";
+    await update(ref(db, `missions/${id}`), {
+      status: nextStatus,
+      updatedAt: Date.now()
+    });
+  }
+  if (button.dataset.action === "edit") {
+    startEditMission(id);
+  }
+  if (button.dataset.action === "delete") {
+    if (confirm("Deseja excluir esta missão?")) {
+      await remove(ref(db, `missions/${id}`));
+    }
+  }
+});
+
 document.getElementById("workOrdersTableBody")?.addEventListener("click", async (event) => {
   const button = event.target.closest("button");
   if (!button) return;
@@ -1059,6 +1248,13 @@ onValue(ref(db, "maintenance"), (snapshot) => {
   renderMaintenanceTable();
   updateDashboard();
   renderVehicleHistory();
+  renderGeneralSearch();
+});
+
+onValue(ref(db, "missions"), (snapshot) => {
+  state.missions = toArray(snapshot);
+  renderMissionsTable();
+  updateDashboard();
   renderGeneralSearch();
 });
 
