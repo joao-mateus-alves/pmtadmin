@@ -1,6 +1,20 @@
 //https://to-do.microsoft.com/sharing?InvitationToken=JIIP-oArEEBHBeCGEbQFDQVvDOBdIS04WkiwQSAtvB1waHOFcoaHGKx9r6W0GPK0I 
 //deixa isso aqui kakakaka
 
+// trocar placa por EB
+// retirar ano e odometro
+// adicionar os veiculos do PDF
+// no calendario habilitar vizualização quando clicar em cima do dia, criar um pop-up mostrando as informações
+// melhorar calendario mobile apenas, está tudo meio minusculo e ilegivel.
+// mesclar atalhos rápidos com os cards de quantidades do dashboard
+// LOGICA: caso um veiculo esteja em operação, ele não poderá ser escalado enquanto não retornar, preciso aprimorar essa logica ainda... na real não sei se funcionaria, imagina que ele ainda não voltou e a operação esteja em aberto, ai eu preciso abrir outra missão com esse veiculo... como resolveria essa questão? podemos pensar em previsão de encerramento e encerramento real da operação, ai resolveria esse problema e casa perfeitamente com a função de fechar a operação no dashboard
+//retirar "veiculos com mais operações" do dashboard
+//retirar opção "em manutenção"
+//deixar a parte de status dos condutores como uma variavel que o sistema vai informar, caso ele esteja em missão, então ele mostrara em missão, senão ele vai estar disponivel
+//caso alguem abra uma operação e venha ocorrer algum conflito de horario, ele vai avisar que tal viatura já está sendo usada pra tal operação, se tem certeza que quer escolher ela
+//
+
+
 import { db } from "./firebase.js";
 import {
   ref,
