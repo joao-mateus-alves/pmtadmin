@@ -3,7 +3,6 @@
 
 // trocar placa por EB
 // retirar ano e odometro
-// adicionar os veiculos do PDF
 // no calendario habilitar vizualização quando clicar em cima do dia, criar um pop-up mostrando as informações
 // melhorar calendario mobile apenas, está tudo meio minusculo e ilegivel.
 // mesclar atalhos rápidos com os cards de quantidades do dashboard
@@ -96,7 +95,7 @@ function toArray(snapshot) {
 function formatVehicleLabel(vehicle) {
   if (!vehicle) return "Não definido";
   const model = vehicle.model ? ` - ${vehicle.model}` : "";
-  return `${vehicle.plate || "Sem placa"}${model}`;
+  return `${vehicle.eb || "Sem EB"}${model}`;
 }
 
 function formatDriverLabel(driver) {
@@ -248,16 +247,14 @@ function renderVehiclesTable() {
   const tbody = document.getElementById("vehiclesTableBody");
   if (!tbody) return;
   if (!state.vehicles.length) {
-    renderEmptyRow(tbody, 6, "Nenhum veículo cadastrado.");
+    renderEmptyRow(tbody, 4, "Nenhum veículo cadastrado.");
     return;
   }
   tbody.innerHTML = state.vehicles
     .map(
       (vehicle) => `<tr class="border-t border-slate-100">
-        <td class="py-3 pr-4">${vehicle.plate || "-"}</td>
+        <td class="py-3 pr-4">${vehicle.eb || "-"}</td>
         <td class="py-3 pr-4">${vehicle.model || "-"}</td>
-        <td class="py-3 pr-4">${vehicle.year || "-"}</td>
-        <td class="py-3 pr-4">${vehicle.odometer || "-"}</td>
         <td class="py-3 pr-4">${vehicle.status || "-"}</td>
         <td class="py-3">
           <button class="text-accent mr-3" data-action="edit" data-id="${vehicle.id}">Editar</button>
@@ -637,9 +634,8 @@ function updateDashboard() {
 
   const totalVehicles = state.vehicles.length;
   const availableVehicles = state.vehicles.filter((vehicle) => vehicle.status === "Disponível").length;
-  const inServiceVehicles = state.vehicles.filter((vehicle) => vehicle.status === "Em serviço").length;
-  const maintenanceVehicles = state.vehicles.filter((vehicle) => vehicle.status === "Em manutenção").length;
-  const inactiveVehicles = state.vehicles.filter((vehicle) => vehicle.status === "Baixada").length;
+  const availableRestricted = state.vehicles.filter((vehicle) => vehicle.status === "Disponível (restrição)").length;
+  const unavailableVehicles = state.vehicles.filter((vehicle) => vehicle.status === "Indisponível").length;
   const availabilityPercent = totalVehicles
     ? Math.round((availableVehicles / totalVehicles) * 100)
     : 0;
@@ -661,13 +657,13 @@ function updateDashboard() {
     fleetAvailable.textContent = String(availableVehicles);
   }
   if (fleetInService) {
-    fleetInService.textContent = String(inServiceVehicles);
+    fleetInService.textContent = String(availableRestricted);
   }
   if (fleetMaintenance) {
-    fleetMaintenance.textContent = String(maintenanceVehicles);
+    fleetMaintenance.textContent = String(unavailableVehicles);
   }
   if (fleetInactive) {
-    fleetInactive.textContent = String(inactiveVehicles);
+    fleetInactive.textContent = String(0);
   }
 
   const latestWorkOrders = document.getElementById("latestWorkOrders");
@@ -724,9 +720,8 @@ const statusOptionsByType = {
   vehicles: [
     { value: "all", label: "Todos" },
     { value: "Disponível", label: "Disponível" },
-    { value: "Em serviço", label: "Em serviço" },
-    { value: "Em manutenção", label: "Em manutenção" },
-    { value: "Baixada", label: "Baixada" }
+    { value: "Disponível (restrição)", label: "Disponível (restrição)" },
+    { value: "Indisponível", label: "Indisponível" }
   ],
   drivers: [
     { value: "all", label: "Todos" },
@@ -769,8 +764,6 @@ function buildSearchItems() {
 
   state.vehicles.forEach((vehicle) => {
     const details = [];
-    if (vehicle.year) details.push(`Ano ${vehicle.year}`);
-    if (vehicle.odometer) details.push(`Odômetro ${vehicle.odometer}`);
     items.push({
       id: vehicle.id,
       typeId: "vehicles",
@@ -1012,10 +1005,8 @@ const workOrderForm = document.getElementById("workOrderForm");
 function startEditVehicle(id) {
   const vehicle = state.vehicles.find((item) => item.id === id);
   if (!vehicle || !vehicleForm) return;
-  document.getElementById("vehiclePlate").value = vehicle.plate || "";
+  document.getElementById("vehicleEB").value = vehicle.eb || "";
   document.getElementById("vehicleModel").value = vehicle.model || "";
-  document.getElementById("vehicleYear").value = vehicle.year || "";
-  document.getElementById("vehicleOdometer").value = vehicle.odometer || "";
   document.getElementById("vehicleStatus").value = vehicle.status || "Disponível";
   vehicleForm.dataset.editId = id;
   setFormMode(vehicleForm, true);
@@ -1081,10 +1072,8 @@ function startEditWorkOrder(id) {
 vehicleForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const payload = {
-    plate: document.getElementById("vehiclePlate").value.trim(),
+    eb: document.getElementById("vehicleEB").value.trim(),
     model: document.getElementById("vehicleModel").value.trim(),
-    year: document.getElementById("vehicleYear").value.trim(),
-    odometer: document.getElementById("vehicleOdometer").value.trim(),
     status: document.getElementById("vehicleStatus").value
   };
   const editId = vehicleForm.dataset.editId;

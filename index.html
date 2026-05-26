@@ -209,15 +209,15 @@
                       <span id="fleetAvailable" class="font-semibold">0</span>
                     </div>
                     <div class="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2">
-                      <span>Em serviço</span>
+                      <span>Disponível (restrição)</span>
                       <span id="fleetInService" class="font-semibold">0</span>
                     </div>
                     <div class="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2">
-                      <span>Em manutenção</span>
+                      <span>Indisponível</span>
                       <span id="fleetMaintenance" class="font-semibold">0</span>
                     </div>
                     <div class="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2">
-                      <span>Baixadas</span>
+                      <span>Outros</span>
                       <span id="fleetInactive" class="font-semibold">0</span>
                     </div>
                   </div>
@@ -378,12 +378,12 @@
                 <h3 class="text-lg font-semibold mb-4">Cadastrar / editar</h3>
                 <form id="vehicleForm" class="space-y-4">
                   <div>
-                    <label class="text-sm text-slate-600">Placa</label>
+                    <label class="text-sm text-slate-600">EB</label>
                     <input
-                      id="vehiclePlate"
+                      id="vehicleEB"
                       required
                       class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                      placeholder="ABC-1234"
+                      placeholder="EB-1234"
                     />
                   </div>
                   <div>
@@ -395,28 +395,7 @@
                       placeholder="Modelo do veículo"
                     />
                   </div>
-                  <div>
-                    <label class="text-sm text-slate-600">Ano</label>
-                    <input
-                      id="vehicleYear"
-                      type="number"
-                      min="1990"
-                      max="2100"
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                      placeholder="2024"
-                    />
-                  </div>
-                  <div>
-                    <label class="text-sm text-slate-600">Odômetro</label>
-                    <input
-                      id="vehicleOdometer"
-                      type="number"
-                      min="0"
-                      required
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                      placeholder="00000"
-                    />
-                  </div>
+                  <!-- Year and odometer removed per spec -->
                   <div>
                     <label class="text-sm text-slate-600">Status da viatura</label>
                     <select
@@ -424,9 +403,8 @@
                       class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
                     >
                       <option value="Disponível">Disponível</option>
-                      <option value="Em serviço">Em serviço</option>
-                      <option value="Em manutenção">Em manutenção</option>
-                      <option value="Baixada">Baixada</option>
+                      <option value="Disponível (restrição)">Disponível (restrição)</option>
+                      <option value="Indisponível">Indisponível</option>
                     </select>
                   </div>
                   <div class="flex flex-wrap gap-3">
@@ -455,10 +433,8 @@
                   <table class="min-w-full text-sm">
                     <thead class="text-left text-slate-500">
                       <tr>
-                        <th class="pb-2">Placa</th>
+                        <th class="pb-2">EB</th>
                         <th class="pb-2">Modelo</th>
-                        <th class="pb-2">Ano</th>
-                        <th class="pb-2">Odômetro</th>
                         <th class="pb-2">Status da viatura</th>
                         <th class="pb-2">Ações</th>
                       </tr>
