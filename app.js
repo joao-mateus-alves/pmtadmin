@@ -1,11 +1,6 @@
 //https://to-do.microsoft.com/sharing?InvitationToken=JIIP-oArEEBHBeCGEbQFDQVvDOBdIS04WkiwQSAtvB1waHOFcoaHGKx9r6W0GPK0I 
 //deixa isso aqui kakakaka
 
-//retirar "veiculos com mais operações" do dashboard
-//deixar a parte de status dos condutores como uma variavel que o sistema vai informar, caso ele esteja em missão, então ele mostrara em missão, senão ele vai estar disponivel
-//caso alguem abra uma operação e venha ocorrer algum conflito de horario, ele vai avisar que tal viatura já está sendo usada pra tal operação, se tem certeza que quer escolher ela
-//
-
 
 import { db } from "./firebase.js";
 import {
@@ -27,7 +22,10 @@ const state = {
 let missionCalendarDate = new Date();
 missionCalendarDate.setDate(1);
 
-const sectionIds = ["dashboard", "search", "vehicles", "drivers", "maintenance", "missions", "workOrders"];
+let missionWeeklyDate = new Date();
+missionWeeklyDate.setDate(missionWeeklyDate.getDate() - missionWeeklyDate.getDay());
+
+const sectionIds = ["dashboard", "search", "vehicles", "drivers", "maintenance", "missions", "monthlyCalendar", "workOrders"];
 const sectionTitles = {
   dashboard: "Dashboard",
   search: "Pesquisa geral",
@@ -35,6 +33,7 @@ const sectionTitles = {
   drivers: "Condutores",
   maintenance: "Manutenções",
   missions: "Missões",
+  monthlyCalendar: "Calendário do mês",
   workOrders: "Operações"
 };
 
@@ -603,6 +602,84 @@ function resetMissionCalendarMonth() {
   renderMissionCalendar();
 }
 
+function changeMissionWeeklyWeek(offset) {
+  missionWeeklyDate = new Date(missionWeeklyDate.getTime() + offset * 7 * 24 * 60 * 60 * 1000);
+  renderMissionWeekly();
+}
+
+function resetMissionWeeklyWeek() {
+  missionWeeklyDate = new Date();
+  missionWeeklyDate.setDate(missionWeeklyDate.getDate() - missionWeeklyDate.getDay());
+  renderMissionWeekly();
+}
+
+function renderMissionWeekly() {
+  const weeklyContainer = document.getElementById("missionWeekly");
+  const weeklyTitle = document.getElementById("missionWeeklyTitle");
+  const weeklySummary = document.getElementById("missionWeeklySummary");
+  if (!weeklyContainer) return;
+
+  const startOfWeek = new Date(missionWeeklyDate);
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(endOfWeek.getDate() + 6);
+
+  const weekKey = startOfWeek.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const endKey = endOfWeek.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+
+  const missionsByDate = new Map();
+  state.missions.forEach((mission) => {
+    const list = missionsByDate.get(mission.date) || [];
+    list.push(mission);
+    missionsByDate.set(mission.date, list);
+  });
+
+  let totalMissions = 0;
+  let completedMissions = 0;
+  for (let i = 0; i < 7; i += 1) {
+    const day = new Date(startOfWeek);
+    day.setDate(day.getDate() + i);
+    const dateKey = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
+    const dayMissions = missionsByDate.get(dateKey) || [];
+    totalMissions += dayMissions.length;
+    completedMissions += dayMissions.filter((m) => m.status === "Conclu\u00edda").length;
+  }
+
+  if (weeklyTitle) {
+    weeklyTitle.textContent = `Miss\u00f5es da semana (${weekKey} - ${endKey})`;
+  }
+  if (weeklySummary) {
+    weeklySummary.textContent = totalMissions
+      ? `${totalMissions} miss\u00e3o(ões) • ${totalMissions - completedMissions} pendente(s) • ${completedMissions} conclu\u00edda(s).`
+      : "Nenhuma miss\u00e3o cadastrada para esta semana.";
+  }
+
+  const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "S\u00e1b"];
+  const cells = weekDays.map((day) => `<div class="font-semibold text-center text-slate-500">${day}</div>`);
+
+  for (let i = 0; i < 7; i += 1) {
+    const day = new Date(startOfWeek);
+    day.setDate(day.getDate() + i);
+    const dateKey = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
+    const missions = (missionsByDate.get(dateKey) || []).sort((a, b) => (a.time || "").localeCompare(b.time || ""));
+    const dayLabel = day.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit" });
+    const missionItems = missions.slice(0, 3).map((mission) => {
+      const doneClass = mission.status === "Conclu\u00edda" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700";
+      return `<div class="mt-1 rounded px-2 py-1 ${doneClass}">
+        <p class="truncate font-medium">${mission.title || "Miss\u00e3o"}</p>
+        <p class="truncate text-xs">${mission.time || "Sem hora"}</p>
+      </div>`;
+    }).join("");
+    const extra = missions.length > 3 ? `<p class="mt-1 text-xs text-slate-500">+${missions.length - 3}</p>` : "";
+    cells.push(`<button type="button" data-calendar-date="${dateKey}" aria-label="Abrir miss\u00f5es de ${formatDate(dateKey)}" class="min-h-24 rounded-md border border-slate-100 bg-white p-2 text-left transition hover:border-accent hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-accent">
+      <p class="text-xs font-semibold text-slate-700">${dayLabel}</p>
+      ${missionItems || '<p class="mt-2 text-slate-400 text-xs">-</p>'}
+      ${extra}
+    </button>`);
+  }
+
+  weeklyContainer.innerHTML = cells.join("");
+}
+
 function renderMissionCalendar() {
   const calendar = document.getElementById("missionCalendar");
   const title = document.getElementById("missionCalendarTitle");
@@ -670,8 +747,9 @@ function updateDashboard() {
   const availableVehicles = state.vehicles.filter((vehicle) => vehicle.status === "Disponível").length;
   const availableRestricted = state.vehicles.filter((vehicle) => vehicle.status === "Disponível (restrição)").length;
   const unavailableVehicles = state.vehicles.filter((vehicle) => vehicle.status === "Indisponível").length;
+  const operationalVehicles = availableVehicles + availableRestricted;
   const availabilityPercent = totalVehicles
-    ? Math.round((availableVehicles / totalVehicles) * 100)
+    ? Math.round((operationalVehicles / totalVehicles) * 100)
     : 0;
 
   const fleetAvailabilityPercent = document.getElementById("fleetAvailabilityPercent");
@@ -948,6 +1026,26 @@ document.querySelectorAll(".quick-link").forEach((button) => {
     );
   }
   button.addEventListener("click", () => setActiveSection(button.dataset.target));
+});
+
+document.getElementById("missionWeeklyPrev")?.addEventListener("click", () => {
+  changeMissionWeeklyWeek(-1);
+});
+
+document.getElementById("missionWeeklyToday")?.addEventListener("click", () => {
+  resetMissionWeeklyWeek();
+});
+
+document.getElementById("missionWeeklyNext")?.addEventListener("click", () => {
+  changeMissionWeeklyWeek(1);
+});
+
+document.getElementById("missionWeekly")?.addEventListener("click", (event) => {
+  const dayButton = event.target.closest("[data-calendar-date]");
+  if (!dayButton) return;
+  const dateKey = dayButton.dataset.calendarDate;
+  if (!dateKey) return;
+  openMissionCalendarModal(dateKey);
 });
 
 document.getElementById("missionCalendarPrev")?.addEventListener("click", () => {
@@ -1381,4 +1479,5 @@ onValue(ref(db, "workOrders"), (snapshot) => {
 
 updateSearchStatusOptions(generalSearchType?.value || "all");
 renderGeneralSearch();
+renderMissionWeekly();
 setActiveSection("dashboard");

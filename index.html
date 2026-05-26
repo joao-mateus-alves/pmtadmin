@@ -109,6 +109,13 @@
           </button>
           <button
             class="nav-item"
+            data-target="monthlyCalendar"
+            data-title="Calendário"
+          >
+            Calendário do mês
+          </button>
+          <button
+            class="nav-item"
             data-target="workOrders"
             data-title="Operações"
           >
@@ -206,6 +213,72 @@
             <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm mt-6">
               <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
                 <div>
+                  <h2 id="missionWeeklyTitle" class="text-lg font-semibold">Missões da semana</h2>
+                  <p id="missionWeeklySummary" class="text-sm text-slate-500"></p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <button
+                    id="missionWeeklyPrev"
+                    type="button"
+                    class="calendar-icon-button"
+                    aria-label="Semana anterior"
+                    title="Semana anterior"
+                  >
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="m15 18-6-6 6-6" />
+                    </svg>
+                    Semana anterior
+                  </button>
+                  <button
+                    id="missionWeeklyToday"
+                    type="button"
+                    class="calendar-icon-button"
+                    aria-label="Semana atual"
+                    title="Semana atual"
+                  >
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M8 2v4" />
+                      <path d="M16 2v4" />
+                      <rect width="18" height="18" x="3" y="4" rx="2" />
+                      <path d="M3 10h18" />
+                    </svg>
+                    Semana atual
+                  </button>
+                  <button
+                    id="missionWeeklyNext"
+                    type="button"
+                    class="calendar-icon-button"
+                    aria-label="Proxima semana"
+                    title="Proxima semana"
+                  >
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="m9 18 6-6-6-6" />
+                    </svg>
+                    Próxima semana
+                  </button>
+                </div>
+              </div>
+              <div id="missionWeekly" class="grid grid-cols-7 gap-2 text-xs text-slate-600"></div>
+            </div>
+
+
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
+              <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
+                <h2 class="text-lg font-semibold mb-4">Últimas operações</h2>
+                <div id="latestWorkOrders" class="space-y-3 text-sm text-slate-600"></div>
+              </div>
+              <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
+                <h2 class="text-lg font-semibold mb-4">Manutenções recentes</h2>
+                <div id="latestMaintenance" class="space-y-3 text-sm text-slate-600"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Calendário do mês -->
+          <section id="monthlyCalendar" data-section class="hidden">
+            <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
+              <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
+                <div>
                   <h2 id="missionCalendarTitle" class="text-lg font-semibold">Missões do mês</h2>
                   <p id="missionCalendarSummary" class="text-sm text-slate-500"></p>
                 </div>
@@ -249,37 +322,9 @@
                     </svg>
                     Próximo mês
                   </button>
-                  <button
-                    class="quick-link calendar-icon-button"
-                    data-target="missions"
-                    aria-label="Ver missoes"
-                    title="Ver missoes"
-                  >
-                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M8 6h13" />
-                      <path d="M8 12h13" />
-                      <path d="M8 18h13" />
-                      <path d="M3 6h.01" />
-                      <path d="M3 12h.01" />
-                      <path d="M3 18h.01" />
-                    </svg>
-                    Ver missões
-                  </button>
                 </div>
               </div>
               <div id="missionCalendar" class="grid grid-cols-7 gap-2 text-xs text-slate-600"></div>
-            </div>
-
-
-            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
-              <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
-                <h2 class="text-lg font-semibold mb-4">Últimas operações</h2>
-                <div id="latestWorkOrders" class="space-y-3 text-sm text-slate-600"></div>
-              </div>
-              <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
-                <h2 class="text-lg font-semibold mb-4">Manutenções recentes</h2>
-                <div id="latestMaintenance" class="space-y-3 text-sm text-slate-600"></div>
-              </div>
             </div>
           </section>
 
