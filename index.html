@@ -142,52 +142,30 @@
         <main class="flex-1 p-6 space-y-8">
           <section id="dashboard" data-section>
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
-              <div class="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+              <button type="button" class="quick-link bg-white rounded-lg border border-slate-200 p-5 shadow-sm text-left transition hover:border-accent hover:shadow-md" data-target="vehicles">
                 <p class="text-sm text-slate-500">Veículos</p>
-                <p id="countVehicles" class="text-2xl font-semibold">0</p>
-              </div>
-              <div class="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+                <p id="countVehicles" class="text-3xl font-semibold text-slate-900 mt-2">0</p>
+              </button>
+              <button type="button" class="quick-link bg-white rounded-lg border border-slate-200 p-5 shadow-sm text-left transition hover:border-accent hover:shadow-md" data-target="drivers">
                 <p class="text-sm text-slate-500">Condutores</p>
-                <p id="countDrivers" class="text-2xl font-semibold">0</p>
-              </div>
-              <div class="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+                <p id="countDrivers" class="text-3xl font-semibold text-slate-900 mt-2">0</p>
+              </button>
+              <button type="button" class="quick-link bg-white rounded-lg border border-slate-200 p-5 shadow-sm text-left transition hover:border-accent hover:shadow-md" data-target="maintenance">
                 <p class="text-sm text-slate-500">Manutenções</p>
-                <p id="countMaintenance" class="text-2xl font-semibold">0</p>
-              </div>
-              <div class="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+                <p id="countMaintenance" class="text-3xl font-semibold text-slate-900 mt-2">0</p>
+              </button>
+              <button type="button" class="quick-link bg-white rounded-lg border border-slate-200 p-5 shadow-sm text-left transition hover:border-accent hover:shadow-md" data-target="missions">
                 <p class="text-sm text-slate-500">Missões</p>
-                <p id="countMissions" class="text-2xl font-semibold">0</p>
-              </div>
-              <div class="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+                <p id="countMissions" class="text-3xl font-semibold text-slate-900 mt-2">0</p>
+              </button>
+              <button type="button" class="quick-link bg-white rounded-lg border border-slate-200 p-5 shadow-sm text-left transition hover:border-accent hover:shadow-md" data-target="workOrders">
                 <p class="text-sm text-slate-500">Operações</p>
-                <p id="countWorkOrders" class="text-2xl font-semibold">0</p>
-              </div>
+                <p id="countWorkOrders" class="text-3xl font-semibold text-slate-900 mt-2">0</p>
+              </button>
             </div>
 
             <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
               <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm xl:col-span-2">
-                <div class="flex items-center justify-between mb-4">
-                  <h2 class="text-lg font-semibold">Atalhos rápidos</h2>
-                </div>
-                <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
-                  <button class="quick-link" data-target="vehicles">
-                    Cadastrar veículo
-                  </button>
-                  <button class="quick-link" data-target="drivers">
-                    Cadastrar condutor
-                  </button>
-                  <button class="quick-link" data-target="maintenance">
-                    Registrar manutenção
-                  </button>
-                  <button class="quick-link" data-target="missions">
-                    Cadastrar missão
-                  </button>
-                  <button class="quick-link" data-target="workOrders">
-                    Abrir operação
-                  </button>
-                </div>
-              </div>
-              <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
                 <h2 class="text-lg font-semibold mb-4">Indicadores da frota</h2>
                 <div class="space-y-4 text-sm text-slate-600">
                   <div>
@@ -292,12 +270,6 @@
               <div id="missionCalendar" class="grid grid-cols-7 gap-2 text-xs text-slate-600"></div>
             </div>
 
-            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
-              <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm xl:col-span-3">
-                <h2 class="text-lg font-semibold mb-4">Veículos com mais operações</h2>
-                <div id="topVehiclesList" class="space-y-3 text-sm text-slate-600"></div>
-              </div>
-            </div>
 
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
               <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
@@ -498,17 +470,7 @@
                       placeholder="(00) 00000-0000"
                     />
                   </div>
-                  <div>
-                    <label class="text-sm text-slate-600">Situação</label>
-                    <select
-                      id="driverStatus"
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                    >
-                      <option value="Em missão">Em missão</option>
-                      <option value="Ocioso">Ocioso</option>
-                      <option value="Indisponível">Indisponível</option>
-                    </select>
-                  </div>
+
                   <div class="flex flex-wrap gap-3">
                     <button
                       type="submit"
@@ -854,7 +816,23 @@
                     />
                   </div>
                   <div>
-                    <label class="text-sm text-slate-600">Data de chegada</label>
+                    <label class="text-sm text-slate-600">Data de chegada prevista</label>
+                    <input
+                      id="workOrderExpectedArrivalDate"
+                      type="date"
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label class="text-sm text-slate-600">Hora de chegada prevista</label>
+                    <input
+                      id="workOrderExpectedArrivalTime"
+                      type="time"
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label class="text-sm text-slate-600">Data de chegada real</label>
                     <input
                       id="workOrderArrivalDate"
                       type="date"
@@ -862,7 +840,7 @@
                     />
                   </div>
                   <div>
-                    <label class="text-sm text-slate-600">Hora de chegada</label>
+                    <label class="text-sm text-slate-600">Hora de chegada real</label>
                     <input
                       id="workOrderArrivalTime"
                       type="time"
@@ -911,6 +889,30 @@
             </div>
           </section>
         </main>
+      </div>
+    </div>
+
+    <div
+      id="missionCalendarModal"
+      class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-900/60 px-4 py-6"
+      aria-hidden="true"
+    >
+      <div class="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-2xl max-h-[85vh] overflow-hidden flex flex-col">
+        <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+          <div>
+            <h3 id="missionCalendarModalTitle" class="text-lg font-semibold text-slate-900">Missões do dia</h3>
+            <p id="missionCalendarModalSummary" class="text-sm text-slate-500"></p>
+          </div>
+          <button
+            id="missionCalendarModalClose"
+            type="button"
+            class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-accent hover:text-accent"
+            aria-label="Fechar popup"
+          >
+            ✕
+          </button>
+        </div>
+        <div id="missionCalendarModalList" class="space-y-3 overflow-auto px-5 py-5 text-sm text-slate-600"></div>
       </div>
     </div>
 

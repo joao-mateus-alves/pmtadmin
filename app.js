@@ -1,14 +1,7 @@
 //https://to-do.microsoft.com/sharing?InvitationToken=JIIP-oArEEBHBeCGEbQFDQVvDOBdIS04WkiwQSAtvB1waHOFcoaHGKx9r6W0GPK0I 
 //deixa isso aqui kakakaka
 
-// trocar placa por EB
-// retirar ano e odometro
-// no calendario habilitar vizualização quando clicar em cima do dia, criar um pop-up mostrando as informações
-// melhorar calendario mobile apenas, está tudo meio minusculo e ilegivel.
-// mesclar atalhos rápidos com os cards de quantidades do dashboard
-// LOGICA: caso um veiculo esteja em operação, ele não poderá ser escalado enquanto não retornar, preciso aprimorar essa logica ainda... na real não sei se funcionaria, imagina que ele ainda não voltou e a operação esteja em aberto, ai eu preciso abrir outra missão com esse veiculo... como resolveria essa questão? podemos pensar em previsão de encerramento e encerramento real da operação, ai resolveria esse problema e casa perfeitamente com a função de fechar a operação no dashboard
 //retirar "veiculos com mais operações" do dashboard
-//retirar opção "em manutenção"
 //deixar a parte de status dos condutores como uma variavel que o sistema vai informar, caso ele esteja em missão, então ele mostrara em missão, senão ele vai estar disponivel
 //caso alguem abra uma operação e venha ocorrer algum conflito de horario, ele vai avisar que tal viatura já está sendo usada pra tal operação, se tem certeza que quer escolher ela
 //
@@ -58,6 +51,11 @@ const generalSearchType = document.getElementById("generalSearchType");
 const generalSearchStatus = document.getElementById("generalSearchStatus");
 const generalSearchResults = document.getElementById("generalSearchResults");
 const generalSearchSummary = document.getElementById("generalSearchSummary");
+const missionCalendarModal = document.getElementById("missionCalendarModal");
+const missionCalendarModalTitle = document.getElementById("missionCalendarModalTitle");
+const missionCalendarModalSummary = document.getElementById("missionCalendarModalSummary");
+const missionCalendarModalList = document.getElementById("missionCalendarModalList");
+const missionCalendarModalClose = document.getElementById("missionCalendarModalClose");
 
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -125,6 +123,34 @@ function isDriverOnMission(driverId) {
   return state.workOrders.some((order) => order.driverId === driverId && isWorkOrderOpen(order));
 }
 
+function isVehicleAvailableForScheduling(vehicleId, proposedDepartureDate, proposedDepartureTime) {
+  const openOrders = state.workOrders.filter((order) => order.vehicleId === vehicleId && isWorkOrderOpen(order));
+  
+  if (!openOrders.length) return { available: true };
+  
+  const proposedDateTime = toTimestamp(proposedDepartureDate, proposedDepartureTime);
+  const conflicts = [];
+  
+  openOrders.forEach((order) => {
+    const expectedReturnDateTime = toTimestamp(order.expectedArrivalDate, order.expectedArrivalTime);
+    const departureDateTime = toTimestamp(order.departureDate, order.departureTime);
+    
+    if (!expectedReturnDateTime) {
+      conflicts.push({
+        order,
+        reason: `Operação aberta em ${formatDateTime(order.departureDate, order.departureTime)} sem horário previsto de retorno`
+      });
+    } else if (proposedDateTime < expectedReturnDateTime) {
+      conflicts.push({
+        order,
+        reason: `Veículo deve retornar às ${formatDateTime(order.expectedArrivalDate, order.expectedArrivalTime)}`
+      });
+    }
+  });
+  
+  return { available: conflicts.length === 0, conflicts };
+}
+
 function getDriverStatusLabel(driver) {
   if (!driver) return "-";
   return isDriverOnMission(driver.id) ? "Em missão" : driver.status || "Ocioso";
@@ -188,6 +214,57 @@ function renderTimeline(container, events, emptyMessage) {
       </div>`
     )
     .join("");
+}
+
+function closeMissionCalendarModal() {
+  if (!missionCalendarModal) return;
+  missionCalendarModal.classList.add("hidden");
+  missionCalendarModal.setAttribute("aria-hidden", "true");
+}
+
+function openMissionCalendarModal(dateKey) {
+  if (!missionCalendarModal || !missionCalendarModalTitle || !missionCalendarModalSummary || !missionCalendarModalList) {
+    return;
+  }
+
+  const missions = state.missions
+    .filter((mission) => mission.date === dateKey)
+    .sort((a, b) => (a.time || "").localeCompare(b.time || ""));
+  const completed = missions.filter((mission) => mission.status === "Concluída").length;
+  const pending = missions.length - completed;
+
+  missionCalendarModalTitle.textContent = `Missões de ${formatDate(dateKey)}`;
+  missionCalendarModalSummary.textContent = missions.length
+    ? `${missions.length} missão(ões) • ${pending} pendente(s) • ${completed} concluída(s).`
+    : "Nenhuma missão cadastrada para este dia.";
+
+  if (!missions.length) {
+    missionCalendarModalList.innerHTML = '<p class="text-sm text-slate-500">Não há missões registradas para esta data.</p>';
+  } else {
+    missionCalendarModalList.innerHTML = missions
+      .map((mission) => {
+        const statusClass = mission.status === "Concluída"
+          ? "bg-emerald-50 text-emerald-700"
+          : "bg-amber-50 text-amber-700";
+        const timeLabel = mission.time || "Sem hora";
+        const locationLabel = mission.location || "Sem local";
+        const notesLabel = mission.notes ? `<p class="text-sm text-slate-500 mt-1">${mission.notes}</p>` : "";
+        return `<div class="rounded-xl border border-slate-200 p-4 bg-slate-50">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="font-semibold text-slate-900">${mission.title || "Missão"}</p>
+              <p class="text-sm text-slate-600 mt-1">${timeLabel} • ${locationLabel}</p>
+            </div>
+            <span class="text-xs px-2 py-1 rounded-full ${statusClass}">${mission.status || "Pendente"}</span>
+          </div>
+          ${notesLabel}
+        </div>`;
+      })
+      .join("");
+  }
+
+  missionCalendarModal.classList.remove("hidden");
+  missionCalendarModal.setAttribute("aria-hidden", "false");
 }
 
 function setFormMode(form, isEditing) {
@@ -483,29 +560,6 @@ function getOrderReferenceTimestamp(order) {
   return order.createdAt || toTimestamp(order.departureDate, order.departureTime) || 0;
 }
 
-function buildTopVehicles() {
-  const map = new Map();
-  state.workOrders.forEach((order) => {
-    if (!order.vehicleId) return;
-    const current = map.get(order.vehicleId) || {
-      count: 0,
-      lastTimestamp: 0
-    };
-    const referenceTimestamp = getOrderReferenceTimestamp(order);
-    current.count += 1;
-    current.lastTimestamp = Math.max(current.lastTimestamp, referenceTimestamp);
-    map.set(order.vehicleId, current);
-  });
-
-  return [...map.entries()]
-    .map(([vehicleId, info]) => ({
-      vehicle: state.vehicles.find((item) => item.id === vehicleId),
-      count: info.count,
-      lastTimestamp: info.lastTimestamp
-    }))
-    .sort((a, b) => b.count - a.count || b.lastTimestamp - a.lastTimestamp);
-}
-
 function renderVehicleHistory() {
   const vehicleId = vehicleHistorySelect?.value;
   if (!vehicleId) {
@@ -524,26 +578,6 @@ function renderDriverHistory() {
   }
   const events = buildDriverTimeline(driverId);
   renderTimeline(driverHistoryList, events, "Sem eventos registrados para este condutor.");
-}
-
-function renderTopVehicles() {
-  const topVehiclesList = document.getElementById("topVehiclesList");
-  if (!topVehiclesList) return;
-  const topVehicles = buildTopVehicles();
-  if (!topVehicles.length) {
-    topVehiclesList.innerHTML = '<p class="text-slate-500">Sem dados suficientes.</p>';
-    return;
-  }
-  topVehiclesList.innerHTML = topVehicles.slice(0, 5).map((item, index) => {
-    const vehicle = item.vehicle;
-    return `<div class="flex items-center justify-between rounded-md border border-slate-100 px-3 py-2">
-      <div>
-        <p class="font-medium">${index + 1}. ${formatVehicleLabel(vehicle)}</p>
-        <p class="text-xs text-slate-500">Última movimentação: ${formatTimestamp(item.lastTimestamp)}</p>
-      </div>
-      <span class="text-sm font-semibold">${item.count}</span>
-    </div>`;
-  }).join("");
 }
 
 function getCurrentMonthInfo() {
@@ -615,11 +649,11 @@ function renderMissionCalendar() {
       </div>`;
     }).join("");
     const extra = missions.length > 3 ? `<p class="mt-1 text-slate-500">+${missions.length - 3} missão(ões)</p>` : "";
-    cells.push(`<div class="min-h-24 rounded-md border border-slate-100 bg-white p-2">
+    cells.push(`<button type="button" data-calendar-date="${dateKey}" aria-label="Abrir missões de ${formatDate(dateKey)}" class="min-h-24 rounded-md border border-slate-100 bg-white p-2 text-left transition hover:border-accent hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-accent">
       <p class="font-semibold text-slate-700">${day}</p>
       ${missionItems || '<p class="mt-2 text-slate-400">-</p>'}
       ${extra}
-    </div>`);
+    </button>`);
   }
 
   calendar.innerHTML = cells.join("");
@@ -711,7 +745,6 @@ function updateDashboard() {
     }).join("");
   }
 
-  renderTopVehicles();
   renderMissionCalendar();
 }
 
@@ -929,6 +962,28 @@ document.getElementById("missionCalendarNext")?.addEventListener("click", () => 
   changeMissionCalendarMonth(1);
 });
 
+document.getElementById("missionCalendar")?.addEventListener("click", (event) => {
+  const dayButton = event.target.closest("[data-calendar-date]");
+  if (!dayButton) return;
+  const dateKey = dayButton.dataset.calendarDate;
+  if (!dateKey) return;
+  openMissionCalendarModal(dateKey);
+});
+
+missionCalendarModalClose?.addEventListener("click", closeMissionCalendarModal);
+
+missionCalendarModal?.addEventListener("click", (event) => {
+  if (event.target === missionCalendarModal) {
+    closeMissionCalendarModal();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeMissionCalendarModal();
+  }
+});
+
 vehicleHistorySelect?.addEventListener("change", renderVehicleHistory);
 driverHistorySelect?.addEventListener("change", renderDriverHistory);
 generalSearchInput?.addEventListener("input", renderGeneralSearch);
@@ -1019,7 +1074,6 @@ function startEditDriver(id) {
   document.getElementById("driverRole").value = driver.role || "";
   document.getElementById("driverName").value = driver.name || "";
   document.getElementById("driverPhone").value = driver.phone || "";
-  document.getElementById("driverStatus").value = driver.status || "Ocioso";
   driverForm.dataset.editId = id;
   setFormMode(driverForm, true);
   driverForm.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1062,6 +1116,8 @@ function startEditWorkOrder(id) {
   document.getElementById("workOrderStatus").value = item.status || "Aberta";
   document.getElementById("workOrderDepartureDate").value = item.departureDate || "";
   document.getElementById("workOrderDepartureTime").value = item.departureTime || "";
+  document.getElementById("workOrderExpectedArrivalDate").value = item.expectedArrivalDate || "";
+  document.getElementById("workOrderExpectedArrivalTime").value = item.expectedArrivalTime || "";
   document.getElementById("workOrderArrivalDate").value = item.arrivalDate || "";
   document.getElementById("workOrderArrivalTime").value = item.arrivalTime || "";
   workOrderForm.dataset.editId = id;
@@ -1094,8 +1150,7 @@ driverForm?.addEventListener("submit", async (event) => {
   const payload = {
     role: document.getElementById("driverRole").value.trim(),
     name: document.getElementById("driverName").value.trim(),
-    phone: document.getElementById("driverPhone").value.trim(),
-    status: document.getElementById("driverStatus").value
+    phone: document.getElementById("driverPhone").value.trim()
   };
   const editId = driverForm.dataset.editId;
   if (editId) {
@@ -1148,18 +1203,38 @@ missionForm?.addEventListener("submit", async (event) => {
 
 workOrderForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
+  const vehicleId = document.getElementById("workOrderVehicle").value;
+  const departureDate = document.getElementById("workOrderDepartureDate").value;
+  const departureTime = document.getElementById("workOrderDepartureTime").value;
+  const editId = workOrderForm.dataset.editId;
+  
+  if (!editId) {
+    const availabilityCheck = isVehicleAvailableForScheduling(vehicleId, departureDate, departureTime);
+    if (!availabilityCheck.available && availabilityCheck.conflicts.length > 0) {
+      const conflictDetails = availabilityCheck.conflicts
+        .map((c) => `• ${c.reason}`)
+        .join("\n");
+      const proceedAnyway = confirm(
+        `AVISO: Conflito de horário detectado!\n\n${conflictDetails}\n\nDeseja prosseguir mesmo assim?`
+      );
+      if (!proceedAnyway) return;
+    }
+  }
+  
   const payload = {
-    vehicleId: document.getElementById("workOrderVehicle").value,
+    vehicleId: vehicleId,
     driverId: document.getElementById("workOrderDriver").value,
     destination: document.getElementById("workOrderDestination").value.trim(),
     description: document.getElementById("workOrderDescription").value.trim(),
     status: document.getElementById("workOrderStatus").value,
-    departureDate: document.getElementById("workOrderDepartureDate").value,
-    departureTime: document.getElementById("workOrderDepartureTime").value,
+    departureDate: departureDate,
+    departureTime: departureTime,
+    expectedArrivalDate: document.getElementById("workOrderExpectedArrivalDate").value,
+    expectedArrivalTime: document.getElementById("workOrderExpectedArrivalTime").value,
     arrivalDate: document.getElementById("workOrderArrivalDate").value,
     arrivalTime: document.getElementById("workOrderArrivalTime").value
   };
-  const editId = workOrderForm.dataset.editId;
+  
   if (editId) {
     await update(ref(db, `workOrders/${editId}`), { ...payload, updatedAt: Date.now() });
     setFormMode(workOrderForm, false);
@@ -1297,6 +1372,7 @@ onValue(ref(db, "missions"), (snapshot) => {
 onValue(ref(db, "workOrders"), (snapshot) => {
   state.workOrders = toArray(snapshot);
   renderWorkOrdersTable();
+  renderDriversTable();
   updateDashboard();
   renderVehicleHistory();
   renderDriverHistory();
