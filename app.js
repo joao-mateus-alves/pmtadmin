@@ -632,7 +632,7 @@ function buildCompactCalendarCell({
     indicators.push('<span class="h-1.5 w-1.5 rounded-full bg-sky-400"></span>');
   }
   const indicatorRow = indicators.length
-    ? `<div class="flex items-center gap-1">${indicators.join("")}</div>`
+    ? `<div class="flex items-center gap-1 md:hidden">${indicators.join("")}</div>`
     : '<div class="h-2"></div>';
   const missionPreview = missions.slice(0, 2);
   const workOrderPreview = workOrders.slice(0, 2);
