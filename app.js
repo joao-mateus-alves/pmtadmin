@@ -14,7 +14,6 @@ import {
 const state = {
   vehicles: [],
   drivers: [],
-  maintenance: [],
   missions: [],
   workOrders: []
 };
@@ -25,13 +24,12 @@ missionCalendarDate.setDate(1);
 let missionWeeklyDate = new Date();
 missionWeeklyDate.setDate(missionWeeklyDate.getDate() - missionWeeklyDate.getDay());
 
-const sectionIds = ["dashboard", "search", "vehicles", "drivers", "maintenance", "missions", "monthlyCalendar", "workOrders"];
+const sectionIds = ["dashboard", "search", "vehicles", "drivers", "missions", "monthlyCalendar", "workOrders"];
 const sectionTitles = {
   dashboard: "Dashboard",
   search: "Pesquisa geral",
   vehicles: "Veículos",
   drivers: "Condutores",
-  maintenance: "Manutenções",
   missions: "Missões",
   monthlyCalendar: "Calendário do mês",
   workOrders: "Operações"
@@ -363,30 +361,6 @@ function renderDriversTable() {
     .join("");
 }
 
-function renderMaintenanceTable() {
-  const tbody = document.getElementById("maintenanceTableBody");
-  if (!tbody) return;
-  if (!state.maintenance.length) {
-    renderEmptyRow(tbody, 5, "Nenhuma manutenção cadastrada.");
-    return;
-  }
-  tbody.innerHTML = state.maintenance
-    .map((item) => {
-      const vehicle = state.vehicles.find((v) => v.id === item.vehicleId);
-      const cost = item.cost ? currencyFormatter.format(Number(item.cost)) : "-";
-      return `<tr class="border-t border-slate-100">
-        <td class="py-3 pr-4">${formatVehicleLabel(vehicle)}</td>
-        <td class="py-3 pr-4">${item.type || "-"}</td>
-        <td class="py-3 pr-4">${item.date || "-"}</td>
-        <td class="py-3 pr-4">${cost}</td>
-        <td class="py-3">
-          <button class="text-accent mr-3" data-action="edit" data-id="${item.id}">Editar</button>
-          <button class="text-red-600" data-action="delete" data-id="${item.id}">Excluir</button>
-        </td>
-      </tr>`;
-    })
-    .join("");
-}
 
 function renderMissionsTable() {
   const tbody = document.getElementById("missionsTableBody");
@@ -469,19 +443,6 @@ function buildVehicleTimeline(vehicleId) {
     });
   }
 
-  state.maintenance
-    .filter((item) => item.vehicleId === vehicleId)
-    .forEach((item) => {
-      const timestamp = toTimestamp(item.date) || item.createdAt || item.updatedAt || 0;
-      const cost = item.cost ? currencyFormatter.format(Number(item.cost)) : "";
-      const dateLabel = item.date || "-";
-      const costLabel = cost ? ` • ${cost}` : "";
-      events.push({
-        sortKey: timestamp,
-        title: "Manutenção registrada",
-        meta: `${dateLabel} • ${item.type || "Manutenção"}${costLabel}`
-      });
-    });
 
   state.workOrders
     .filter((item) => item.vehicleId === vehicleId)
@@ -613,6 +574,31 @@ function resetMissionWeeklyWeek() {
   renderMissionWeekly();
 }
 
+function getTodayKey() {
+  const today = new Date();
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+}
+
+function buildCompactCalendarCell({ dateKey, dayLabel, pendingCount, completedCount, isToday }) {
+  const dayNumber = isToday
+    ? `<span class="h-6 w-6 rounded-full bg-accent text-white text-xs font-semibold leading-none flex items-center justify-center">${dayLabel}</span>`
+    : `<span class="text-sm font-semibold text-slate-700 leading-none">${dayLabel}</span>`;
+  const indicators = [];
+  if (pendingCount > 0) {
+    indicators.push('<span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>');
+  }
+  if (completedCount > 0) {
+    indicators.push('<span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>');
+  }
+  const indicatorRow = indicators.length
+    ? `<div class="flex items-center gap-1">${indicators.join("")}</div>`
+    : '<div class="h-2"></div>';
+  return `<button type="button" data-calendar-date="${dateKey}" aria-label="Abrir missões de ${formatDate(dateKey)}" class="group aspect-square rounded-lg border border-slate-200 bg-white p-2 text-left flex flex-col justify-between transition hover:border-accent hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-accent">
+    ${dayNumber}
+    ${indicatorRow}
+  </button>`;
+}
+
 function renderMissionWeekly() {
   const weeklyContainer = document.getElementById("missionWeekly");
   const weeklyTitle = document.getElementById("missionWeeklyTitle");
@@ -653,28 +639,27 @@ function renderMissionWeekly() {
       : "Nenhuma miss\u00e3o cadastrada para esta semana.";
   }
 
+  const todayKey = getTodayKey();
   const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "S\u00e1b"];
-  const cells = weekDays.map((day) => `<div class="font-semibold text-center text-slate-500">${day}</div>`);
+  const cells = weekDays.map(
+    (day) => `<div class="text-[10px] font-semibold text-center text-slate-400 uppercase tracking-wide">${day}</div>`
+  );
 
   for (let i = 0; i < 7; i += 1) {
     const day = new Date(startOfWeek);
     day.setDate(day.getDate() + i);
     const dateKey = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
-    const missions = (missionsByDate.get(dateKey) || []).sort((a, b) => (a.time || "").localeCompare(b.time || ""));
-    const dayLabel = day.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit" });
-    const missionItems = missions.slice(0, 3).map((mission) => {
-      const doneClass = mission.status === "Conclu\u00edda" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700";
-      return `<div class="mt-1 rounded px-2 py-1 ${doneClass}">
-        <p class="truncate font-medium">${mission.title || "Miss\u00e3o"}</p>
-        <p class="truncate text-xs">${mission.time || "Sem hora"}</p>
-      </div>`;
-    }).join("");
-    const extra = missions.length > 3 ? `<p class="mt-1 text-xs text-slate-500">+${missions.length - 3}</p>` : "";
-    cells.push(`<button type="button" data-calendar-date="${dateKey}" aria-label="Abrir miss\u00f5es de ${formatDate(dateKey)}" class="min-h-24 rounded-md border border-slate-100 bg-white p-2 text-left transition hover:border-accent hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-accent">
-      <p class="text-xs font-semibold text-slate-700">${dayLabel}</p>
-      ${missionItems || '<p class="mt-2 text-slate-400 text-xs">-</p>'}
-      ${extra}
-    </button>`);
+    const missions = missionsByDate.get(dateKey) || [];
+    const completedCount = missions.filter((mission) => mission.status === "Conclu\u00edda").length;
+    const pendingCount = missions.length - completedCount;
+    const dayLabel = String(day.getDate()).padStart(2, "0");
+    cells.push(buildCompactCalendarCell({
+      dateKey,
+      dayLabel,
+      pendingCount,
+      completedCount,
+      isToday: dateKey === todayKey
+    }));
   }
 
   weeklyContainer.innerHTML = cells.join("");
@@ -706,31 +691,31 @@ function renderMissionCalendar() {
     summary.textContent = `${monthMissions.length} no mês • ${pending} pendente(s) • ${completed} concluída(s).`;
   }
 
+  const todayKey = getTodayKey();
   const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const cells = weekDays.map((day) => `<div class="font-semibold text-center text-slate-500">${day}</div>`);
+  const cells = weekDays.map(
+    (day) => `<div class="text-[10px] font-semibold text-center text-slate-400 uppercase tracking-wide">${day}</div>`
+  );
 
   for (let i = 0; i < firstDay; i += 1) {
-    cells.push('<div class="min-h-24 rounded-md border border-slate-100 bg-slate-50"></div>');
+    cells.push('<div class="aspect-square rounded-lg border border-slate-100 bg-slate-50"></div>');
   }
 
   for (let day = 1; day <= daysInMonth; day += 1) {
     const dateKey = `${monthKey}-${String(day).padStart(2, "0")}`;
-    const missions = (missionsByDate.get(dateKey) || []).sort((a, b) => (a.time || "").localeCompare(b.time || ""));
-    const missionItems = missions.slice(0, 3).map((mission) => {
-      const doneClass = mission.status === "Concluída" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700";
-      return `<div class="mt-1 rounded px-2 py-1 ${doneClass}">
-        <p class="truncate font-medium">${mission.title || "Missão"}</p>
-        <p class="truncate">${mission.time || "Sem hora"}</p>
-      </div>`;
-    }).join("");
-    const extra = missions.length > 3 ? `<p class="mt-1 text-slate-500">+${missions.length - 3} missão(ões)</p>` : "";
-    cells.push(`<button type="button" data-calendar-date="${dateKey}" aria-label="Abrir missões de ${formatDate(dateKey)}" class="min-h-24 rounded-md border border-slate-100 bg-white p-2 text-left transition hover:border-accent hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-accent">
-      <p class="font-semibold text-slate-700">${day}</p>
-      ${missionItems || '<p class="mt-2 text-slate-400">-</p>'}
-      ${extra}
-    </button>`);
+    const missions = missionsByDate.get(dateKey) || [];
+    const completedCount = missions.filter((mission) => mission.status === "Concluída").length;
+    const pendingCount = missions.length - completedCount;
+    const dayLabel = String(day).padStart(2, "0");
+    cells.push(buildCompactCalendarCell({
+      dateKey,
+      dayLabel,
+      pendingCount,
+      completedCount,
+      isToday: dateKey === todayKey
+    }));
   }
 
   calendar.innerHTML = cells.join("");
@@ -739,7 +724,6 @@ function renderMissionCalendar() {
 function updateDashboard() {
   document.getElementById("countVehicles").textContent = String(state.vehicles.length);
   document.getElementById("countDrivers").textContent = String(state.drivers.length);
-  document.getElementById("countMaintenance").textContent = String(state.maintenance.length);
   document.getElementById("countMissions").textContent = String(state.missions.length);
   document.getElementById("countWorkOrders").textContent = String(state.workOrders.length);
 
@@ -756,7 +740,6 @@ function updateDashboard() {
   const fleetAvailabilityBar = document.getElementById("fleetAvailabilityBar");
   const fleetAvailable = document.getElementById("fleetAvailable");
   const fleetInService = document.getElementById("fleetInService");
-  const fleetMaintenance = document.getElementById("fleetMaintenance");
   const fleetInactive = document.getElementById("fleetInactive");
 
   if (fleetAvailabilityPercent) {
@@ -771,18 +754,13 @@ function updateDashboard() {
   if (fleetInService) {
     fleetInService.textContent = String(availableRestricted);
   }
-  if (fleetMaintenance) {
-    fleetMaintenance.textContent = String(unavailableVehicles);
-  }
   if (fleetInactive) {
     fleetInactive.textContent = String(0);
   }
 
   const latestWorkOrders = document.getElementById("latestWorkOrders");
-  const latestMaintenance = document.getElementById("latestMaintenance");
-
   const sortedOrders = [...state.workOrders].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-  const sortedMaintenance = [...state.maintenance].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
 
   if (!sortedOrders.length) {
     latestWorkOrders.innerHTML = '<p class="text-slate-500">Sem operações registradas.</p>';
@@ -806,23 +784,6 @@ function updateDashboard() {
     }).join("");
   }
 
-  if (!sortedMaintenance.length) {
-    latestMaintenance.innerHTML = '<p class="text-slate-500">Sem manutenções registradas.</p>';
-  } else {
-    latestMaintenance.innerHTML = sortedMaintenance.slice(0, 5).map((item) => {
-      const vehicle = state.vehicles.find((v) => v.id === item.vehicleId);
-      const cost = item.cost ? currencyFormatter.format(Number(item.cost)) : "-";
-      const notes = item.notes ? ` • ${item.notes}` : "";
-      return `<div class="flex items-center justify-between border border-slate-100 rounded-md p-3">
-        <div>
-          <p class="font-medium">${item.type || "Manutenção"}</p>
-          <p class="text-xs text-slate-500">${formatVehicleLabel(vehicle)} • ${item.date || "-"}${notes}</p>
-        </div>
-        <span class="text-xs text-slate-500">${cost}</span>
-      </div>`;
-    }).join("");
-  }
-
   renderMissionCalendar();
 }
 
@@ -840,7 +801,7 @@ const statusOptionsByType = {
     { value: "Ocioso", label: "Ocioso" },
     { value: "Indisponível", label: "Indisponível" }
   ],
-  maintenance: [{ value: "all", label: "Todos" }],
+  
   missions: [
     { value: "all", label: "Todos" },
     { value: "Pendente", label: "Pendente" },
@@ -896,20 +857,7 @@ function buildSearchItems() {
     });
   });
 
-  state.maintenance.forEach((item) => {
-    const vehicle = state.vehicles.find((v) => v.id === item.vehicleId);
-    const cost = item.cost ? currencyFormatter.format(Number(item.cost)) : "";
-    const details = [formatVehicleLabel(vehicle), item.date || "-"].filter(Boolean);
-    if (cost) details.push(cost);
-    items.push({
-      id: item.id,
-      typeId: "maintenance",
-      typeLabel: "Manutenção",
-      title: item.type || "Manutenção registrada",
-      description: details.join(" • "),
-      status: ""
-    });
-  });
+  
 
   state.missions.forEach((mission) => {
     const details = [mission.location, formatDateTime(formatDate(mission.date), mission.time), mission.notes]
@@ -1105,10 +1053,6 @@ generalSearchResults?.addEventListener("click", (event) => {
     setActiveSection("drivers");
     startEditDriver(id);
   }
-  if (type === "maintenance") {
-    setActiveSection("maintenance");
-    startEditMaintenance(id);
-  }
   if (type === "missions") {
     setActiveSection("missions");
     startEditMission(id);
@@ -1151,7 +1095,6 @@ if (sidebarOverlay) {
 
 const vehicleForm = document.getElementById("vehicleForm");
 const driverForm = document.getElementById("driverForm");
-const maintenanceForm = document.getElementById("maintenanceForm");
 const missionForm = document.getElementById("missionForm");
 const workOrderForm = document.getElementById("workOrderForm");
 
@@ -1177,18 +1120,6 @@ function startEditDriver(id) {
   driverForm.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function startEditMaintenance(id) {
-  const item = state.maintenance.find((entry) => entry.id === id);
-  if (!item || !maintenanceForm) return;
-  document.getElementById("maintenanceVehicle").value = item.vehicleId || "";
-  document.getElementById("maintenanceType").value = item.type || "";
-  document.getElementById("maintenanceDate").value = item.date || "";
-  document.getElementById("maintenanceCost").value = item.cost || "";
-  document.getElementById("maintenanceNotes").value = item.notes || "";
-  maintenanceForm.dataset.editId = id;
-  setFormMode(maintenanceForm, true);
-  maintenanceForm.scrollIntoView({ behavior: "smooth", block: "start" });
-}
 
 function startEditMission(id) {
   const mission = state.missions.find((item) => item.id === id);
@@ -1257,25 +1188,6 @@ driverForm?.addEventListener("submit", async (event) => {
   } else {
     await push(ref(db, "drivers"), { ...payload, createdAt: Date.now() });
     driverForm.reset();
-  }
-});
-
-maintenanceForm?.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const payload = {
-    vehicleId: document.getElementById("maintenanceVehicle").value,
-    type: document.getElementById("maintenanceType").value.trim(),
-    date: document.getElementById("maintenanceDate").value,
-    cost: document.getElementById("maintenanceCost").value.trim(),
-    notes: document.getElementById("maintenanceNotes").value.trim()
-  };
-  const editId = maintenanceForm.dataset.editId;
-  if (editId) {
-    await update(ref(db, `maintenance/${editId}`), { ...payload, updatedAt: Date.now() });
-    setFormMode(maintenanceForm, false);
-  } else {
-    await push(ref(db, "maintenance"), { ...payload, createdAt: Date.now() });
-    maintenanceForm.reset();
   }
 });
 
@@ -1381,20 +1293,7 @@ document.getElementById("driversTableBody")?.addEventListener("click", async (ev
   }
 });
 
-document.getElementById("maintenanceTableBody")?.addEventListener("click", async (event) => {
-  const button = event.target.closest("button");
-  if (!button) return;
-  const id = button.dataset.id;
-  if (!id) return;
-  if (button.dataset.action === "edit") {
-    startEditMaintenance(id);
-  }
-  if (button.dataset.action === "delete") {
-    if (confirm("Deseja excluir esta manutenção?")) {
-      await remove(ref(db, `maintenance/${id}`));
-    }
-  }
-});
+
 
 document.getElementById("missionsTableBody")?.addEventListener("click", async (event) => {
   const button = event.target.closest("button");
@@ -1452,13 +1351,6 @@ onValue(ref(db, "drivers"), (snapshot) => {
   renderGeneralSearch();
 });
 
-onValue(ref(db, "maintenance"), (snapshot) => {
-  state.maintenance = toArray(snapshot);
-  renderMaintenanceTable();
-  updateDashboard();
-  renderVehicleHistory();
-  renderGeneralSearch();
-});
 
 onValue(ref(db, "missions"), (snapshot) => {
   state.missions = toArray(snapshot);

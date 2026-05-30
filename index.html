@@ -24,13 +24,13 @@
 
       .calendar-icon-button {
         display: inline-flex;
-        height: 2.5rem;
-        width: 2.5rem;
+        height: 2rem;
+        width: 2rem;
         align-items: center;
         justify-content: center;
-        border-radius: 0.375rem;
-        border: 1px solid #bfdbfe;
-        background: #eff6ff;
+        border-radius: 9999px;
+        border: 1px solid #dbeafe;
+        background: #ffffff;
         color: #1d4ed8;
         font-size: 0;
         transition: color 150ms ease, border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
@@ -38,7 +38,7 @@
 
       .calendar-icon-button:hover {
         border-color: #006cff;
-        background: #dbeafe;
+        background: #eff6ff;
         color: #0057d9;
         box-shadow: 0 1px 6px rgb(37 99 235 / 0.18);
       }
@@ -93,13 +93,7 @@
           >
             Condutores
           </button>
-          <button
-            class="nav-item"
-            data-target="maintenance"
-            data-title="Manutenções"
-          >
-            Manutenções
-          </button>
+          
           <button
             class="nav-item"
             data-target="missions"
@@ -157,10 +151,7 @@
                 <p class="text-sm text-slate-500">Condutores</p>
                 <p id="countDrivers" class="text-3xl font-semibold text-slate-900 mt-2">0</p>
               </button>
-              <button type="button" class="quick-link bg-white rounded-lg border border-slate-200 p-5 shadow-sm text-left transition hover:border-accent hover:shadow-md" data-target="maintenance">
-                <p class="text-sm text-slate-500">Manutenções</p>
-                <p id="countMaintenance" class="text-3xl font-semibold text-slate-900 mt-2">0</p>
-              </button>
+              
               <button type="button" class="quick-link bg-white rounded-lg border border-slate-200 p-5 shadow-sm text-left transition hover:border-accent hover:shadow-md" data-target="missions">
                 <p class="text-sm text-slate-500">Missões</p>
                 <p id="countMissions" class="text-3xl font-semibold text-slate-900 mt-2">0</p>
@@ -197,10 +188,7 @@
                       <span>Disponível (restrição)</span>
                       <span id="fleetInService" class="font-semibold">0</span>
                     </div>
-                    <div class="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2">
-                      <span>Indisponível</span>
-                      <span id="fleetMaintenance" class="font-semibold">0</span>
-                    </div>
+                    
                     <div class="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2">
                       <span>Outros</span>
                       <span id="fleetInactive" class="font-semibold">0</span>
@@ -258,7 +246,7 @@
                   </button>
                 </div>
               </div>
-              <div id="missionWeekly" class="grid grid-cols-7 gap-2 text-xs text-slate-600"></div>
+              <div id="missionWeekly" class="grid grid-cols-7 gap-2 text-[11px] text-slate-500 bg-slate-50/70 p-3 rounded-lg"></div>
             </div>
 
 
@@ -267,10 +255,7 @@
                 <h2 class="text-lg font-semibold mb-4">Últimas operações</h2>
                 <div id="latestWorkOrders" class="space-y-3 text-sm text-slate-600"></div>
               </div>
-              <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
-                <h2 class="text-lg font-semibold mb-4">Manutenções recentes</h2>
-                <div id="latestMaintenance" class="space-y-3 text-sm text-slate-600"></div>
-              </div>
+              
             </div>
           </section>
 
@@ -324,7 +309,7 @@
                   </button>
                 </div>
               </div>
-              <div id="missionCalendar" class="grid grid-cols-7 gap-2 text-xs text-slate-600"></div>
+              <div id="missionCalendar" class="grid grid-cols-7 gap-2 text-[11px] text-slate-500 bg-slate-50/70 p-3 rounded-lg"></div>
             </div>
           </section>
 
@@ -357,7 +342,7 @@
                     <option value="all">Todos</option>
                     <option value="vehicles">Veículos</option>
                     <option value="drivers">Condutores</option>
-                    <option value="maintenance">Manutenções</option>
+                    
                     <option value="missions">Missões</option>
                     <option value="workOrders">Operações</option>
                   </select>
@@ -568,106 +553,7 @@
             </div>
           </section>
 
-          <section id="maintenance" data-section class="hidden">
-            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
-              <div>
-                <h2 class="text-2xl font-semibold">Manutenções</h2>
-                <p class="text-sm text-slate-500">
-                  Registre e acompanhe manutenções.
-                </p>
-              </div>
-            </div>
-            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
-              <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
-                <h3 class="text-lg font-semibold mb-4">Cadastrar / editar</h3>
-                <form id="maintenanceForm" class="space-y-4">
-                  <div>
-                    <label class="text-sm text-slate-600">Veículo</label>
-                    <select
-                      id="maintenanceVehicle"
-                      data-vehicle-select
-                      required
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                    >
-                      <option value="">Selecione um veículo</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label class="text-sm text-slate-600">Tipo</label>
-                    <input
-                      id="maintenanceType"
-                      required
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                      placeholder="Preventiva, corretiva..."
-                    />
-                  </div>
-                  <div>
-                    <label class="text-sm text-slate-600">Data</label>
-                    <input
-                      id="maintenanceDate"
-                      type="date"
-                      required
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                    />
-                  </div>
-                  <div>
-                    <label class="text-sm text-slate-600">Custo (R$)</label>
-                    <input
-                      id="maintenanceCost"
-                      type="number"
-                      step="0.01"
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                      placeholder="0,00"
-                    />
-                  </div>
-                  <div>
-                    <label class="text-sm text-slate-600">Observações</label>
-                    <textarea
-                      id="maintenanceNotes"
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                      rows="3"
-                      placeholder="Detalhes da manutenção"
-                    ></textarea>
-                  </div>
-                  <div class="flex flex-wrap gap-3">
-                    <button
-                      type="submit"
-                      data-submit
-                      data-default-text="Registrar manutenção"
-                      data-edit-text="Salvar alterações"
-                      class="px-4 py-2 rounded-md bg-accent text-white shadow-sm shadow-blue-500/20 hover:bg-accent-dark transition"
-                    >
-                      Registrar manutenção
-                    </button>
-                    <button
-                      type="button"
-                      data-cancel
-                      class="px-4 py-2 rounded-md border border-slate-200 text-slate-600 hidden"
-                    >
-                      Cancelar edição
-                    </button>
-                  </div>
-                </form>
-              </div>
-              <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm xl:col-span-2">
-                <h3 class="text-lg font-semibold mb-4">Gerenciar manutenções</h3>
-                <div class="overflow-auto">
-                  <table class="min-w-full text-sm">
-                    <thead class="text-left text-slate-500">
-                      <tr>
-                        <th class="pb-2">Veículo</th>
-                        <th class="pb-2">Tipo</th>
-                        <th class="pb-2">Data</th>
-                        <th class="pb-2">Custo</th>
-                        <th class="pb-2">Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody id="maintenanceTableBody"></tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </section>
+          
 
           <section id="missions" data-section class="hidden">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
