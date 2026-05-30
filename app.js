@@ -227,34 +227,63 @@ function openMissionCalendarModal(dateKey) {
   const missions = state.missions
     .filter((mission) => mission.date === dateKey)
     .sort((a, b) => (a.time || "").localeCompare(b.time || ""));
+  const workOrders = state.workOrders
+    .filter((order) => order.departureDate === dateKey)
+    .sort((a, b) => (a.departureTime || "").localeCompare(b.departureTime || ""));
   const completed = missions.filter((mission) => mission.status === "Concluída").length;
   const pending = missions.length - completed;
+  const totalItems = missions.length + workOrders.length;
 
-  missionCalendarModalTitle.textContent = `Missões de ${formatDate(dateKey)}`;
-  missionCalendarModalSummary.textContent = missions.length
-    ? `${missions.length} missão(ões) • ${pending} pendente(s) • ${completed} concluída(s).`
-    : "Nenhuma missão cadastrada para este dia.";
+  missionCalendarModalTitle.textContent = `Agenda de ${formatDate(dateKey)}`;
+  missionCalendarModalSummary.textContent = totalItems
+    ? `${missions.length} missão(ões) • ${pending} pendente(s) • ${completed} concluída(s) • ${workOrders.length} operação(ões).`
+    : "Nenhuma missão ou operação cadastrada para este dia.";
 
-  if (!missions.length) {
-    missionCalendarModalList.innerHTML = '<p class="text-sm text-slate-500">Não há missões registradas para esta data.</p>';
+  if (!totalItems) {
+    missionCalendarModalList.innerHTML = '<p class="text-sm text-slate-500">Não há missões ou operações registradas para esta data.</p>';
   } else {
-    missionCalendarModalList.innerHTML = missions
-      .map((mission) => {
-        const statusClass = mission.status === "Concluída"
-          ? "bg-emerald-50 text-emerald-700"
-          : "bg-amber-50 text-amber-700";
-        const timeLabel = mission.time || "Sem hora";
-        const locationLabel = mission.location || "Sem local";
-        const notesLabel = mission.notes ? `<p class="text-sm text-slate-500 mt-1">${mission.notes}</p>` : "";
+    const items = [
+      ...missions.map((mission) => ({ type: "mission", mission })),
+      ...workOrders.map((order) => ({ type: "workOrder", order }))
+    ].sort((a, b) => {
+      const aTime = a.type === "mission" ? a.mission.time : a.order.departureTime;
+      const bTime = b.type === "mission" ? b.mission.time : b.order.departureTime;
+      return (aTime || "99:99").localeCompare(bTime || "99:99");
+    });
+    missionCalendarModalList.innerHTML = items
+      .map((item) => {
+        if (item.type === "mission") {
+          const { mission } = item;
+          const statusClass = mission.status === "Concluída"
+            ? "bg-emerald-50 text-emerald-700"
+            : "bg-amber-50 text-amber-700";
+          const timeLabel = mission.time || "Sem hora";
+          const locationLabel = mission.location || "Sem local";
+          const notesLabel = mission.notes ? `<p class="text-sm text-slate-500 mt-1">${mission.notes}</p>` : "";
+          return `<div class="rounded-xl border border-slate-200 p-4 bg-slate-50">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <p class="font-semibold text-slate-900">${mission.title || "Missão"}</p>
+                <p class="text-sm text-slate-600 mt-1">${timeLabel} • ${locationLabel}</p>
+              </div>
+              <span class="text-xs px-2 py-1 rounded-full ${statusClass}">${mission.status || "Pendente"}</span>
+            </div>
+            ${notesLabel}
+          </div>`;
+        }
+        const { order } = item;
+        const vehicle = state.vehicles.find((v) => v.id === order.vehicleId);
+        const driver = state.drivers.find((d) => d.id === order.driverId);
+        const timeLabel = order.departureTime || "Sem hora";
+        const meta = [formatVehicleLabel(vehicle), formatDriverLabel(driver)].filter(Boolean).join(" • ");
         return `<div class="rounded-xl border border-slate-200 p-4 bg-slate-50">
           <div class="flex items-start justify-between gap-3">
             <div>
-              <p class="font-semibold text-slate-900">${mission.title || "Missão"}</p>
-              <p class="text-sm text-slate-600 mt-1">${timeLabel} • ${locationLabel}</p>
+              <p class="font-semibold text-slate-900">${order.destination || "Operação"}</p>
+              <p class="text-sm text-slate-600 mt-1">${timeLabel}${meta ? ` • ${meta}` : ""}</p>
             </div>
-            <span class="text-xs px-2 py-1 rounded-full ${statusClass}">${mission.status || "Pendente"}</span>
+            <span class="text-xs px-2 py-1 rounded-full bg-sky-50 text-sky-700">${order.status || "Aberta"}</span>
           </div>
-          ${notesLabel}
         </div>`;
       })
       .join("");
@@ -579,7 +608,16 @@ function getTodayKey() {
   return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 }
 
-function buildCompactCalendarCell({ dateKey, dayLabel, pendingCount, completedCount, isToday }) {
+function buildCompactCalendarCell({
+  dateKey,
+  dayLabel,
+  pendingCount,
+  completedCount,
+  operationCount,
+  missions = [],
+  workOrders = [],
+  isToday
+}) {
   const dayNumber = isToday
     ? `<span class="h-6 w-6 rounded-full bg-accent text-white text-xs font-semibold leading-none flex items-center justify-center">${dayLabel}</span>`
     : `<span class="text-sm font-semibold text-slate-700 leading-none">${dayLabel}</span>`;
@@ -590,12 +628,40 @@ function buildCompactCalendarCell({ dateKey, dayLabel, pendingCount, completedCo
   if (completedCount > 0) {
     indicators.push('<span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>');
   }
+  if (operationCount > 0) {
+    indicators.push('<span class="h-1.5 w-1.5 rounded-full bg-sky-400"></span>');
+  }
   const indicatorRow = indicators.length
     ? `<div class="flex items-center gap-1">${indicators.join("")}</div>`
     : '<div class="h-2"></div>';
-  return `<button type="button" data-calendar-date="${dateKey}" aria-label="Abrir missões de ${formatDate(dateKey)}" class="group aspect-square rounded-lg border border-slate-200 bg-white p-2 text-left flex flex-col justify-between transition hover:border-accent hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-accent">
+  const missionPreview = missions.slice(0, 2);
+  const workOrderPreview = workOrders.slice(0, 2);
+  const detailLines = [
+    ...missionPreview.map((mission) => {
+      const dotClass = mission.status === "Concluída" ? "bg-emerald-400" : "bg-amber-400";
+      return `<div class="flex items-center gap-1 text-[11px] text-slate-600">
+        <span class="h-1.5 w-1.5 rounded-full ${dotClass}"></span>
+        <span class="truncate">${mission.title || "Missão"}</span>
+      </div>`;
+    }),
+    ...workOrderPreview.map((order) => `<div class="flex items-center gap-1 text-[11px] text-slate-600">
+      <span class="h-1.5 w-1.5 rounded-full bg-sky-400"></span>
+      <span class="truncate">${order.destination || "Operação"}</span>
+    </div>`)
+  ];
+  if (missions.length > missionPreview.length) {
+    detailLines.push(`<div class="text-[10px] text-slate-400">+${missions.length - missionPreview.length} missão(ões)</div>`);
+  }
+  if (workOrders.length > workOrderPreview.length) {
+    detailLines.push(`<div class="text-[10px] text-slate-400">+${workOrders.length - workOrderPreview.length} operação(ões)</div>`);
+  }
+  const detailBlock = detailLines.length
+    ? `<div class="hidden lg:flex flex-col gap-1 mt-2">${detailLines.join("")}</div>`
+    : "";
+  return `<button type="button" data-calendar-date="${dateKey}" aria-label="Abrir agenda de ${formatDate(dateKey)}" class="group aspect-square lg:aspect-auto lg:min-h-[6rem] rounded-lg border border-slate-200 bg-white p-2 text-left flex flex-col transition hover:border-accent hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-accent">
     ${dayNumber}
-    ${indicatorRow}
+    ${detailBlock}
+    <div class="mt-auto">${indicatorRow}</div>
   </button>`;
 }
 
@@ -617,6 +683,13 @@ function renderMissionWeekly() {
     const list = missionsByDate.get(mission.date) || [];
     list.push(mission);
     missionsByDate.set(mission.date, list);
+  });
+  const workOrdersByDate = new Map();
+  state.workOrders.forEach((order) => {
+    if (!order.departureDate) return;
+    const list = workOrdersByDate.get(order.departureDate) || [];
+    list.push(order);
+    workOrdersByDate.set(order.departureDate, list);
   });
 
   let totalMissions = 0;
@@ -649,7 +722,10 @@ function renderMissionWeekly() {
     const day = new Date(startOfWeek);
     day.setDate(day.getDate() + i);
     const dateKey = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
-    const missions = missionsByDate.get(dateKey) || [];
+    const missions = (missionsByDate.get(dateKey) || [])
+      .sort((a, b) => (a.time || "").localeCompare(b.time || ""));
+    const workOrders = (workOrdersByDate.get(dateKey) || [])
+      .sort((a, b) => (a.departureTime || "").localeCompare(b.departureTime || ""));
     const completedCount = missions.filter((mission) => mission.status === "Conclu\u00edda").length;
     const pendingCount = missions.length - completedCount;
     const dayLabel = String(day.getDate()).padStart(2, "0");
@@ -658,6 +734,9 @@ function renderMissionWeekly() {
       dayLabel,
       pendingCount,
       completedCount,
+      operationCount: workOrders.length,
+      missions,
+      workOrders,
       isToday: dateKey === todayKey
     }));
   }
@@ -676,11 +755,19 @@ function renderMissionCalendar() {
   const completed = monthMissions.filter((mission) => mission.status === "Concluída").length;
   const pending = monthMissions.length - completed;
   const missionsByDate = new Map();
+  const monthWorkOrders = state.workOrders.filter((order) => (order.departureDate || "").startsWith(monthKey));
+  const workOrdersByDate = new Map();
 
   monthMissions.forEach((mission) => {
     const list = missionsByDate.get(mission.date) || [];
     list.push(mission);
     missionsByDate.set(mission.date, list);
+  });
+  monthWorkOrders.forEach((order) => {
+    if (!order.departureDate) return;
+    const list = workOrdersByDate.get(order.departureDate) || [];
+    list.push(order);
+    workOrdersByDate.set(order.departureDate, list);
   });
 
   
@@ -700,12 +787,15 @@ function renderMissionCalendar() {
   );
 
   for (let i = 0; i < firstDay; i += 1) {
-    cells.push('<div class="aspect-square rounded-lg border border-slate-100 bg-slate-50"></div>');
+    cells.push('<div class="aspect-square lg:aspect-auto lg:min-h-[6rem] rounded-lg border border-slate-100 bg-slate-50"></div>');
   }
 
   for (let day = 1; day <= daysInMonth; day += 1) {
     const dateKey = `${monthKey}-${String(day).padStart(2, "0")}`;
-    const missions = missionsByDate.get(dateKey) || [];
+    const missions = (missionsByDate.get(dateKey) || [])
+      .sort((a, b) => (a.time || "").localeCompare(b.time || ""));
+    const workOrders = (workOrdersByDate.get(dateKey) || [])
+      .sort((a, b) => (a.departureTime || "").localeCompare(b.departureTime || ""));
     const completedCount = missions.filter((mission) => mission.status === "Concluída").length;
     const pendingCount = missions.length - completedCount;
     const dayLabel = String(day).padStart(2, "0");
@@ -714,6 +804,9 @@ function renderMissionCalendar() {
       dayLabel,
       pendingCount,
       completedCount,
+      operationCount: workOrders.length,
+      missions,
+      workOrders,
       isToday: dateKey === todayKey
     }));
   }
