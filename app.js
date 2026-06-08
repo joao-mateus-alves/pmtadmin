@@ -1,7 +1,3 @@
-//https://to-do.microsoft.com/sharing?InvitationToken=JIIP-oArEEBHBeCGEbQFDQVvDOBdIS04WkiwQSAtvB1waHOFcoaHGKx9r6W0GPK0I 
-//deixa isso aqui kakakaka
-
-
 import { db } from "./firebase.js";
 import {
   ref,
@@ -53,6 +49,7 @@ const missionCalendarModalTitle = document.getElementById("missionCalendarModalT
 const missionCalendarModalSummary = document.getElementById("missionCalendarModalSummary");
 const missionCalendarModalList = document.getElementById("missionCalendarModalList");
 const missionCalendarModalClose = document.getElementById("missionCalendarModalClose");
+const missionStatusFilter = document.getElementById("missionStatusFilter");
 
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -117,7 +114,8 @@ function isWorkOrderOpen(order) {
 }
 
 function isDriverOnMission(driverId) {
-  return state.workOrders.some((order) => order.driverId === driverId && isWorkOrderOpen(order));
+  return state.workOrders.some((order) => order.driverId === driverId && isWorkOrderOpen(order))
+    || state.missions.some((mission) => mission.driverId === driverId && isMissionInProgress(mission));
 }
 
 function isVehicleAvailableForScheduling(vehicleId, proposedDepartureDate, proposedDepartureTime) {
@@ -254,9 +252,7 @@ function openMissionCalendarModal(dateKey) {
       .map((item) => {
         if (item.type === "mission") {
           const { mission } = item;
-          const statusClass = mission.status === "Concluída"
-            ? "bg-emerald-50 text-emerald-700"
-            : "bg-amber-50 text-amber-700";
+          const statusClass = getMissionStatusClass(mission.status || "Pendente");
           const timeLabel = mission.time || "Sem hora";
           const locationLabel = mission.location || "Sem local";
           const notesLabel = mission.notes ? `<p class="text-sm text-slate-500 mt-1">${mission.notes}</p>` : "";
@@ -346,6 +342,16 @@ function renderEmptyRow(tbody, colspan, message) {
   tbody.innerHTML = `<tr><td colspan="${colspan}" class="py-6 text-center text-slate-500">${message}</td></tr>`;
 }
 
+function getMissionStatusClass(status) {
+  if (status === "Concluída") return "bg-emerald-50 text-emerald-700";
+  if (status === "Em andamento") return "bg-sky-50 text-sky-700";
+  return "bg-amber-50 text-amber-700";
+}
+
+function isMissionInProgress(mission) {
+  return (mission.status || "Pendente") === "Em andamento";
+}
+
 function renderVehiclesTable() {
   const tbody = document.getElementById("vehiclesTableBody");
   if (!tbody) return;
@@ -398,13 +404,25 @@ function renderMissionsTable() {
     renderEmptyRow(tbody, 5, "Nenhuma missão cadastrada.");
     return;
   }
-  tbody.innerHTML = [...state.missions]
+  const statusFilter = missionStatusFilter?.value || "all";
+  const filteredMissions = [...state.missions].filter((mission) => {
+    if (statusFilter === "all") return true;
+    return (mission.status || "Pendente") === statusFilter;
+  });
+  if (!filteredMissions.length) {
+    renderEmptyRow(tbody, 5, "Nenhuma missão encontrada para este status.");
+    return;
+  }
+  tbody.innerHTML = filteredMissions
     .sort((a, b) => (toTimestamp(a.date, a.time) || 0) - (toTimestamp(b.date, b.time) || 0))
     .map((mission) => {
       const status = mission.status || "Pendente";
-      const isCompleted = status === "Concluída";
-      const toggleLabel = isCompleted ? "Marcar pendente" : "Concluir";
-      const statusClass = isCompleted ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700";
+      const toggleLabel = status === "Pendente"
+        ? "Iniciar"
+        : status === "Em andamento"
+          ? "Concluir"
+          : "Marcar pendente";
+      const statusClass = getMissionStatusClass(status);
       return `<tr class="border-t border-slate-100">
         <td class="py-3 pr-4">
           <p class="font-medium">${mission.title || "-"}</p>
@@ -425,6 +443,68 @@ function renderMissionsTable() {
     .join("");
 }
 
+function renderOngoingMissionsPanel() {
+  const container = document.getElementById("ongoingMissionsPanel");
+  if (!container) return;
+  const ongoingMissions = state.missions
+    .filter(isMissionInProgress)
+    .sort((a, b) => (toTimestamp(a.date, a.time) || 0) - (toTimestamp(b.date, b.time) || 0));
+  if (!ongoingMissions.length) {
+    container.innerHTML = '<p class="text-slate-500">Nenhuma missão em andamento.</p>';
+    return;
+  }
+  const vehicleOptions = ['<option value="">Selecione um veículo</option>']
+    .concat(state.vehicles.map((vehicle) => `<option value="${vehicle.id}">${formatVehicleLabel(vehicle)}</option>`))
+    .join("");
+  const driverOptions = ['<option value="">Selecione um condutor</option>']
+    .concat(state.drivers.map((driver) => `<option value="${driver.id}">${formatDriverLabel(driver)}</option>`))
+    .join("");
+  container.innerHTML = ongoingMissions
+    .map((mission) => {
+      const vehicle = state.vehicles.find((item) => item.id === mission.vehicleId);
+      const driver = state.drivers.find((item) => item.id === mission.driverId);
+      const dateLabel = formatDateTime(formatDate(mission.date), mission.time);
+      const locationLabel = mission.location || "Sem local";
+      const notesLabel = mission.notes ? `<p class="text-xs text-slate-500 mt-1">${mission.notes}</p>` : "";
+      return `<div class="rounded-md border border-slate-100 p-4 bg-white">
+        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+          <div>
+            <p class="font-medium text-slate-900">${mission.title || "Missão"}</p>
+            <p class="text-xs text-slate-500">${dateLabel} • ${locationLabel}</p>
+            ${notesLabel}
+          </div>
+          <span class="text-xs px-2 py-1 rounded-full ${getMissionStatusClass("Em andamento")}">Em andamento</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+          <div>
+            <label class="text-xs text-slate-500">Veículo</label>
+            <select data-mission-vehicle data-id="${mission.id}" class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2 text-sm">
+              ${vehicleOptions}
+            </select>
+            <p class="text-[11px] text-slate-400 mt-1">${vehicle ? formatVehicleLabel(vehicle) : "Nenhum veículo vinculado"}</p>
+          </div>
+          <div>
+            <label class="text-xs text-slate-500">Condutor</label>
+            <select data-mission-driver data-id="${mission.id}" class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2 text-sm">
+              ${driverOptions}
+            </select>
+            <p class="text-[11px] text-slate-400 mt-1">${driver ? formatDriverLabel(driver) : "Nenhum condutor vinculado"}</p>
+          </div>
+        </div>
+        <div class="flex justify-end mt-4">
+          <button type="button" data-action="save-mission-operation" data-id="${mission.id}" class="px-3 py-2 rounded-md bg-accent text-white text-xs shadow-sm shadow-blue-500/20 hover:bg-accent-dark transition">Salvar equipe</button>
+        </div>
+      </div>`;
+    })
+    .join("");
+  ongoingMissions.forEach((mission) => {
+    const vehicleSelect = container.querySelector(`[data-mission-vehicle][data-id="${mission.id}"]`);
+    const driverSelect = container.querySelector(`[data-mission-driver][data-id="${mission.id}"]`);
+    if (vehicleSelect) vehicleSelect.value = mission.vehicleId || "";
+    if (driverSelect) driverSelect.value = mission.driverId || "";
+  });
+}
+
 function renderWorkOrdersTable() {
   const tbody = document.getElementById("workOrdersTableBody");
   if (!tbody) return;
@@ -438,6 +518,7 @@ function renderWorkOrdersTable() {
       const driver = state.drivers.find((d) => d.id === item.driverId);
       const departureDateTime = formatDateTime(item.departureDate, item.departureTime);
       const arrivalDateTime = formatDateTime(item.arrivalDate, item.arrivalTime);
+      const canClose = (item.status || "Aberta") === "Aberta";
       return `<tr class="border-t border-slate-100">
         <td class="py-3 pr-4">${formatVehicleLabel(vehicle)}</td>
         <td class="py-3 pr-4">${formatDriverLabel(driver)}</td>
@@ -445,8 +526,8 @@ function renderWorkOrdersTable() {
         <td class="py-3 pr-4">${departureDateTime}</td>
         <td class="py-3 pr-4">${arrivalDateTime}</td>
         <td class="py-3 pr-4">${item.status || "-"}</td>
-        <td class="py-3">
-          <button class="text-accent mr-3" data-action="edit" data-id="${item.id}">Editar</button>
+        <td class="py-3 whitespace-nowrap">
+          ${canClose ? `<button class="text-accent mr-3" data-action="close" data-id="${item.id}">Fechar</button>` : ""}
           <button class="text-red-600" data-action="delete" data-id="${item.id}">Excluir</button>
         </td>
       </tr>`;
@@ -898,6 +979,7 @@ const statusOptionsByType = {
   missions: [
     { value: "all", label: "Todos" },
     { value: "Pendente", label: "Pendente" },
+    { value: "Em andamento", label: "Em andamento" },
     { value: "Concluída", label: "Concluída" }
   ],
   workOrders: [
@@ -1021,7 +1103,8 @@ function renderGeneralSearch() {
         ? `<span class="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600">${item.status}</span>`
         : "";
       const details = item.description ? ` • ${item.description}` : "";
-      const editButton = `<button class="text-accent text-xs font-medium" data-action="edit" data-type="${item.typeId}" data-id="${item.id}">Editar</button>`;
+      const actionLabel = item.typeId === "workOrders" ? "Abrir" : "Editar";
+      const editButton = `<button class="text-accent text-xs font-medium" data-action="edit" data-type="${item.typeId}" data-id="${item.id}">${actionLabel}</button>`;
       const actions = `<div class="flex items-center gap-2">${statusBadge}${editButton}</div>`;
       return `<div class="flex items-start justify-between gap-3 border border-slate-100 rounded-md p-3">
         <div>
@@ -1131,6 +1214,7 @@ generalSearchType?.addEventListener("change", () => {
   renderGeneralSearch();
 });
 generalSearchStatus?.addEventListener("change", renderGeneralSearch);
+missionStatusFilter?.addEventListener("change", renderMissionsTable);
 generalSearchResults?.addEventListener("click", (event) => {
   const button = event.target.closest("button");
   if (!button) return;
@@ -1152,7 +1236,6 @@ generalSearchResults?.addEventListener("click", (event) => {
   }
   if (type === "workOrders") {
     setActiveSection("workOrders");
-    startEditWorkOrder(id);
   }
 });
 
@@ -1395,7 +1478,12 @@ document.getElementById("missionsTableBody")?.addEventListener("click", async (e
   if (!id) return;
   if (button.dataset.action === "toggle") {
     const mission = state.missions.find((item) => item.id === id);
-    const nextStatus = mission?.status === "Concluída" ? "Pendente" : "Concluída";
+    const currentStatus = mission?.status || "Pendente";
+    const nextStatus = currentStatus === "Pendente"
+      ? "Em andamento"
+      : currentStatus === "Em andamento"
+        ? "Concluída"
+        : "Pendente";
     await update(ref(db, `missions/${id}`), {
       status: nextStatus,
       updatedAt: Date.now()
@@ -1416,8 +1504,14 @@ document.getElementById("workOrdersTableBody")?.addEventListener("click", async 
   if (!button) return;
   const id = button.dataset.id;
   if (!id) return;
-  if (button.dataset.action === "edit") {
-    startEditWorkOrder(id);
+  if (button.dataset.action === "close") {
+    const { date, time } = getCurrentDateTime();
+    await update(ref(db, `workOrders/${id}`), {
+      arrivalDate: date,
+      arrivalTime: time,
+      status: "Concluída",
+      updatedAt: Date.now()
+    });
   }
   if (button.dataset.action === "delete") {
     if (confirm("Deseja excluir esta operação?")) {
@@ -1448,6 +1542,7 @@ onValue(ref(db, "drivers"), (snapshot) => {
 onValue(ref(db, "missions"), (snapshot) => {
   state.missions = toArray(snapshot);
   renderMissionsTable();
+  renderOngoingMissionsPanel();
   updateDashboard();
   renderGeneralSearch();
 });
@@ -1465,4 +1560,5 @@ onValue(ref(db, "workOrders"), (snapshot) => {
 updateSearchStatusOptions(generalSearchType?.value || "all");
 renderGeneralSearch();
 renderMissionWeekly();
+renderOngoingMissionsPanel();
 setActiveSection("dashboard");

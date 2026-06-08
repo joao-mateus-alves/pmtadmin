@@ -18,6 +18,7 @@
       };
     </script>
     <style>
+      
       body {
         font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
       }
@@ -611,6 +612,7 @@
                       class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
                     >
                       <option value="Pendente">Pendente</option>
+                      <option value="Em andamento">Em andamento</option>
                       <option value="Concluída">Concluída</option>
                     </select>
                   </div>
@@ -644,7 +646,21 @@
                 </form>
               </div>
               <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm xl:col-span-2">
-                <h3 class="text-lg font-semibold mb-4">Lista de missões</h3>
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+                  <h3 class="text-lg font-semibold">Lista de missões</h3>
+                  <div class="flex items-center gap-2">
+                    <label for="missionStatusFilter" class="text-sm text-slate-600">Status</label>
+                    <select
+                      id="missionStatusFilter"
+                      class="w-48 rounded-md border border-slate-200 px-3 py-2 text-sm"
+                    >
+                      <option value="all">Todos</option>
+                      <option value="Pendente">Pendente</option>
+                      <option value="Em andamento">Em andamento</option>
+                      <option value="Concluída">Concluída</option>
+                    </select>
+                  </div>
+                </div>
                 <div class="overflow-auto">
                   <table class="min-w-full text-sm">
                     <thead class="text-left text-slate-500">
@@ -672,150 +688,10 @@
                 </p>
               </div>
             </div>
-            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
+            <div class="mt-6">
               <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
-                <h3 class="text-lg font-semibold mb-4">Cadastrar / editar</h3>
-                <form id="workOrderForm" class="space-y-4">
-                  <div>
-                    <label class="text-sm text-slate-600">Veículo</label>
-                    <select
-                      id="workOrderVehicle"
-                      data-vehicle-select
-                      required
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                    >
-                      <option value="">Selecione um veículo</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label class="text-sm text-slate-600">Condutor</label>
-                    <select
-                      id="workOrderDriver"
-                      data-driver-select
-                      required
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                    >
-                      <option value="">Selecione um condutor</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label class="text-sm text-slate-600">Destino</label>
-                    <input
-                      id="workOrderDestination"
-                      required
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                      placeholder="Destino da missão"
-                    />
-                  </div>
-                  <div>
-                    <label class="text-sm text-slate-600">Descrição</label>
-                    <textarea
-                      id="workOrderDescription"
-                      required
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                      rows="3"
-                      placeholder="Resumo da operação"
-                    ></textarea>
-                  </div>
-                  <div>
-                    <label class="text-sm text-slate-600">Status</label>
-                    <select
-                      id="workOrderStatus"
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                    >
-                      <option value="Aberta">Aberta</option>
-                      <option value="Concluída">Concluída</option>
-                      <option value="Cancelada">Cancelada</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label class="text-sm text-slate-600">Data de saída</label>
-                    <input
-                      id="workOrderDepartureDate"
-                      type="date"
-                      required
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                    />
-                  </div>
-                  <div>
-                    <label class="text-sm text-slate-600">Hora de saída</label>
-                    <input
-                      id="workOrderDepartureTime"
-                      type="time"
-                      required
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                    />
-                  </div>
-                  <div>
-                    <label class="text-sm text-slate-600">Data de chegada prevista</label>
-                    <input
-                      id="workOrderExpectedArrivalDate"
-                      type="date"
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                    />
-                  </div>
-                  <div>
-                    <label class="text-sm text-slate-600">Hora de chegada prevista</label>
-                    <input
-                      id="workOrderExpectedArrivalTime"
-                      type="time"
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                    />
-                  </div>
-                  <div>
-                    <label class="text-sm text-slate-600">Data de chegada real</label>
-                    <input
-                      id="workOrderArrivalDate"
-                      type="date"
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                    />
-                  </div>
-                  <div>
-                    <label class="text-sm text-slate-600">Hora de chegada real</label>
-                    <input
-                      id="workOrderArrivalTime"
-                      type="time"
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                    />
-                  </div>
-                  <div class="flex flex-wrap gap-3">
-                    <button
-                      type="submit"
-                      data-submit
-                      data-default-text="Cadastrar operação"
-                      data-edit-text="Salvar alterações"
-                      class="px-4 py-2 rounded-md bg-accent text-white shadow-sm shadow-blue-500/20 hover:bg-accent-dark transition"
-                    >
-                      Cadastrar operação
-                    </button>
-                    <button
-                      type="button"
-                      data-cancel
-                      class="px-4 py-2 rounded-md border border-slate-200 text-slate-600 hidden"
-                    >
-                      Cancelar edição
-                    </button>
-                  </div>
-                </form>
-              </div>
-              <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm xl:col-span-2">
-                <h3 class="text-lg font-semibold mb-4">Gerenciar operações</h3>
-                <div class="overflow-auto">
-                      <table class="min-w-full text-sm">
-                    <thead class="text-left text-slate-500">
-                      <tr>
-                        <th class="pb-2">Veículo</th>
-                        <th class="pb-2">Condutor</th>
-                        <th class="pb-2">Destino</th>
-                        <th class="pb-2">Saída</th>
-                        <th class="pb-2">Chegada</th>
-                        <th class="pb-2">Status</th>
-                        <th class="pb-2">Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody id="workOrdersTableBody"></tbody>
-                  </table>
-                </div>
+                <h3 class="text-lg font-semibold mb-4">Missões em andamento</h3>
+                <div id="ongoingMissionsPanel" class="grid grid-cols-1 xl:grid-cols-2 gap-4 text-sm text-slate-600"></div>
               </div>
             </div>
           </section>
