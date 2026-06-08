@@ -1,728 +1,585 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PMT Ops</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              accent: "#006CFF",
-              "accent-dark": "#0057D9"
-            }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PMT Ops</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            accent: "#006CFF",
+            "accent-dark": "#0057D9"
           }
         }
-      };
-    </script>
-    <style>
-      
-      body {
-        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
       }
+    };
 
-      .calendar-icon-button {
-        display: inline-flex;
-        height: 2rem;
-        width: 2rem;
-        align-items: center;
-        justify-content: center;
-        border-radius: 9999px;
-        border: 1px solid #dbeafe;
-        background: #ffffff;
-        color: #1d4ed8;
-        font-size: 0;
-        transition: color 150ms ease, border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
-      }
+  </script>
+  <style>
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    }
 
-      .calendar-icon-button:hover {
-        border-color: #006cff;
-        background: #eff6ff;
-        color: #0057d9;
-        box-shadow: 0 1px 6px rgb(37 99 235 / 0.18);
-      }
+    .calendar-icon-button {
+      display: inline-flex;
+      height: 2rem;
+      width: 2rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 9999px;
+      border: 1px solid #dbeafe;
+      background: #ffffff;
+      color: #1d4ed8;
+      font-size: 0;
+      transition: color 150ms ease, border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+    }
 
-      .calendar-icon-button svg {
-        height: 1rem;
-        width: 1rem;
-      }
-    </style>
-  </head>
-  <body class="bg-slate-50 text-slate-900">
-    <div class="min-h-screen flex">
-      <div
-        id="sidebarOverlay"
-        class="fixed inset-0 bg-slate-900/30 hidden z-20 md:hidden"
-      ></div>
-      <aside
-        id="sidebar"
-        class="fixed inset-y-0 left-0 w-72 bg-white border-r border-slate-200 z-30 transform -translate-x-full transition md:translate-x-0 md:static md:inset-auto"
-      >
-        <div class="px-6 py-6 border-b border-slate-200">
-          <div class="flex items-center gap-3">
-            <div
-              class="h-10 w-10 rounded-lg bg-accent text-white flex items-center justify-center font-semibold"
-            >
-              PMT
-            </div>
-            <div>
-              <p class="text-sm text-slate-500">Operações</p>
-              <p class="text-lg font-semibold">Painel PMT</p>
-            </div>
+    .calendar-icon-button:hover {
+      border-color: #006cff;
+      background: #eff6ff;
+      color: #0057d9;
+      box-shadow: 0 1px 6px rgb(37 99 235 / 0.18);
+    }
+
+    .calendar-icon-button svg {
+      height: 1rem;
+      width: 1rem;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-50 text-slate-900">
+  <div class="min-h-screen flex">
+    <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/30 hidden z-20 md:hidden"></div>
+    <aside id="sidebar"
+      class="fixed inset-y-0 left-0 w-72 bg-white border-r border-slate-200 z-30 transform -translate-x-full transition md:translate-x-0 md:static md:inset-auto">
+      <div class="px-6 py-6 border-b border-slate-200">
+        <div class="flex items-center gap-3">
+          <div class="h-10 w-10 rounded-lg bg-accent text-white flex items-center justify-center font-semibold">
+            PMT
+          </div>
+          <div>
+            <p class="text-sm text-slate-500">Operações</p>
+            <p class="text-lg font-semibold">Painel PMT</p>
           </div>
         </div>
-        <nav class="px-4 py-4 space-y-1">
-          <button
-            class="nav-item"
-            data-target="dashboard"
-            data-title="Dashboard"
-          >
-            Dashboard
-          </button>
-          <button class="nav-item" data-target="search" data-title="Pesquisa geral">
-            Pesquisa geral
-          </button>
-          <button class="nav-item" data-target="vehicles" data-title="Veículos">
-            Veículos
-          </button>
-          <button
-            class="nav-item"
-            data-target="drivers"
-            data-title="Condutores"
-          >
-            Condutores
-          </button>
-          
-          <button
-            class="nav-item"
-            data-target="missions"
-            data-title="Missões"
-          >
-            Missões
-          </button>
-          <button
-            class="nav-item"
-            data-target="monthlyCalendar"
-            data-title="Calendário"
-          >
-            Calendário do mês
-          </button>
-          <button
-            class="nav-item"
-            data-target="workOrders"
-            data-title="Operações"
-          >
-            Operações
-          </button>
-        </nav>
-        <div class="px-6 py-6 text-xs text-slate-400">
-          Sistema de operações interno.
-        </div>
-      </aside>
+      </div>
+      <nav class="px-4 py-4 space-y-1">
+        <button class="nav-item" data-target="dashboard" data-title="Dashboard">
+          Dashboard
+        </button>
+        <button class="nav-item" data-target="search" data-title="Pesquisa geral">
+          Pesquisa geral
+        </button>
+        <button class="nav-item" data-target="vehicles" data-title="Veículos">
+          Veículos
+        </button>
+        <button class="nav-item" data-target="drivers" data-title="Condutores">
+          Condutores
+        </button>
 
-      <div class="flex-1 flex flex-col md:ml-0">
-        <header
-          class="flex items-center justify-between px-6 py-4 bg-white border-b border-slate-200 sticky top-0 z-10 cursor-pointer md:cursor-default"
-        >
-          <div class="flex items-center gap-3">
-            <button
-              id="sidebarToggle"
-              class="md:hidden inline-flex items-center justify-center h-10 w-10 rounded-md border border-slate-200"
-              aria-label="Abrir menu"
-            >
-              ☰
+        <button class="nav-item" data-target="missions" data-title="Missões">
+          Missões
+        </button>
+        <button class="nav-item" data-target="monthlyCalendar" data-title="Calendário">
+          Calendário do mês
+        </button>
+        <button class="nav-item" data-target="workOrders" data-title="Operações">
+          Operações
+        </button>
+      </nav>
+      <div class="px-6 py-6 text-xs text-slate-400">
+        Sistema de operações interno.
+      </div>
+    </aside>
+
+    <div class="flex-1 flex flex-col md:ml-0">
+      <header
+        class="flex items-center justify-between px-6 py-4 bg-white border-b border-slate-200 sticky top-0 z-10 cursor-pointer md:cursor-default">
+        <div class="flex items-center gap-3">
+          <button id="sidebarToggle"
+            class="md:hidden inline-flex items-center justify-center h-10 w-10 rounded-md border border-slate-200"
+            aria-label="Abrir menu">
+            ☰
+          </button>
+          <div>
+            <p class="text-sm text-slate-500">PMT</p>
+            <h1 id="pageTitle" class="text-xl font-semibold">Dashboard</h1>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1 p-6 space-y-8">
+        <section id="dashboard" data-section>
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+            <button type="button"
+              class="quick-link bg-white rounded-lg border border-slate-200 p-5 shadow-sm text-left transition hover:border-accent hover:shadow-md"
+              data-target="vehicles">
+              <p class="text-sm text-slate-500">Veículos</p>
+              <p id="countVehicles" class="text-3xl font-semibold text-slate-900 mt-2">0</p>
             </button>
-            <div>
-              <p class="text-sm text-slate-500">PMT</p>
-              <h1 id="pageTitle" class="text-xl font-semibold">Dashboard</h1>
+            <button type="button"
+              class="quick-link bg-white rounded-lg border border-slate-200 p-5 shadow-sm text-left transition hover:border-accent hover:shadow-md"
+              data-target="drivers">
+              <p class="text-sm text-slate-500">Condutores</p>
+              <p id="countDrivers" class="text-3xl font-semibold text-slate-900 mt-2">0</p>
+            </button>
+
+            <button type="button"
+              class="quick-link bg-white rounded-lg border border-slate-200 p-5 shadow-sm text-left transition hover:border-accent hover:shadow-md"
+              data-target="missions">
+              <p class="text-sm text-slate-500">Missões</p>
+              <p id="countMissions" class="text-3xl font-semibold text-slate-900 mt-2">0</p>
+            </button>
+            <button type="button"
+              class="quick-link bg-white rounded-lg border border-slate-200 p-5 shadow-sm text-left transition hover:border-accent hover:shadow-md"
+              data-target="workOrders">
+              <p class="text-sm text-slate-500">Operações</p>
+              <p id="countWorkOrders" class="text-3xl font-semibold text-slate-900 mt-2">0</p>
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
+            <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm xl:col-span-2">
+              <h2 class="text-lg font-semibold mb-4">Indicadores da frota</h2>
+              <div class="space-y-4 text-sm text-slate-600">
+                <div>
+                  <div class="flex items-center justify-between">
+                    <span>Disponibilidade</span>
+                    <span id="fleetAvailabilityPercent" class="font-semibold">0%</span>
+                  </div>
+                  <div class="h-2 mt-2 rounded-full bg-slate-100 overflow-hidden">
+                    <div id="fleetAvailabilityBar" class="h-full bg-accent rounded-full" style="width: 0%"></div>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 text-xs">
+                  <div class="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2">
+                    <span>Disponíveis</span>
+                    <span id="fleetAvailable" class="font-semibold">0</span>
+                  </div>
+                  <div class="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2">
+                    <span>Disponível (restrição)</span>
+                    <span id="fleetInService" class="font-semibold">0</span>
+                  </div>
+
+                  <div class="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2">
+                    <span>Outros</span>
+                    <span id="fleetInactive" class="font-semibold">0</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </header>
 
-        <main class="flex-1 p-6 space-y-8">
-          <section id="dashboard" data-section>
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
-              <button type="button" class="quick-link bg-white rounded-lg border border-slate-200 p-5 shadow-sm text-left transition hover:border-accent hover:shadow-md" data-target="vehicles">
-                <p class="text-sm text-slate-500">Veículos</p>
-                <p id="countVehicles" class="text-3xl font-semibold text-slate-900 mt-2">0</p>
-              </button>
-              <button type="button" class="quick-link bg-white rounded-lg border border-slate-200 p-5 shadow-sm text-left transition hover:border-accent hover:shadow-md" data-target="drivers">
-                <p class="text-sm text-slate-500">Condutores</p>
-                <p id="countDrivers" class="text-3xl font-semibold text-slate-900 mt-2">0</p>
-              </button>
-              
-              <button type="button" class="quick-link bg-white rounded-lg border border-slate-200 p-5 shadow-sm text-left transition hover:border-accent hover:shadow-md" data-target="missions">
-                <p class="text-sm text-slate-500">Missões</p>
-                <p id="countMissions" class="text-3xl font-semibold text-slate-900 mt-2">0</p>
-              </button>
-              <button type="button" class="quick-link bg-white rounded-lg border border-slate-200 p-5 shadow-sm text-left transition hover:border-accent hover:shadow-md" data-target="workOrders">
-                <p class="text-sm text-slate-500">Operações</p>
-                <p id="countWorkOrders" class="text-3xl font-semibold text-slate-900 mt-2">0</p>
-              </button>
-            </div>
-
-            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
-              <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm xl:col-span-2">
-                <h2 class="text-lg font-semibold mb-4">Indicadores da frota</h2>
-                <div class="space-y-4 text-sm text-slate-600">
-                  <div>
-                    <div class="flex items-center justify-between">
-                      <span>Disponibilidade</span>
-                      <span id="fleetAvailabilityPercent" class="font-semibold">0%</span>
-                    </div>
-                    <div class="h-2 mt-2 rounded-full bg-slate-100 overflow-hidden">
-                      <div
-                        id="fleetAvailabilityBar"
-                        class="h-full bg-accent rounded-full"
-                        style="width: 0%"
-                      ></div>
-                    </div>
-                  </div>
-                  <div class="grid grid-cols-2 gap-3 text-xs">
-                    <div class="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2">
-                      <span>Disponíveis</span>
-                      <span id="fleetAvailable" class="font-semibold">0</span>
-                    </div>
-                    <div class="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2">
-                      <span>Disponível (restrição)</span>
-                      <span id="fleetInService" class="font-semibold">0</span>
-                    </div>
-                    
-                    <div class="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2">
-                      <span>Outros</span>
-                      <span id="fleetInactive" class="font-semibold">0</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm mt-6">
-              <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
-                <div>
-                  <h2 id="missionWeeklyTitle" class="text-lg font-semibold">Missões da semana</h2>
-                  <p id="missionWeeklySummary" class="text-sm text-slate-500"></p>
-                </div>
-                <div class="flex flex-wrap items-center gap-2">
-                  <button
-                    id="missionWeeklyPrev"
-                    type="button"
-                    class="calendar-icon-button"
-                    aria-label="Semana anterior"
-                    title="Semana anterior"
-                  >
-                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="m15 18-6-6 6-6" />
-                    </svg>
-                    Semana anterior
-                  </button>
-                  <button
-                    id="missionWeeklyToday"
-                    type="button"
-                    class="calendar-icon-button"
-                    aria-label="Semana atual"
-                    title="Semana atual"
-                  >
-                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M8 2v4" />
-                      <path d="M16 2v4" />
-                      <rect width="18" height="18" x="3" y="4" rx="2" />
-                      <path d="M3 10h18" />
-                    </svg>
-                    Semana atual
-                  </button>
-                  <button
-                    id="missionWeeklyNext"
-                    type="button"
-                    class="calendar-icon-button"
-                    aria-label="Proxima semana"
-                    title="Proxima semana"
-                  >
-                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="m9 18 6-6-6-6" />
-                    </svg>
-                    Próxima semana
-                  </button>
-                </div>
-              </div>
-              <div id="missionWeekly" class="grid grid-cols-7 gap-2 text-[11px] text-slate-500 bg-slate-50/70 p-3 rounded-lg"></div>
-            </div>
-
-
-            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
-              <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
-                <h2 class="text-lg font-semibold mb-4">Últimas operações</h2>
-                <div id="latestWorkOrders" class="space-y-3 text-sm text-slate-600"></div>
-              </div>
-              
-            </div>
-          </section>
-
-          <!-- Calendário do mês -->
-          <section id="monthlyCalendar" data-section class="hidden">
-            <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
-              <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
-                <div>
-                  <h2 id="missionCalendarTitle" class="text-lg font-semibold">Missões do mês</h2>
-                  <p id="missionCalendarSummary" class="text-sm text-slate-500"></p>
-                </div>
-                <div class="flex flex-wrap items-center gap-2">
-                  <button
-                    id="missionCalendarPrev"
-                    type="button"
-                    class="calendar-icon-button"
-                    aria-label="Mes anterior"
-                    title="Mes anterior"
-                  >
-                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="m15 18-6-6 6-6" />
-                    </svg>
-                    Mês anterior
-                  </button>
-                  <button
-                    id="missionCalendarToday"
-                    type="button"
-                    class="calendar-icon-button"
-                    aria-label="Mes atual"
-                    title="Mes atual"
-                  >
-                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M8 2v4" />
-                      <path d="M16 2v4" />
-                      <rect width="18" height="18" x="3" y="4" rx="2" />
-                      <path d="M3 10h18" />
-                    </svg>
-                    Mês atual
-                  </button>
-                  <button
-                    id="missionCalendarNext"
-                    type="button"
-                    class="calendar-icon-button"
-                    aria-label="Proximo mes"
-                    title="Proximo mes"
-                  >
-                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="m9 18 6-6-6-6" />
-                    </svg>
-                    Próximo mês
-                  </button>
-                </div>
-              </div>
-              <div id="missionCalendar" class="grid grid-cols-7 gap-2 text-[11px] text-slate-500 bg-slate-50/70 p-3 rounded-lg"></div>
-            </div>
-          </section>
-
-          <section id="search" data-section class="hidden">
-            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
+          <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm mt-6">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
               <div>
-                <h2 class="text-2xl font-semibold">Pesquisa geral</h2>
-                <p class="text-sm text-slate-500">
-                  Filtre e pesquise dados gerais do sistema.
-                </p>
+                <h2 id="missionWeeklyTitle" class="text-lg font-semibold">Missões da semana</h2>
+                <p id="missionWeeklySummary" class="text-sm text-slate-500"></p>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <button id="missionWeeklyPrev" type="button" class="calendar-icon-button" aria-label="Semana anterior"
+                  title="Semana anterior">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m15 18-6-6 6-6" />
+                  </svg>
+                  Semana anterior
+                </button>
+                <button id="missionWeeklyToday" type="button" class="calendar-icon-button" aria-label="Semana atual"
+                  title="Semana atual">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M8 2v4" />
+                    <path d="M16 2v4" />
+                    <rect width="18" height="18" x="3" y="4" rx="2" />
+                    <path d="M3 10h18" />
+                  </svg>
+                  Semana atual
+                </button>
+                <button id="missionWeeklyNext" type="button" class="calendar-icon-button" aria-label="Proxima semana"
+                  title="Proxima semana">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m9 18 6-6-6-6" />
+                  </svg>
+                  Próxima semana
+                </button>
               </div>
             </div>
+            <div id="missionWeekly"
+              class="grid grid-cols-7 gap-2 text-[11px] text-slate-500 bg-slate-50/70 p-3 rounded-lg"></div>
+          </div>
 
-            <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm mt-6">
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
+            <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
+              <h2 class="text-lg font-semibold mb-4">Últimas operações</h2>
+              <div id="latestWorkOrders" class="space-y-3 text-sm text-slate-600"></div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- Calendário do mês -->
+        <section id="monthlyCalendar" data-section class="hidden">
+          <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
+              <div>
+                <h2 id="missionCalendarTitle" class="text-lg font-semibold">Missões do mês</h2>
+                <p id="missionCalendarSummary" class="text-sm text-slate-500"></p>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <button id="missionCalendarPrev" type="button" class="calendar-icon-button" aria-label="Mes anterior"
+                  title="Mes anterior">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m15 18-6-6 6-6" />
+                  </svg>
+                  Mês anterior
+                </button>
+                <button id="missionCalendarToday" type="button" class="calendar-icon-button" aria-label="Mes atual"
+                  title="Mes atual">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M8 2v4" />
+                    <path d="M16 2v4" />
+                    <rect width="18" height="18" x="3" y="4" rx="2" />
+                    <path d="M3 10h18" />
+                  </svg>
+                  Mês atual
+                </button>
+                <button id="missionCalendarNext" type="button" class="calendar-icon-button" aria-label="Proximo mes"
+                  title="Proximo mes">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m9 18 6-6-6-6" />
+                  </svg>
+                  Próximo mês
+                </button>
+              </div>
+            </div>
+            <div id="missionCalendar"
+              class="grid grid-cols-7 gap-2 text-[11px] text-slate-500 bg-slate-50/70 p-3 rounded-lg"></div>
+          </div>
+        </section>
+
+        <section id="search" data-section class="hidden">
+          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
+            <div>
+              <h2 class="text-2xl font-semibold">Pesquisa geral</h2>
+              <p class="text-sm text-slate-500">
+                Filtre e pesquise dados gerais do sistema.
+              </p>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm mt-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="text-sm text-slate-600">Pesquisar</label>
+                <input id="generalSearchInput" class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                  placeholder="Digite para pesquisar" />
+              </div>
+              <div>
+                <label class="text-sm text-slate-600">Tipo de dado</label>
+                <select id="generalSearchType" class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2">
+                  <option value="all">Todos</option>
+                  <option value="vehicles">Veículos</option>
+                  <option value="drivers">Condutores</option>
+
+                  <option value="missions">Missões</option>
+                  <option value="workOrders">Operações</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-sm text-slate-600">Status</label>
+                <select id="generalSearchStatus" class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2">
+                  <option value="all">Todos</option>
+                </select>
+              </div>
+            </div>
+            <p id="generalSearchSummary" class="text-xs text-slate-500 mt-4"></p>
+          </div>
+
+          <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm mt-6">
+            <h3 class="text-lg font-semibold mb-4">Resultados</h3>
+            <div id="generalSearchResults" class="space-y-3 text-sm text-slate-600"></div>
+          </div>
+        </section>
+        <section id="vehicles" data-section class="hidden">
+          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
+            <div>
+              <h2 class="text-2xl font-semibold">Veículos</h2>
+              <p class="text-sm text-slate-500">
+                Cadastre e gerencie veículos do PMT.
+              </p>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
+            <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+              <h3 class="text-lg font-semibold mb-4">Cadastrar / editar</h3>
+              <form id="vehicleForm" class="space-y-4">
                 <div>
-                  <label class="text-sm text-slate-600">Pesquisar</label>
-                  <input
-                    id="generalSearchInput"
-                    class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                    placeholder="Digite para pesquisar"
-                  />
+                  <label class="text-sm text-slate-600">EB</label>
+                  <input id="vehicleEB" required class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                    placeholder="EB-1234" />
                 </div>
                 <div>
-                  <label class="text-sm text-slate-600">Tipo de dado</label>
-                  <select
-                    id="generalSearchType"
-                    class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                  >
-                    <option value="all">Todos</option>
-                    <option value="vehicles">Veículos</option>
-                    <option value="drivers">Condutores</option>
-                    
-                    <option value="missions">Missões</option>
-                    <option value="workOrders">Operações</option>
+                  <label class="text-sm text-slate-600">Modelo</label>
+                  <input id="vehicleModel" required class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                    placeholder="Modelo do veículo" />
+                </div>
+                <!-- Year and odometer removed per spec -->
+                <div>
+                  <label class="text-sm text-slate-600">Status da viatura</label>
+                  <select id="vehicleStatus" class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2">
+                    <option value="Disponível">Disponível</option>
+                    <option value="Disponível (restrição)">Disponível (restrição)</option>
+                    <option value="Indisponível">Indisponível</option>
                   </select>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                  <button type="submit" data-submit data-default-text="Cadastrar veículo"
+                    data-edit-text="Salvar alterações"
+                    class="px-4 py-2 rounded-md bg-accent text-white shadow-sm shadow-blue-500/20 hover:bg-accent-dark transition">
+                    Cadastrar veículo
+                  </button>
+                  <button type="button" data-cancel
+                    class="px-4 py-2 rounded-md border border-slate-200 text-slate-600 hidden">
+                    Cancelar edição
+                  </button>
+                </div>
+              </form>
+            </div>
+            <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm xl:col-span-2">
+              <h3 class="text-lg font-semibold mb-4">Gerenciar veículos</h3>
+              <div class="overflow-auto">
+                <table class="min-w-full text-sm">
+                  <thead class="text-left text-slate-500">
+                    <tr>
+                      <th class="pb-2">EB</th>
+                      <th class="pb-2">Modelo</th>
+                      <th class="pb-2">Status da viatura</th>
+                      <th class="pb-2">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody id="vehiclesTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm mt-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+              <h3 class="text-lg font-semibold">Histórico do veículo</h3>
+              <select id="vehicleHistorySelect" data-vehicle-select
+                class="w-full md:w-72 rounded-md border border-slate-200 px-3 py-2 text-sm">
+                <option value="">Selecione um veículo</option>
+              </select>
+            </div>
+            <div id="vehicleHistoryList" class="space-y-3 text-sm text-slate-600"></div>
+          </div>
+        </section>
+
+        <section id="drivers" data-section class="hidden">
+          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
+            <div>
+              <h2 class="text-2xl font-semibold">Condutores</h2>
+              <p class="text-sm text-slate-500">
+                Cadastre e gerencie condutores.
+              </p>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
+            <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+              <h3 class="text-lg font-semibold mb-4">Cadastrar / editar</h3>
+              <form id="driverForm" class="space-y-4">
+                <div>
+                  <label class="text-sm text-slate-600">Cargo</label>
+                  <input id="driverRole" required class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                    placeholder="Cargo militar" />
+                </div>
+                <div>
+                  <label class="text-sm text-slate-600">Nome</label>
+                  <input id="driverName" required class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                    placeholder="Nome do condutor" />
+                </div>
+                <div>
+                  <label class="text-sm text-slate-600">Telefone</label>
+                  <input id="driverPhone" class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                    placeholder="(00) 00000-0000" />
+                </div>
+
+                <div class="flex flex-wrap gap-3">
+                  <button type="submit" data-submit data-default-text="Cadastrar condutor"
+                    data-edit-text="Salvar alterações"
+                    class="px-4 py-2 rounded-md bg-accent text-white shadow-sm shadow-blue-500/20 hover:bg-accent-dark transition">
+                    Cadastrar condutor
+                  </button>
+                  <button type="button" data-cancel
+                    class="px-4 py-2 rounded-md border border-slate-200 text-slate-600 hidden">
+                    Cancelar edição
+                  </button>
+                </div>
+              </form>
+            </div>
+            <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm xl:col-span-2">
+              <h3 class="text-lg font-semibold mb-4">Gerenciar condutores</h3>
+              <div class="overflow-auto">
+                <table class="min-w-full text-sm">
+                  <thead class="text-left text-slate-500">
+                    <tr>
+                      <th class="pb-2">Condutor</th>
+                      <th class="pb-2">Telefone</th>
+                      <th class="pb-2">Situação</th>
+                      <th class="pb-2">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody id="driversTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm mt-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+              <h3 class="text-lg font-semibold">Histórico do condutor</h3>
+              <select id="driverHistorySelect" data-driver-select
+                class="w-full md:w-72 rounded-md border border-slate-200 px-3 py-2 text-sm">
+                <option value="">Selecione um condutor</option>
+              </select>
+            </div>
+            <div id="driverHistoryList" class="space-y-3 text-sm text-slate-600"></div>
+          </div>
+        </section>
+
+        <section id="missions" data-section class="hidden">
+          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
+            <div>
+              <h2 class="text-2xl font-semibold">Missões</h2>
+              <p class="text-sm text-slate-500">
+                Cadastre, acompanhe e conclua missões planejadas.
+              </p>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
+            <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+              <h3 class="text-lg font-semibold mb-4">Cadastrar / editar</h3>
+              <form id="missionForm" class="space-y-4">
+                <div>
+                  <label class="text-sm text-slate-600">Missão</label>
+                  <input id="missionTitle" required class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                    placeholder="Nome da missão" />
+                </div>
+                <div>
+                  <label class="text-sm text-slate-600">Local</label>
+                  <input id="missionLocation" class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                    placeholder="Local da missão" />
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="text-sm text-slate-600">Data</label>
+                    <input id="missionDate" type="date" required
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2" />
+                  </div>
+                  <div>
+                    <label class="text-sm text-slate-600">Hora</label>
+                    <input id="missionTime" type="time"
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2" />
+                  </div>
                 </div>
                 <div>
                   <label class="text-sm text-slate-600">Status</label>
-                  <select
-                    id="generalSearchStatus"
-                    class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                  >
+                  <select id="missionStatus" class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2">
+                    <option value="Pendente">Pendente</option>
+                    <option value="Em andamento">Em andamento</option>
+                    <option value="Concluída">Concluída</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="text-sm text-slate-600">Observações</label>
+                  <textarea id="missionNotes" class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2" rows="3"
+                    placeholder="Detalhes importantes"></textarea>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                  <button type="submit" data-submit data-default-text="Cadastrar missão"
+                    data-edit-text="Salvar alterações"
+                    class="px-4 py-2 rounded-md bg-accent text-white shadow-sm shadow-blue-500/20 hover:bg-accent-dark transition">
+                    Cadastrar missão
+                  </button>
+                  <button type="button" data-cancel
+                    class="px-4 py-2 rounded-md border border-slate-200 text-slate-600 hidden">
+                    Cancelar edição
+                  </button>
+                </div>
+              </form>
+            </div>
+            <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm xl:col-span-2">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+                <h3 class="text-lg font-semibold">Lista de missões</h3>
+                <div class="flex items-center gap-2">
+                  <label for="missionStatusFilter" class="text-sm text-slate-600">Status</label>
+                  <select id="missionStatusFilter" class="w-48 rounded-md border border-slate-200 px-3 py-2 text-sm">
                     <option value="all">Todos</option>
+                    <option value="Pendente">Pendente</option>
+                    <option value="Em andamento">Em andamento</option>
+                    <option value="Concluída">Concluída</option>
                   </select>
                 </div>
               </div>
-              <p id="generalSearchSummary" class="text-xs text-slate-500 mt-4"></p>
-            </div>
-
-            <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm mt-6">
-              <h3 class="text-lg font-semibold mb-4">Resultados</h3>
-              <div id="generalSearchResults" class="space-y-3 text-sm text-slate-600"></div>
-            </div>
-          </section>
-
-          <section id="vehicles" data-section class="hidden">
-            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
-              <div>
-                <h2 class="text-2xl font-semibold">Veículos</h2>
-                <p class="text-sm text-slate-500">
-                  Cadastre e gerencie veículos do PMT.
-                </p>
+              <div class="overflow-auto">
+                <table class="min-w-full text-sm">
+                  <thead class="text-left text-slate-500">
+                    <tr>
+                      <th class="pb-2">Missão</th>
+                      <th class="pb-2">Local</th>
+                      <th class="pb-2">Data</th>
+                      <th class="pb-2">Status</th>
+                      <th class="pb-2">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody id="missionsTableBody"></tbody>
+                </table>
               </div>
             </div>
-            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
-              <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
-                <h3 class="text-lg font-semibold mb-4">Cadastrar / editar</h3>
-                <form id="vehicleForm" class="space-y-4">
-                  <div>
-                    <label class="text-sm text-slate-600">EB</label>
-                    <input
-                      id="vehicleEB"
-                      required
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                      placeholder="EB-1234"
-                    />
-                  </div>
-                  <div>
-                    <label class="text-sm text-slate-600">Modelo</label>
-                    <input
-                      id="vehicleModel"
-                      required
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                      placeholder="Modelo do veículo"
-                    />
-                  </div>
-                  <!-- Year and odometer removed per spec -->
-                  <div>
-                    <label class="text-sm text-slate-600">Status da viatura</label>
-                    <select
-                      id="vehicleStatus"
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                    >
-                      <option value="Disponível">Disponível</option>
-                      <option value="Disponível (restrição)">Disponível (restrição)</option>
-                      <option value="Indisponível">Indisponível</option>
-                    </select>
-                  </div>
-                  <div class="flex flex-wrap gap-3">
-                    <button
-                      type="submit"
-                      data-submit
-                      data-default-text="Cadastrar veículo"
-                      data-edit-text="Salvar alterações"
-                      class="px-4 py-2 rounded-md bg-accent text-white shadow-sm shadow-blue-500/20 hover:bg-accent-dark transition"
-                    >
-                      Cadastrar veículo
-                    </button>
-                    <button
-                      type="button"
-                      data-cancel
-                      class="px-4 py-2 rounded-md border border-slate-200 text-slate-600 hidden"
-                    >
-                      Cancelar edição
-                    </button>
-                  </div>
-                </form>
-              </div>
-              <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm xl:col-span-2">
-                <h3 class="text-lg font-semibold mb-4">Gerenciar veículos</h3>
-                <div class="overflow-auto">
-                  <table class="min-w-full text-sm">
-                    <thead class="text-left text-slate-500">
-                      <tr>
-                        <th class="pb-2">EB</th>
-                        <th class="pb-2">Modelo</th>
-                        <th class="pb-2">Status da viatura</th>
-                        <th class="pb-2">Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody id="vehiclesTableBody"></tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-            <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm mt-6">
-              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-                <h3 class="text-lg font-semibold">Histórico do veículo</h3>
-                <select
-                  id="vehicleHistorySelect"
-                  data-vehicle-select
-                  class="w-full md:w-72 rounded-md border border-slate-200 px-3 py-2 text-sm"
-                >
-                  <option value="">Selecione um veículo</option>
-                </select>
-              </div>
-              <div id="vehicleHistoryList" class="space-y-3 text-sm text-slate-600"></div>
-            </div>
-          </section>
-
-          <section id="drivers" data-section class="hidden">
-            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
-              <div>
-                <h2 class="text-2xl font-semibold">Condutores</h2>
-                <p class="text-sm text-slate-500">
-                  Cadastre e gerencie condutores.
-                </p>
-              </div>
-            </div>
-            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
-              <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
-                <h3 class="text-lg font-semibold mb-4">Cadastrar / editar</h3>
-                <form id="driverForm" class="space-y-4">
-                  <div>
-                    <label class="text-sm text-slate-600">Cargo</label>
-                    <input
-                      id="driverRole"
-                      required
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                      placeholder="Cargo militar"
-                    />
-                  </div>
-                  <div>
-                    <label class="text-sm text-slate-600">Nome</label>
-                    <input
-                      id="driverName"
-                      required
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                      placeholder="Nome do condutor"
-                    />
-                  </div>
-                  <div>
-                    <label class="text-sm text-slate-600">Telefone</label>
-                    <input
-                      id="driverPhone"
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                      placeholder="(00) 00000-0000"
-                    />
-                  </div>
-
-                  <div class="flex flex-wrap gap-3">
-                    <button
-                      type="submit"
-                      data-submit
-                      data-default-text="Cadastrar condutor"
-                      data-edit-text="Salvar alterações"
-                      class="px-4 py-2 rounded-md bg-accent text-white shadow-sm shadow-blue-500/20 hover:bg-accent-dark transition"
-                    >
-                      Cadastrar condutor
-                    </button>
-                    <button
-                      type="button"
-                      data-cancel
-                      class="px-4 py-2 rounded-md border border-slate-200 text-slate-600 hidden"
-                    >
-                      Cancelar edição
-                    </button>
-                  </div>
-                </form>
-              </div>
-              <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm xl:col-span-2">
-                <h3 class="text-lg font-semibold mb-4">Gerenciar condutores</h3>
-                <div class="overflow-auto">
-                      <table class="min-w-full text-sm">
-                    <thead class="text-left text-slate-500">
-                      <tr>
-                        <th class="pb-2">Condutor</th>
-                        <th class="pb-2">Telefone</th>
-                        <th class="pb-2">Situação</th>
-                        <th class="pb-2">Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody id="driversTableBody"></tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-            <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm mt-6">
-              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-                <h3 class="text-lg font-semibold">Histórico do condutor</h3>
-                <select
-                  id="driverHistorySelect"
-                  data-driver-select
-                  class="w-full md:w-72 rounded-md border border-slate-200 px-3 py-2 text-sm"
-                >
-                  <option value="">Selecione um condutor</option>
-                </select>
-              </div>
-              <div id="driverHistoryList" class="space-y-3 text-sm text-slate-600"></div>
-            </div>
-          </section>
-
-          
-
-          <section id="missions" data-section class="hidden">
-            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
-              <div>
-                <h2 class="text-2xl font-semibold">Missões</h2>
-                <p class="text-sm text-slate-500">
-                  Cadastre, acompanhe e conclua missões planejadas.
-                </p>
-              </div>
-            </div>
-            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
-              <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
-                <h3 class="text-lg font-semibold mb-4">Cadastrar / editar</h3>
-                <form id="missionForm" class="space-y-4">
-                  <div>
-                    <label class="text-sm text-slate-600">Missão</label>
-                    <input
-                      id="missionTitle"
-                      required
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                      placeholder="Nome da missão"
-                    />
-                  </div>
-                  <div>
-                    <label class="text-sm text-slate-600">Local</label>
-                    <input
-                      id="missionLocation"
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                      placeholder="Local da missão"
-                    />
-                  </div>
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label class="text-sm text-slate-600">Data</label>
-                      <input
-                        id="missionDate"
-                        type="date"
-                        required
-                        class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                      />
-                    </div>
-                    <div>
-                      <label class="text-sm text-slate-600">Hora</label>
-                      <input
-                        id="missionTime"
-                        type="time"
-                        class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label class="text-sm text-slate-600">Status</label>
-                    <select
-                      id="missionStatus"
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                    >
-                      <option value="Pendente">Pendente</option>
-                      <option value="Em andamento">Em andamento</option>
-                      <option value="Concluída">Concluída</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label class="text-sm text-slate-600">Observações</label>
-                    <textarea
-                      id="missionNotes"
-                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                      rows="3"
-                      placeholder="Detalhes importantes"
-                    ></textarea>
-                  </div>
-                  <div class="flex flex-wrap gap-3">
-                    <button
-                      type="submit"
-                      data-submit
-                      data-default-text="Cadastrar missão"
-                      data-edit-text="Salvar alterações"
-                      class="px-4 py-2 rounded-md bg-accent text-white shadow-sm shadow-blue-500/20 hover:bg-accent-dark transition"
-                    >
-                      Cadastrar missão
-                    </button>
-                    <button
-                      type="button"
-                      data-cancel
-                      class="px-4 py-2 rounded-md border border-slate-200 text-slate-600 hidden"
-                    >
-                      Cancelar edição
-                    </button>
-                  </div>
-                </form>
-              </div>
-              <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm xl:col-span-2">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-                  <h3 class="text-lg font-semibold">Lista de missões</h3>
-                  <div class="flex items-center gap-2">
-                    <label for="missionStatusFilter" class="text-sm text-slate-600">Status</label>
-                    <select
-                      id="missionStatusFilter"
-                      class="w-48 rounded-md border border-slate-200 px-3 py-2 text-sm"
-                    >
-                      <option value="all">Todos</option>
-                      <option value="Pendente">Pendente</option>
-                      <option value="Em andamento">Em andamento</option>
-                      <option value="Concluída">Concluída</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="overflow-auto">
-                  <table class="min-w-full text-sm">
-                    <thead class="text-left text-slate-500">
-                      <tr>
-                        <th class="pb-2">Missão</th>
-                        <th class="pb-2">Local</th>
-                        <th class="pb-2">Data</th>
-                        <th class="pb-2">Status</th>
-                        <th class="pb-2">Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody id="missionsTableBody"></tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section id="workOrders" data-section class="hidden">
-            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
-              <div>
-                <h2 class="text-2xl font-semibold">Operações</h2>
-                <p class="text-sm text-slate-500">
-                  Abra e acompanhe operações.
-                </p>
-              </div>
-            </div>
-            <div class="mt-6">
-              <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
-                <h3 class="text-lg font-semibold mb-4">Missões em andamento</h3>
-                <div id="ongoingMissionsPanel" class="grid grid-cols-1 xl:grid-cols-2 gap-4 text-sm text-slate-600"></div>
-              </div>
-            </div>
-          </section>
-        </main>
-      </div>
-    </div>
-
-    <div
-      id="missionCalendarModal"
-      class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-900/60 px-4 py-6"
-      aria-hidden="true"
-    >
-      <div class="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-2xl max-h-[85vh] overflow-hidden flex flex-col">
-        <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
-          <div>
-            <h3 id="missionCalendarModalTitle" class="text-lg font-semibold text-slate-900">Missões do dia</h3>
-            <p id="missionCalendarModalSummary" class="text-sm text-slate-500"></p>
           </div>
-          <button
-            id="missionCalendarModalClose"
-            type="button"
-            class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-accent hover:text-accent"
-            aria-label="Fechar popup"
-          >
-            ✕
-          </button>
-        </div>
-        <div id="missionCalendarModalList" class="space-y-3 overflow-auto px-5 py-5 text-sm text-slate-600"></div>
-      </div>
-    </div>
+        </section>
 
-    <script type="module" src="./app.js"></script>
-  </body>
+        <section id="workOrders" data-section class="hidden">
+          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
+            <div>
+              <h2 class="text-2xl font-semibold">Operações</h2>
+              <p class="text-sm text-slate-500">
+                Abra e acompanhe operações.
+              </p>
+            </div>
+          </div>
+          <div class="mt-6">
+            <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+              <h3 class="text-lg font-semibold mb-4">Missões em andamento</h3>
+              <div id="ongoingMissionsPanel" class="grid grid-cols-1 xl:grid-cols-2 gap-4 text-sm text-slate-600"></div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div id="missionCalendarModal" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-900/60 px-4 py-6"
+    aria-hidden="true">
+    <div
+      class="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-2xl max-h-[85vh] overflow-hidden flex flex-col">
+      <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+        <div>
+          <h3 id="missionCalendarModalTitle" class="text-lg font-semibold text-slate-900">Missões do dia</h3>
+          <p id="missionCalendarModalSummary" class="text-sm text-slate-500"></p>
+        </div>
+        <button id="missionCalendarModalClose" type="button"
+          class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-accent hover:text-accent"
+          aria-label="Fechar popup">
+          ✕
+        </button>
+      </div>
+      <div id="missionCalendarModalList" class="space-y-3 overflow-auto px-5 py-5 text-sm text-slate-600"></div>
+    </div>
+  </div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+
 </html>

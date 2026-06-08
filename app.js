@@ -120,16 +120,16 @@ function isDriverOnMission(driverId) {
 
 function isVehicleAvailableForScheduling(vehicleId, proposedDepartureDate, proposedDepartureTime) {
   const openOrders = state.workOrders.filter((order) => order.vehicleId === vehicleId && isWorkOrderOpen(order));
-  
+
   if (!openOrders.length) return { available: true };
-  
+
   const proposedDateTime = toTimestamp(proposedDepartureDate, proposedDepartureTime);
   const conflicts = [];
-  
+
   openOrders.forEach((order) => {
     const expectedReturnDateTime = toTimestamp(order.expectedArrivalDate, order.expectedArrivalTime);
     const departureDateTime = toTimestamp(order.departureDate, order.departureTime);
-    
+
     if (!expectedReturnDateTime) {
       conflicts.push({
         order,
@@ -142,7 +142,7 @@ function isVehicleAvailableForScheduling(vehicleId, proposedDepartureDate, propo
       });
     }
   });
-  
+
   return { available: conflicts.length === 0, conflicts };
 }
 
@@ -851,7 +851,7 @@ function renderMissionCalendar() {
     workOrdersByDate.set(order.departureDate, list);
   });
 
-  
+
   if (title) {
     title.textContent = `Missões de ${monthName}`;
   }
@@ -975,7 +975,7 @@ const statusOptionsByType = {
     { value: "Ocioso", label: "Ocioso" },
     { value: "Indisponível", label: "Indisponível" }
   ],
-  
+
   missions: [
     { value: "all", label: "Todos" },
     { value: "Pendente", label: "Pendente" },
@@ -1032,7 +1032,7 @@ function buildSearchItems() {
     });
   });
 
-  
+
 
   state.missions.forEach((mission) => {
     const details = [mission.location, formatDateTime(formatDate(mission.date), mission.time), mission.notes]
@@ -1393,7 +1393,7 @@ workOrderForm?.addEventListener("submit", async (event) => {
   const departureDate = document.getElementById("workOrderDepartureDate").value;
   const departureTime = document.getElementById("workOrderDepartureTime").value;
   const editId = workOrderForm.dataset.editId;
-  
+
   if (!editId) {
     const availabilityCheck = isVehicleAvailableForScheduling(vehicleId, departureDate, departureTime);
     if (!availabilityCheck.available && availabilityCheck.conflicts.length > 0) {
@@ -1406,7 +1406,7 @@ workOrderForm?.addEventListener("submit", async (event) => {
       if (!proceedAnyway) return;
     }
   }
-  
+
   const payload = {
     vehicleId: vehicleId,
     driverId: document.getElementById("workOrderDriver").value,
@@ -1420,7 +1420,7 @@ workOrderForm?.addEventListener("submit", async (event) => {
     arrivalDate: document.getElementById("workOrderArrivalDate").value,
     arrivalTime: document.getElementById("workOrderArrivalTime").value
   };
-  
+
   if (editId) {
     await update(ref(db, `workOrders/${editId}`), { ...payload, updatedAt: Date.now() });
     setFormMode(workOrderForm, false);
