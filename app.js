@@ -929,7 +929,7 @@ function updateDashboard() {
     fleetInService.textContent = String(availableRestricted);
   }
   if (fleetInactive) {
-    fleetInactive.textContent = String(0);
+    fleetInactive.textContent = String(unavailableVehicles);
   }
 
   const latestWorkOrders = document.getElementById("latestWorkOrders");
@@ -958,6 +958,7 @@ function updateDashboard() {
     }).join("");
   }
 
+  renderMissionWeekly();
   renderMissionCalendar();
 }
 
