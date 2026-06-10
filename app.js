@@ -192,6 +192,20 @@ function toTimestamp(dateValue, timeValue) {
   return null;
 }
 
+function getWorkOrderTimestamp(order) {
+  return order?.createdAt
+    || toTimestamp(order?.departureDate, order?.departureTime)
+    || order?.updatedAt
+    || 0;
+}
+
+function getMissionOperationTimestamp(mission) {
+  return toTimestamp(mission?.date, mission?.time)
+    || mission?.updatedAt
+    || mission?.createdAt
+    || 0;
+}
+
 function renderTimeline(container, events, emptyMessage) {
   if (!container) return;
   if (!events.length) {
@@ -450,7 +464,7 @@ function renderOngoingMissionsPanel() {
     .filter(isMissionInProgress)
     .sort((a, b) => (toTimestamp(a.date, a.time) || 0) - (toTimestamp(b.date, b.time) || 0));
   if (!ongoingMissions.length) {
-    container.innerHTML = '<p class="text-slate-500">Nenhuma missão em andamento.</p>';
+    container.innerHTML = '<p class="text-slate-500">Nenhuma operação em andamento.</p>';
     return;
   }
   const vehicleOptions = ['<option value="">Selecione um veículo</option>']
@@ -469,7 +483,7 @@ function renderOngoingMissionsPanel() {
       return `<div class="rounded-md border border-slate-100 p-4 bg-white">
         <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
           <div>
-            <p class="font-medium text-slate-900">${mission.title || "Missão"}</p>
+            <p class="font-medium text-slate-900">${mission.title || "Operação"}</p>
             <p class="text-xs text-slate-500">${dateLabel} • ${locationLabel}</p>
             ${notesLabel}
           </div>
@@ -896,10 +910,11 @@ function renderMissionCalendar() {
 }
 
 function updateDashboard() {
+  const ongoingMissions = state.missions.filter(isMissionInProgress);
   document.getElementById("countVehicles").textContent = String(state.vehicles.length);
   document.getElementById("countDrivers").textContent = String(state.drivers.length);
   document.getElementById("countMissions").textContent = String(state.missions.length);
-  document.getElementById("countWorkOrders").textContent = String(state.workOrders.length);
+  document.getElementById("countWorkOrders").textContent = String(ongoingMissions.length);
 
   const totalVehicles = state.vehicles.length;
   const availableVehicles = state.vehicles.filter((vehicle) => vehicle.status === "Disponível").length;
@@ -933,29 +948,31 @@ function updateDashboard() {
   }
 
   const latestWorkOrders = document.getElementById("latestWorkOrders");
-  const sortedOrders = [...state.workOrders].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  if (latestWorkOrders) {
+    const sortedMissions = [...ongoingMissions].sort((a, b) => getMissionOperationTimestamp(b) - getMissionOperationTimestamp(a));
 
-
-  if (!sortedOrders.length) {
-    latestWorkOrders.innerHTML = '<p class="text-slate-500">Sem operações registradas.</p>';
-  } else {
-    latestWorkOrders.innerHTML = sortedOrders.slice(0, 5).map((order) => {
-      const vehicle = state.vehicles.find((v) => v.id === order.vehicleId);
-      const driver = state.drivers.find((d) => d.id === order.driverId);
-      const statusLabel = order.status || "Aberta";
-      const canClose = statusLabel === "Aberta";
-      const departureDateTime = formatDateTime(order.departureDate, order.departureTime);
-      return `<div class="flex items-center justify-between border border-slate-100 rounded-md p-3">
-        <div>
-          <p class="font-medium">${statusLabel}</p>
-          <p class="text-xs text-slate-500">${formatVehicleLabel(vehicle)} • ${formatDriverLabel(driver)} • ${order.destination || "-"}</p>
-        </div>
-        <div class="flex flex-col items-end gap-2">
-          <span class="text-xs text-slate-500">${departureDateTime}</span>
-          ${canClose ? `<button class="text-xs px-2 py-1 rounded-md border border-slate-200 text-slate-600 hover:text-accent hover:border-accent transition" data-action="close-work-order" data-id="${order.id}">Fechar operação</button>` : ""}
-        </div>
-      </div>`;
-    }).join("");
+    if (!sortedMissions.length) {
+      latestWorkOrders.innerHTML = '<p class="text-slate-500">Sem operações em andamento.</p>';
+    } else {
+      latestWorkOrders.innerHTML = sortedMissions.slice(0, 5).map((mission) => {
+        const vehicle = state.vehicles.find((v) => v.id === mission.vehicleId);
+        const driver = state.drivers.find((d) => d.id === mission.driverId);
+        const operationDateTime = formatDateTime(formatDate(mission.date), mission.time);
+        return `<div class="flex flex-col gap-3 border border-slate-100 rounded-md p-3 md:flex-row md:items-center md:justify-between">
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <p class="font-medium text-slate-900">${mission.title || "Operação"}</p>
+              <span class="text-xs px-2 py-1 rounded-full ${getMissionStatusClass("Em andamento")}">Em andamento</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">${formatVehicleLabel(vehicle)} • ${formatDriverLabel(driver)}</p>
+          </div>
+          <div class="flex flex-col items-start gap-2 md:items-end">
+            <span class="text-xs text-slate-500">${operationDateTime}</span>
+            <button class="text-xs px-2 py-1 rounded-md border border-slate-200 text-slate-600 hover:text-accent hover:border-accent transition" data-action="complete-mission-operation" data-id="${mission.id}">Concluir</button>
+          </div>
+        </div>`;
+      }).join("");
+    }
   }
 
   renderMissionWeekly();
@@ -985,9 +1002,7 @@ const statusOptionsByType = {
   ],
   workOrders: [
     { value: "all", label: "Todos" },
-    { value: "Aberta", label: "Aberta" },
-    { value: "Concluída", label: "Concluída" },
-    { value: "Cancelada", label: "Cancelada" }
+    { value: "Em andamento", label: "Em andamento" }
   ]
 };
 
@@ -1048,17 +1063,17 @@ function buildSearchItems() {
     });
   });
 
-  state.workOrders.forEach((order) => {
-    const vehicle = state.vehicles.find((v) => v.id === order.vehicleId);
-    const driver = state.drivers.find((d) => d.id === order.driverId);
-    const departureDateTime = formatDateTime(order.departureDate, order.departureTime);
+  state.missions.filter(isMissionInProgress).forEach((mission) => {
+    const vehicle = state.vehicles.find((v) => v.id === mission.vehicleId);
+    const driver = state.drivers.find((d) => d.id === mission.driverId);
+    const operationDateTime = formatDateTime(formatDate(mission.date), mission.time);
     items.push({
-      id: order.id,
+      id: mission.id,
       typeId: "workOrders",
       typeLabel: "Operação",
-      title: order.destination || "Operação",
-      description: `${formatVehicleLabel(vehicle)} • ${formatDriverLabel(driver)} • ${departureDateTime}`,
-      status: order.status || "Aberta"
+      title: mission.title || "Operação",
+      description: `${formatVehicleLabel(vehicle)} • ${formatDriverLabel(driver)} • ${operationDateTime}`,
+      status: "Em andamento"
     });
   });
 
@@ -1244,14 +1259,29 @@ const latestWorkOrdersContainer = document.getElementById("latestWorkOrders");
 latestWorkOrdersContainer?.addEventListener("click", async (event) => {
   const button = event.target.closest("button");
   if (!button) return;
-  if (button.dataset.action !== "close-work-order") return;
+  if (button.dataset.action !== "complete-mission-operation") return;
   const id = button.dataset.id;
   if (!id) return;
-  const { date, time } = getCurrentDateTime();
-  await update(ref(db, `workOrders/${id}`), {
-    arrivalDate: date,
-    arrivalTime: time,
+  await update(ref(db, `missions/${id}`), {
     status: "Concluída",
+    updatedAt: Date.now()
+  });
+});
+
+document.getElementById("ongoingMissionsPanel")?.addEventListener("click", async (event) => {
+  const button = event.target.closest("button");
+  if (!button || button.dataset.action !== "save-mission-operation") return;
+
+  const missionId = button.dataset.id;
+  const mission = state.missions.find((item) => item.id === missionId);
+  if (!mission) return;
+
+  const vehicleId = document.querySelector(`[data-mission-vehicle][data-id="${missionId}"]`)?.value || "";
+  const driverId = document.querySelector(`[data-mission-driver][data-id="${missionId}"]`)?.value || "";
+
+  await update(ref(db, `missions/${missionId}`), {
+    vehicleId,
+    driverId,
     updatedAt: Date.now()
   });
 });
@@ -1388,49 +1418,6 @@ missionForm?.addEventListener("submit", async (event) => {
   }
 });
 
-workOrderForm?.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const vehicleId = document.getElementById("workOrderVehicle").value;
-  const departureDate = document.getElementById("workOrderDepartureDate").value;
-  const departureTime = document.getElementById("workOrderDepartureTime").value;
-  const editId = workOrderForm.dataset.editId;
-
-  if (!editId) {
-    const availabilityCheck = isVehicleAvailableForScheduling(vehicleId, departureDate, departureTime);
-    if (!availabilityCheck.available && availabilityCheck.conflicts.length > 0) {
-      const conflictDetails = availabilityCheck.conflicts
-        .map((c) => `• ${c.reason}`)
-        .join("\n");
-      const proceedAnyway = confirm(
-        `AVISO: Conflito de horário detectado!\n\n${conflictDetails}\n\nDeseja prosseguir mesmo assim?`
-      );
-      if (!proceedAnyway) return;
-    }
-  }
-
-  const payload = {
-    vehicleId: vehicleId,
-    driverId: document.getElementById("workOrderDriver").value,
-    destination: document.getElementById("workOrderDestination").value.trim(),
-    description: document.getElementById("workOrderDescription").value.trim(),
-    status: document.getElementById("workOrderStatus").value,
-    departureDate: departureDate,
-    departureTime: departureTime,
-    expectedArrivalDate: document.getElementById("workOrderExpectedArrivalDate").value,
-    expectedArrivalTime: document.getElementById("workOrderExpectedArrivalTime").value,
-    arrivalDate: document.getElementById("workOrderArrivalDate").value,
-    arrivalTime: document.getElementById("workOrderArrivalTime").value
-  };
-
-  if (editId) {
-    await update(ref(db, `workOrders/${editId}`), { ...payload, updatedAt: Date.now() });
-    setFormMode(workOrderForm, false);
-  } else {
-    await push(ref(db, "workOrders"), { ...payload, createdAt: Date.now() });
-    workOrderForm.reset();
-  }
-});
-
 document.querySelectorAll("form [data-cancel]").forEach((button) => {
   button.addEventListener("click", () => {
     const form = button.closest("form");
@@ -1543,17 +1530,9 @@ onValue(ref(db, "drivers"), (snapshot) => {
 onValue(ref(db, "missions"), (snapshot) => {
   state.missions = toArray(snapshot);
   renderMissionsTable();
+  renderDriversTable();
   renderOngoingMissionsPanel();
   updateDashboard();
-  renderGeneralSearch();
-});
-
-onValue(ref(db, "workOrders"), (snapshot) => {
-  state.workOrders = toArray(snapshot);
-  renderWorkOrdersTable();
-  renderDriversTable();
-  updateDashboard();
-  renderVehicleHistory();
   renderDriverHistory();
   renderGeneralSearch();
 });
