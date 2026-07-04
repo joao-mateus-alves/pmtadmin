@@ -31,6 +31,8 @@ const sectionTitles = {
   workOrders: "Operações"
 };
 
+let activeSectionId = "dashboard";
+
 const sidebar = document.getElementById("sidebar");
 const sidebarOverlay = document.getElementById("sidebarOverlay");
 const pageTitle = document.getElementById("pageTitle");
@@ -63,6 +65,7 @@ function toggleSidebar(open) {
 }
 
 function setActiveSection(sectionId) {
+  activeSectionId = sectionId;
   sectionIds.forEach((id) => {
     const section = document.getElementById(id);
     if (section) {
@@ -77,6 +80,11 @@ function setActiveSection(sectionId) {
 
   pageTitle.textContent = sectionTitles[sectionId] || "Dashboard";
   toggleSidebar(false);
+
+  if (sectionId === "dashboard") {
+    updateDashboard(true);
+    animateDashboard();
+  }
 }
 
 function toArray(snapshot) {
@@ -909,12 +917,22 @@ function renderMissionCalendar() {
   calendar.innerHTML = cells.join("");
 }
 
-function updateDashboard() {
+function updateDashboard(animate = false) {
   const ongoingMissions = state.missions.filter(isMissionInProgress);
-  document.getElementById("countVehicles").textContent = String(state.vehicles.length);
-  document.getElementById("countDrivers").textContent = String(state.drivers.length);
-  document.getElementById("countMissions").textContent = String(state.missions.length);
-  document.getElementById("countWorkOrders").textContent = String(ongoingMissions.length);
+  const setCountText = (id, value) => {
+    const element = document.getElementById(id);
+    if (!element) return;
+    if (animate && typeof anime !== "undefined") {
+      animateCounter(id, value);
+      return;
+    }
+    element.textContent = String(value);
+  };
+
+  setCountText("countVehicles", state.vehicles.length);
+  setCountText("countDrivers", state.drivers.length);
+  setCountText("countMissions", state.missions.length);
+  setCountText("countWorkOrders", ongoingMissions.length);
 
   const totalVehicles = state.vehicles.length;
   const availableVehicles = state.vehicles.filter((vehicle) => vehicle.status === "Disponível").length;
@@ -977,6 +995,67 @@ function updateDashboard() {
 
   renderMissionWeekly();
   renderMissionCalendar();
+}
+
+function animateDashboard() {
+  if (typeof anime === "undefined") return;
+
+  const fleetAvailabilityBar = document.getElementById("fleetAvailabilityBar");
+  const targetWidth = fleetAvailabilityBar?.style.width;
+
+  anime.remove(".quick-link");
+  if (fleetAvailabilityBar) {
+    anime.remove(fleetAvailabilityBar);
+  }
+
+  anime({
+    targets: ".quick-link",
+    opacity: [0, 1],
+    translateY: [40, 0],
+    scale: [0.9, 1],
+    duration: 700,
+    easing: "easeOutExpo",
+    delay: anime.stagger(120),
+    complete() {
+      anime({
+        targets: ".quick-link",
+        translateY: [
+          { value: -3, duration: 1200 },
+          { value: 0, duration: 1200 }
+        ],
+        easing: "easeInOutSine",
+        direction: "alternate",
+        loop: true,
+        delay: anime.stagger(200)
+      });
+    }
+  });
+
+  if (fleetAvailabilityBar && targetWidth) {
+    anime({
+      targets: fleetAvailabilityBar,
+      width: ["0%", targetWidth],
+      duration: 1400,
+      easing: "easeOutQuart"
+    });
+  }
+}
+
+function animateCounter(id, value) {
+  if (typeof anime === "undefined") return;
+
+  anime({
+    targets: { n: 0 },
+    n: value,
+    round: 1,
+    easing: "easeOutExpo",
+    duration: 1500,
+    update(anim) {
+      const element = document.getElementById(id);
+      if (!element) return;
+      element.textContent = String(Math.round(anim.animations[0].currentValue));
+    }
+  });
 }
 
 const statusOptionsByType = {
@@ -1513,7 +1592,7 @@ onValue(ref(db, "vehicles"), (snapshot) => {
   renderVehiclesTable();
   updateVehicleSelects();
   renderVehicleHistory();
-  updateDashboard();
+  updateDashboard(activeSectionId === "dashboard");
   renderGeneralSearch();
 });
 
@@ -1522,7 +1601,7 @@ onValue(ref(db, "drivers"), (snapshot) => {
   renderDriversTable();
   updateDriverSelects();
   renderDriverHistory();
-  updateDashboard();
+  updateDashboard(activeSectionId === "dashboard");
   renderGeneralSearch();
 });
 
@@ -1532,7 +1611,7 @@ onValue(ref(db, "missions"), (snapshot) => {
   renderMissionsTable();
   renderDriversTable();
   renderOngoingMissionsPanel();
-  updateDashboard();
+  updateDashboard(activeSectionId === "dashboard");
   renderDriverHistory();
   renderGeneralSearch();
 });
@@ -1542,3 +1621,4 @@ renderGeneralSearch();
 renderMissionWeekly();
 renderOngoingMissionsPanel();
 setActiveSection("dashboard");
+
