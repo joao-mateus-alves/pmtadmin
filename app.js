@@ -1621,4 +1621,3 @@ renderGeneralSearch();
 renderMissionWeekly();
 renderOngoingMissionsPanel();
 setActiveSection("dashboard");
-
