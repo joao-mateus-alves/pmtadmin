@@ -418,6 +418,9 @@
         <button class="nav-item" data-target="missions" data-title="Missões">
           Missões
         </button>
+        <button class="nav-item" data-target="flowcharts" data-title="Fluxogramas">
+          Fluxogramas
+        </button>
         <button class="nav-item" data-target="monthlyCalendar" data-title="Calendário">
           Calendário do mês
         </button>
@@ -490,6 +493,10 @@
                   </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3 text-xs">
+                    <div class="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2">
+                      <span>Fluxogramas</span>
+                      <span id="countFlowcharts" class="font-semibold">0</span>
+                    </div>
                   <div class="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2">
                     <span>Disponíveis</span>
                     <span id="fleetAvailable" class="font-semibold">0</span>
@@ -812,9 +819,24 @@
                       class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2" />
                   </div>
                   <div>
-                    <label class="text-sm text-slate-600">Hora</label>
+                    <label class="text-sm text-slate-600">Hora de início</label>
                     <input id="missionTime" type="time"
                       class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2" />
+                  </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="text-sm text-slate-600">Data de fim</label>
+                    <input id="missionEndDate" type="date"
+                      class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2" />
+                  </div>
+                  <div>
+                    <label class="text-sm text-slate-600">Prioridade</label>
+                    <select id="missionPriority" class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2">
+                      <option value="Baixa">Baixa</option>
+                      <option value="Média" selected>Média</option>
+                      <option value="Alta">Alta</option>
+                    </select>
                   </div>
                 </div>
                 <div>
@@ -861,8 +883,10 @@
                   <thead class="text-left text-slate-500">
                     <tr>
                       <th class="pb-2">Missão</th>
+                      <th class="pb-2">Prioridade</th>
                       <th class="pb-2">Local</th>
-                      <th class="pb-2">Data</th>
+                      <th class="pb-2">Início</th>
+                      <th class="pb-2">Fim</th>
                       <th class="pb-2">Status</th>
                       <th class="pb-2">Ações</th>
                     </tr>
@@ -870,6 +894,59 @@
                   <tbody id="missionsTableBody"></tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="flowcharts" data-section class="hidden">
+          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
+            <div>
+              <h2 class="text-2xl font-semibold">Fluxogramas</h2>
+              <p class="text-sm text-slate-500">
+                Cadastre fluxogramas como imagem e visualize no próprio sistema.
+              </p>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 gap-6 mt-6">
+            <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+              <h3 class="text-lg font-semibold mb-4">Cadastrar / editar</h3>
+              <form id="flowchartForm" class="space-y-4">
+                <div>
+                  <label class="text-sm text-slate-600">Título</label>
+                  <input id="flowchartTitle" required class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                    placeholder="Nome do fluxograma" />
+                </div>
+                <div>
+                  <label class="text-sm text-slate-600">Descrição</label>
+                  <textarea id="flowchartDescription" class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2" rows="3"
+                    placeholder="Detalhe o conteúdo do fluxograma"></textarea>
+                </div>
+                <div>
+                  <label class="text-sm text-slate-600">Imagem do fluxograma</label>
+                  <input id="flowchartImage" type="file" accept="image/*" class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2" />
+                </div>
+                <div id="flowchartFormPreview" class="hidden rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <p class="text-xs font-medium text-slate-500 mb-2">Pré-visualização</p>
+                  <img id="flowchartFormPreviewImage" alt="Pré-visualização do fluxograma" class="max-h-64 w-full object-contain rounded-lg bg-white" />
+                </div>
+                <div class="flex flex-wrap gap-3">
+                  <button type="submit" data-submit data-default-text="Cadastrar fluxograma"
+                    data-edit-text="Salvar alterações"
+                    class="px-4 py-2 rounded-md bg-accent text-white shadow-sm shadow-blue-500/20 hover:bg-accent-dark transition">
+                    Cadastrar fluxograma
+                  </button>
+                  <button type="button" data-cancel
+                    class="px-4 py-2 rounded-md border border-slate-200 text-slate-600 hidden">
+                    Cancelar edição
+                  </button>
+                </div>
+              </form>
+            </div>
+            <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+              <div class="flex items-center justify-between gap-3 mb-4">
+                <h3 class="text-lg font-semibold">Fluxogramas cadastrados</h3>
+              </div>
+              <div id="flowchartsList" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
             </div>
           </div>
         </section>
@@ -910,6 +987,21 @@
         </button>
       </div>
       <div id="missionCalendarModalList" class="space-y-3 overflow-auto px-5 py-5 text-sm text-slate-600"></div>
+    </div>
+  </div>
+
+  <div id="flowchartModal" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-900/70 px-4 py-6" aria-hidden="true">
+    <div class="w-full max-w-5xl rounded-2xl border border-slate-200 bg-white shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+        <div>
+          <h3 id="flowchartModalTitle" class="text-lg font-semibold text-slate-900">Fluxograma</h3>
+          <p id="flowchartModalDescription" class="text-sm text-slate-500"></p>
+        </div>
+        <button id="flowchartModalClose" type="button" class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-accent hover:text-accent" aria-label="Fechar popup">✕</button>
+      </div>
+      <div class="p-4 overflow-auto">
+        <img id="flowchartModalImage" alt="Fluxograma ampliado" class="w-full h-auto rounded-xl bg-slate-50 object-contain" />
+      </div>
     </div>
   </div>
 

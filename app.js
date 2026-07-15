@@ -11,7 +11,8 @@ const state = {
   vehicles: [],
   drivers: [],
   missions: [],
-  workOrders: []
+  workOrders: [],
+  flowcharts: []
 };
 
 let missionCalendarDate = new Date();
@@ -20,13 +21,14 @@ missionCalendarDate.setDate(1);
 let missionWeeklyDate = new Date();
 missionWeeklyDate.setDate(missionWeeklyDate.getDate() - missionWeeklyDate.getDay());
 
-const sectionIds = ["dashboard", "search", "vehicles", "drivers", "missions", "monthlyCalendar", "workOrders"];
+const sectionIds = ["dashboard", "search", "vehicles", "drivers", "missions", "flowcharts", "monthlyCalendar", "workOrders"];
 const sectionTitles = {
   dashboard: "Dashboard",
   search: "Pesquisa geral",
   vehicles: "Veículos",
   drivers: "Condutores",
   missions: "Missões",
+  flowcharts: "Fluxogramas",
   monthlyCalendar: "Calendário do mês",
   workOrders: "Operações"
 };
@@ -52,6 +54,16 @@ const missionCalendarModalSummary = document.getElementById("missionCalendarModa
 const missionCalendarModalList = document.getElementById("missionCalendarModalList");
 const missionCalendarModalClose = document.getElementById("missionCalendarModalClose");
 const missionStatusFilter = document.getElementById("missionStatusFilter");
+const flowchartForm = document.getElementById("flowchartForm");
+const flowchartImageInput = document.getElementById("flowchartImage");
+const flowchartFormPreview = document.getElementById("flowchartFormPreview");
+const flowchartFormPreviewImage = document.getElementById("flowchartFormPreviewImage");
+const flowchartList = document.getElementById("flowchartsList");
+const flowchartModal = document.getElementById("flowchartModal");
+const flowchartModalImage = document.getElementById("flowchartModalImage");
+const flowchartModalTitle = document.getElementById("flowchartModalTitle");
+const flowchartModalDescription = document.getElementById("flowchartModalDescription");
+const flowchartModalClose = document.getElementById("flowchartModalClose");
 
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -163,6 +175,25 @@ function formatDateTime(dateValue, timeValue) {
   if (!dateValue && !timeValue) return "-";
   if (dateValue && timeValue) return `${dateValue} ${timeValue}`;
   return dateValue || timeValue;
+}
+
+function getMissionPriorityLabel(priority) {
+  return priority || "Média";
+}
+
+function getMissionPriorityClass(priority) {
+  if (priority === "Alta") return "bg-rose-50 text-rose-700";
+  if (priority === "Baixa") return "bg-emerald-50 text-emerald-700";
+  return "bg-amber-50 text-amber-700";
+}
+
+function getMissionPeriodLabel(mission) {
+  const startLabel = formatDateTime(formatDate(mission?.date), mission?.time);
+  const endLabel = formatDate(mission?.endDate);
+  if (startLabel === "-" && endLabel === "-") return "-";
+  if (endLabel === "-") return `Início: ${startLabel}`;
+  if (startLabel === "-") return `Fim: ${endLabel}`;
+  return `${startLabel} até ${endLabel}`;
 }
 
 function formatDate(dateValue) {
@@ -277,12 +308,15 @@ function openMissionCalendarModal(dateKey) {
           const statusClass = getMissionStatusClass(mission.status || "Pendente");
           const timeLabel = mission.time || "Sem hora";
           const locationLabel = mission.location || "Sem local";
+          const priorityLabel = getMissionPriorityLabel(mission.priority);
+          const endLabel = mission.endDate ? ` • Fim: ${formatDate(mission.endDate)}` : "";
           const notesLabel = mission.notes ? `<p class="text-sm text-slate-500 mt-1">${mission.notes}</p>` : "";
           return `<div class="rounded-xl border border-slate-200 p-4 bg-slate-50">
             <div class="flex items-start justify-between gap-3">
               <div>
                 <p class="font-semibold text-slate-900">${mission.title || "Missão"}</p>
-                <p class="text-sm text-slate-600 mt-1">${timeLabel} • ${locationLabel}</p>
+                <p class="text-sm text-slate-600 mt-1">${timeLabel} • ${locationLabel}${endLabel}</p>
+                <p class="text-xs text-slate-500 mt-1">Prioridade: ${priorityLabel}</p>
               </div>
               <span class="text-xs px-2 py-1 rounded-full ${statusClass}">${mission.status || "Pendente"}</span>
             </div>
@@ -423,7 +457,7 @@ function renderMissionsTable() {
   const tbody = document.getElementById("missionsTableBody");
   if (!tbody) return;
   if (!state.missions.length) {
-    renderEmptyRow(tbody, 5, "Nenhuma missão cadastrada.");
+    renderEmptyRow(tbody, 7, "Nenhuma missão cadastrada.");
     return;
   }
   const statusFilter = missionStatusFilter?.value || "all";
@@ -432,13 +466,14 @@ function renderMissionsTable() {
     return (mission.status || "Pendente") === statusFilter;
   });
   if (!filteredMissions.length) {
-    renderEmptyRow(tbody, 5, "Nenhuma missão encontrada para este status.");
+    renderEmptyRow(tbody, 7, "Nenhuma missão encontrada para este status.");
     return;
   }
   tbody.innerHTML = filteredMissions
     .sort((a, b) => (toTimestamp(a.date, a.time) || 0) - (toTimestamp(b.date, b.time) || 0))
     .map((mission) => {
       const status = mission.status || "Pendente";
+      const priority = getMissionPriorityLabel(mission.priority);
       const toggleLabel = status === "Pendente"
         ? "Iniciar"
         : status === "Em andamento"
@@ -448,10 +483,14 @@ function renderMissionsTable() {
       return `<tr class="border-t border-slate-100">
         <td class="py-3 pr-4">
           <p class="font-medium">${mission.title || "-"}</p>
-          <p class="text-xs text-slate-500">${mission.notes || ""}</p>
+          <p class="text-xs text-slate-500">${mission.location || ""}${mission.location && mission.notes ? " • " : ""}${mission.notes || ""}</p>
+        </td>
+        <td class="py-3 pr-4">
+          <span class="text-xs px-2 py-1 rounded-full ${getMissionPriorityClass(priority)}">${priority}</span>
         </td>
         <td class="py-3 pr-4">${mission.location || "-"}</td>
         <td class="py-3 pr-4">${formatDateTime(formatDate(mission.date), mission.time)}</td>
+        <td class="py-3 pr-4">${formatDate(mission.endDate)}</td>
         <td class="py-3 pr-4">
           <span class="text-xs px-2 py-1 rounded-full ${statusClass}">${status}</span>
         </td>
@@ -744,7 +783,7 @@ function buildCompactCalendarCell({
       const dotClass = mission.status === "Concluída" ? "bg-emerald-400" : "bg-amber-400";
       return `<div class="flex items-center gap-1 text-[11px] text-slate-600">
         <span class="h-1.5 w-1.5 rounded-full ${dotClass}"></span>
-        <span class="truncate">${mission.title || "Missão"}</span>
+        <span class="truncate">${mission.title || "Missão"}${mission.priority ? ` • ${mission.priority}` : ""}</span>
       </div>`;
     }),
     ...workOrderPreview.map((order) => `<div class="flex items-center gap-1 text-[11px] text-slate-600">
@@ -933,6 +972,7 @@ function updateDashboard(animate = false) {
   setCountText("countDrivers", state.drivers.length);
   setCountText("countMissions", state.missions.length);
   setCountText("countWorkOrders", ongoingMissions.length);
+  setCountText("countFlowcharts", state.flowcharts.length);
 
   const totalVehicles = state.vehicles.length;
   const availableVehicles = state.vehicles.filter((vehicle) => vehicle.status === "Disponível").length;
@@ -1130,7 +1170,7 @@ function buildSearchItems() {
 
 
   state.missions.forEach((mission) => {
-    const details = [mission.location, formatDateTime(formatDate(mission.date), mission.time), mission.notes]
+    const details = [mission.location, formatDateTime(formatDate(mission.date), mission.time), formatDate(mission.endDate), `Prioridade: ${getMissionPriorityLabel(mission.priority)}`, mission.notes]
       .filter(Boolean);
     items.push({
       id: mission.id,
@@ -1414,6 +1454,8 @@ function startEditMission(id) {
   document.getElementById("missionLocation").value = mission.location || "";
   document.getElementById("missionDate").value = mission.date || "";
   document.getElementById("missionTime").value = mission.time || "";
+  document.getElementById("missionEndDate").value = mission.endDate || "";
+  document.getElementById("missionPriority").value = mission.priority || "Média";
   document.getElementById("missionStatus").value = mission.status || "Pendente";
   document.getElementById("missionNotes").value = mission.notes || "";
   missionForm.dataset.editId = id;
@@ -1438,6 +1480,100 @@ function startEditWorkOrder(id) {
   workOrderForm.dataset.editId = id;
   setFormMode(workOrderForm, true);
   workOrderForm.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function clearFlowchartPreview() {
+  if (flowchartFormPreviewImage) {
+    flowchartFormPreviewImage.src = "";
+  }
+  flowchartFormPreview?.classList.add("hidden");
+  if (flowchartForm) {
+    delete flowchartForm.dataset.selectedImageDataUrl;
+    delete flowchartForm.dataset.selectedImageName;
+    delete flowchartForm.dataset.existingImageDataUrl;
+  }
+  if (flowchartImageInput) {
+    flowchartImageInput.value = "";
+  }
+}
+
+function setFlowchartPreview(imageDataUrl) {
+  if (!flowchartFormPreview || !flowchartFormPreviewImage) return;
+  if (!imageDataUrl) {
+    clearFlowchartPreview();
+    return;
+  }
+  flowchartFormPreviewImage.src = imageDataUrl;
+  flowchartFormPreview.classList.remove("hidden");
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+    reader.onerror = () => reject(new Error("Não foi possível ler a imagem selecionada."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function openFlowchartModal(flowchart) {
+  if (!flowchartModal || !flowchartModalImage || !flowchartModalTitle || !flowchartModalDescription) return;
+  flowchartModalImage.src = flowchart.imageDataUrl || "";
+  flowchartModalImage.alt = flowchart.title ? `Fluxograma ${flowchart.title}` : "Fluxograma";
+  flowchartModalTitle.textContent = flowchart.title || "Fluxograma";
+  flowchartModalDescription.textContent = flowchart.description || "Sem descrição.";
+  flowchartModal.classList.remove("hidden");
+  flowchartModal.setAttribute("aria-hidden", "false");
+}
+
+function closeFlowchartModal() {
+  if (!flowchartModal) return;
+  flowchartModal.classList.add("hidden");
+  flowchartModal.setAttribute("aria-hidden", "true");
+}
+
+function startEditFlowchart(id) {
+  const flowchart = state.flowcharts.find((item) => item.id === id);
+  if (!flowchart || !flowchartForm) return;
+  document.getElementById("flowchartTitle").value = flowchart.title || "";
+  document.getElementById("flowchartDescription").value = flowchart.description || "";
+  flowchartForm.dataset.editId = id;
+  flowchartForm.dataset.existingImageDataUrl = flowchart.imageDataUrl || "";
+  setFormMode(flowchartForm, true);
+  setFlowchartPreview(flowchart.imageDataUrl || "");
+  flowchartForm.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderFlowchartsList() {
+  if (!flowchartList) return;
+  if (!state.flowcharts.length) {
+    flowchartList.innerHTML = '<p class="text-slate-500">Nenhum fluxograma cadastrado.</p>';
+    return;
+  }
+  flowchartList.innerHTML = [...state.flowcharts]
+    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+    .map((flowchart) => {
+      const imageSrc = flowchart.imageDataUrl || "";
+      return `<article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <button type="button" class="block w-full text-left" data-action="view" data-id="${flowchart.id}">
+          <img src="${imageSrc}" alt="${flowchart.title || "Fluxograma"}" class="h-56 w-full object-cover bg-slate-100" />
+        </button>
+        <div class="p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h4 class="font-semibold text-slate-900">${flowchart.title || "Fluxograma"}</h4>
+              <p class="text-sm text-slate-500 mt-1">${flowchart.description || "Sem descrição."}</p>
+            </div>
+          </div>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <button type="button" class="px-3 py-2 rounded-md border border-slate-200 text-sm text-slate-700 hover:border-accent hover:text-accent transition" data-action="view" data-id="${flowchart.id}">Visualizar</button>
+            <button type="button" class="px-3 py-2 rounded-md border border-slate-200 text-sm text-slate-700 hover:border-accent hover:text-accent transition" data-action="edit" data-id="${flowchart.id}">Editar</button>
+            <button type="button" class="px-3 py-2 rounded-md border border-red-200 text-sm text-red-600 hover:border-red-300 hover:bg-red-50 transition" data-action="delete" data-id="${flowchart.id}">Excluir</button>
+          </div>
+        </div>
+      </article>`;
+    })
+    .join("");
 }
 
 vehicleForm?.addEventListener("submit", async (event) => {
@@ -1484,6 +1620,8 @@ missionForm?.addEventListener("submit", async (event) => {
     location: document.getElementById("missionLocation").value.trim(),
     date: document.getElementById("missionDate").value,
     time: document.getElementById("missionTime").value,
+    endDate: document.getElementById("missionEndDate").value,
+    priority: document.getElementById("missionPriority").value,
     status: document.getElementById("missionStatus").value,
     notes: document.getElementById("missionNotes").value.trim()
   };
@@ -1497,11 +1635,58 @@ missionForm?.addEventListener("submit", async (event) => {
   }
 });
 
+flowchartImageInput?.addEventListener("change", async () => {
+  if (!flowchartForm) return;
+  const file = flowchartImageInput.files?.[0];
+  if (!file) {
+    delete flowchartForm.dataset.selectedImageDataUrl;
+    delete flowchartForm.dataset.selectedImageName;
+    if (!flowchartForm.dataset.existingImageDataUrl) {
+      clearFlowchartPreview();
+    }
+    return;
+  }
+  const imageDataUrl = await readFileAsDataUrl(file);
+  flowchartForm.dataset.selectedImageDataUrl = imageDataUrl;
+  flowchartForm.dataset.selectedImageName = file.name;
+  setFlowchartPreview(imageDataUrl);
+});
+
+flowchartForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const title = document.getElementById("flowchartTitle").value.trim();
+  const description = document.getElementById("flowchartDescription").value.trim();
+  const imageDataUrl = flowchartForm.dataset.selectedImageDataUrl || flowchartForm.dataset.existingImageDataUrl || "";
+  if (!imageDataUrl) {
+    alert("Selecione uma imagem para o fluxograma.");
+    return;
+  }
+  const payload = {
+    title,
+    description,
+    imageDataUrl,
+    imageName: flowchartForm.dataset.selectedImageName || "",
+    updatedAt: Date.now()
+  };
+  const editId = flowchartForm.dataset.editId;
+  if (editId) {
+    await update(ref(db, `flowcharts/${editId}`), payload);
+    setFormMode(flowchartForm, false);
+  } else {
+    await push(ref(db, "flowcharts"), { ...payload, createdAt: Date.now() });
+    flowchartForm.reset();
+  }
+  clearFlowchartPreview();
+});
+
 document.querySelectorAll("form [data-cancel]").forEach((button) => {
   button.addEventListener("click", () => {
     const form = button.closest("form");
     if (form) {
       setFormMode(form, false);
+      if (form.id === "flowchartForm") {
+        clearFlowchartPreview();
+      }
     }
   });
 });
@@ -1566,6 +1751,35 @@ document.getElementById("missionsTableBody")?.addEventListener("click", async (e
   }
 });
 
+flowchartList?.addEventListener("click", async (event) => {
+  const button = event.target.closest("button[data-id]");
+  const target = button || event.target.closest("[data-action][data-id]");
+  if (!target) return;
+  const cardAction = target.dataset.action || (target.tagName === "BUTTON" ? "view" : "");
+  const id = target.dataset.id;
+  if (!id) return;
+  const flowchart = state.flowcharts.find((item) => item.id === id);
+  if (!flowchart) return;
+  if (cardAction === "view") {
+    openFlowchartModal(flowchart);
+  }
+  if (cardAction === "edit") {
+    startEditFlowchart(id);
+  }
+  if (cardAction === "delete") {
+    if (confirm("Deseja excluir este fluxograma?")) {
+      await remove(ref(db, `flowcharts/${id}`));
+    }
+  }
+});
+
+flowchartModalClose?.addEventListener("click", closeFlowchartModal);
+flowchartModal?.addEventListener("click", (event) => {
+  if (event.target === flowchartModal) {
+    closeFlowchartModal();
+  }
+});
+
 document.getElementById("workOrdersTableBody")?.addEventListener("click", async (event) => {
   const button = event.target.closest("button");
   if (!button) return;
@@ -1614,6 +1828,12 @@ onValue(ref(db, "missions"), (snapshot) => {
   updateDashboard(activeSectionId === "dashboard");
   renderDriverHistory();
   renderGeneralSearch();
+});
+
+onValue(ref(db, "flowcharts"), (snapshot) => {
+  state.flowcharts = toArray(snapshot);
+  renderFlowchartsList();
+  updateDashboard(activeSectionId === "dashboard");
 });
 
 updateSearchStatusOptions(generalSearchType?.value || "all");
