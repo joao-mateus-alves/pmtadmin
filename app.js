@@ -86,6 +86,7 @@ const authTitle = document.getElementById("authTitle");
 const authSubtitle = document.getElementById("authSubtitle");
 const forgotPassword = document.getElementById("forgotPassword");
 const logoutButton = document.getElementById("logoutButton");
+const themeToggle = document.getElementById("themeToggle");
 const currentUserEmail = document.getElementById("currentUserEmail");
 const passwordForm = document.getElementById("passwordForm");
 const currentPasswordInput = document.getElementById("currentPassword");
@@ -137,6 +138,29 @@ function refreshIcons() {
     window.lucide.createIcons();
   }
 }
+
+const themeStorageKey = "pmt-theme";
+
+function applyTheme(theme) {
+  const isDark = theme === "dark";
+  document.documentElement.dataset.theme = isDark ? "dark" : "light";
+  if (!themeToggle) return;
+  const nextThemeLabel = isDark ? "Ativar modo claro" : "Ativar modo escuro";
+  themeToggle.setAttribute("aria-label", nextThemeLabel);
+  themeToggle.setAttribute("title", nextThemeLabel);
+  themeToggle.innerHTML = `<i data-lucide="${isDark ? "sun" : "moon"}" class="h-4 w-4" aria-hidden="true"></i>`;
+  refreshIcons();
+}
+
+function getStoredTheme() {
+  try {
+    return localStorage.getItem(themeStorageKey) === "dark" ? "dark" : "light";
+  } catch {
+    return "light";
+  }
+}
+
+applyTheme(getStoredTheme());
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -2101,6 +2125,16 @@ document.getElementById("ongoingMissionsPanel")?.addEventListener("click", async
 if (sidebarToggle) {
   sidebarToggle.addEventListener("click", () => toggleSidebar());
 }
+
+themeToggle?.addEventListener("click", () => {
+  const nextTheme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  try {
+    localStorage.setItem(themeStorageKey, nextTheme);
+  } catch {
+    // Theme switching still works when browser storage is unavailable.
+  }
+  applyTheme(nextTheme);
+});
 
 document.querySelector("header")?.addEventListener("click", (event) => {
   if (window.innerWidth >= 768) return;

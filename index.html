@@ -10,8 +10,8 @@
       theme: {
         extend: {
           colors: {
-            accent: "#0057FF",
-            "accent-dark": "#003FC2"
+            accent: "#3a3a3c",
+            "accent-dark": "#1c1c1e"
           }
         }
       }
@@ -20,21 +20,21 @@
   </script>
   <style>
     :root {
-      --cobalt: #0057ff;
-      --cobalt-dark: #003fc2;
-      --cobalt-soft: #eef4ff;
-      --ink: #172033;
-      --nav: #26304a;
-      --nav-soft: #313b59;
-      --line: #e6eaf2;
-      --muted: #69758b;
+      --cobalt: #3a3a3c;
+      --cobalt-dark: #1c1c1e;
+      --cobalt-soft: #f2f2f7;
+      --ink: #1c1c1e;
+      --nav: #2c2c2e;
+      --nav-soft: #3a3a3c;
+      --line: #d1d1d6;
+      --muted: #636366;
       --surface: #ffffff;
-      --page: #f6f8fc;
-      --shadow: 0 22px 60px rgb(20 30 50 / 0.14);
+      --page: #f2f2f7;
+      --shadow: 0 1px 2px rgb(28 28 30 / 0.08);
     }
 
     * {
-      scrollbar-color: #b8c3d6 transparent;
+      scrollbar-color: #aeaeb2 transparent;
       scrollbar-width: thin;
     }
 
@@ -407,15 +407,15 @@
 
     /* Clean workspace direction: closer to Notion, with quiet surfaces and icon-led navigation. */
     :root {
-      --cobalt: #2563eb;
-      --cobalt-dark: #1d4ed8;
-      --cobalt-soft: #eff6ff;
-      --ink: #1f2937;
-      --line: #e5e7eb;
-      --muted: #6b7280;
+      --cobalt: #3a3a3c;
+      --cobalt-dark: #1c1c1e;
+      --cobalt-soft: #f2f2f7;
+      --ink: #1c1c1e;
+      --line: #d1d1d6;
+      --muted: #636366;
       --surface: #ffffff;
-      --page: #f7f7f5;
-      --shadow: 0 1px 2px rgb(15 23 42 / 0.06);
+      --page: #f2f2f7;
+      --shadow: 0 1px 2px rgb(28 28 30 / 0.08);
     }
 
     body {
@@ -436,7 +436,7 @@
     #sidebar {
       width: 16rem;
       border-right: 1px solid var(--line);
-      background: #fbfbfa;
+      background: #f2f2f7;
       color: var(--ink);
     }
 
@@ -446,7 +446,7 @@
 
     #sidebar .h-10.w-10 {
       border-radius: 8px;
-      background: #111827;
+      background: #3a3a3c;
       color: #ffffff;
       box-shadow: none;
     }
@@ -462,7 +462,7 @@
       gap: 0.65rem;
       border-radius: 6px;
       padding: 0.55rem 0.75rem;
-      color: #4b5563 !important;
+      color: #48484a !important;
       font-size: 0.875rem;
       font-weight: 500;
       box-shadow: none !important;
@@ -476,19 +476,19 @@
     .nav-item [data-lucide] {
       width: 1rem;
       height: 1rem;
-      color: #6b7280;
+      color: #8e8e93;
       stroke-width: 1.9;
     }
 
     .nav-item:hover,
     .nav-item.text-accent {
-      background: #eeeeec;
-      color: #111827 !important;
+      background: #e5e5ea;
+      color: #1c1c1e !important;
     }
 
     .nav-item:hover [data-lucide],
     .nav-item.text-accent [data-lucide] {
-      color: #111827;
+      color: #1c1c1e;
     }
 
     header {
@@ -534,25 +534,25 @@
     }
 
     .quick-link:hover {
-      border-color: #d1d5db !important;
+      border-color: #c7c7cc !important;
       transform: none;
-      background: #fafafa !important;
+      background: #f2f2f7 !important;
     }
 
     .quick-link [data-lucide] {
       width: 1.05rem;
       height: 1.05rem;
-      color: #6b7280;
+      color: #8e8e93;
       margin-bottom: 0.45rem;
     }
 
     .quick-link p[id] {
-      color: #111827 !important;
+      color: #1c1c1e !important;
       font-size: 2rem;
     }
 
     label {
-      color: #4b5563 !important;
+      color: #48484a !important;
       font-weight: 500;
     }
 
@@ -567,21 +567,21 @@
     input:focus,
     select:focus,
     textarea:focus {
-      border-color: #9ca3af !important;
+      border-color: #8e8e93 !important;
       box-shadow: 0 0 0 2px rgb(37 99 235 / 0.12);
     }
 
     button[type="submit"],
     button[data-action="save-mission-operation"] {
       border-radius: 6px !important;
-      background: #111827 !important;
+      background: #3a3a3c !important;
       box-shadow: none !important;
       font-weight: 600;
     }
 
     button[type="submit"]:hover,
     button[data-action="save-mission-operation"]:hover {
-      background: #374151 !important;
+      background: #1c1c1e !important;
     }
 
     button[data-cancel],
@@ -600,7 +600,7 @@
     }
 
     th {
-      background: #fafafa;
+      background: #f2f2f7;
       font-weight: 600;
     }
 
@@ -610,25 +610,25 @@
     }
 
     td {
-      color: #374151;
+      color: #48484a;
     }
 
     tbody tr:hover {
-      background: #fafafa;
+      background: #f2f2f7;
     }
 
     .calendar-icon-button {
       border-radius: 6px;
       border-color: var(--line);
-      color: #4b5563;
+      color: #48484a;
       box-shadow: none !important;
       transform: none !important;
     }
 
     .calendar-icon-button:hover {
       border-color: #d1d5db;
-      background: #f3f4f6;
-      color: #111827;
+      background: #e5e5ea;
+      color: #1c1c1e;
     }
 
     #missionWeekly,
@@ -663,13 +663,13 @@
 
     .scale-day-header {
       min-width: 5.25rem;
-      background: #fafafa;
+      background: #f2f2f7;
       vertical-align: top;
     }
 
     .scale-month-header {
-      background: #f3f4f6;
-      color: #374151;
+      background: #e5e5ea;
+      color: #48484a;
       font-size: 0.72rem;
       font-weight: 600;
       text-transform: capitalize;
@@ -678,7 +678,7 @@
 
     .scale-month-start {
       border-left-width: 2px !important;
-      border-left-color: #9ca3af !important;
+      border-left-color: #8e8e93 !important;
     }
 
     .scale-day-header[data-scale-type="red"] {
@@ -740,7 +740,7 @@
       padding: 0.125rem 0.5rem;
       font-size: 0.72rem;
       font-weight: 500;
-      color: #4b5563;
+      color: #48484a;
       background: #ffffff;
     }
 
@@ -822,6 +822,243 @@
       #sidebar {
         width: 18rem;
       }
+    }
+
+    /* Notion-like dark theme: quiet charcoal surfaces and warm readable text. */
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --cobalt: #d1d1d6;
+      --cobalt-dark: #f2f2f7;
+      --cobalt-soft: #3a3a3c;
+      --ink: #f2f2f7;
+      --line: #48484a;
+      --muted: #aeaeb2;
+      --surface: #1c1c1e;
+      --page: #1c1c1e;
+      --shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+    }
+
+    html[data-theme="dark"] body,
+    html[data-theme="dark"] body > .min-h-screen,
+    html[data-theme="dark"] main {
+      background: var(--page);
+      color: var(--ink);
+    }
+
+    html[data-theme="dark"] body > .min-h-screen {
+      border-color: #3a3a3c;
+    }
+
+    html[data-theme="dark"] #sidebar {
+      background: #2c2c2e;
+      border-right-color: #48484a;
+      color: #f2f2f7;
+    }
+
+    html[data-theme="dark"] #sidebar > div:first-child {
+      border-bottom-color: #48484a;
+    }
+
+    html[data-theme="dark"] #sidebar .h-10.w-10 {
+      background: #3a3a3c;
+      color: #f2f2f7;
+    }
+
+    html[data-theme="dark"] #sidebar p,
+    html[data-theme="dark"] #sidebar p.text-lg,
+    html[data-theme="dark"] #sidebar > div:last-child {
+      color: #aeaeb2;
+    }
+
+    html[data-theme="dark"] .nav-item {
+      color: #c7c7cc !important;
+    }
+
+    html[data-theme="dark"] .nav-item:hover,
+    html[data-theme="dark"] .nav-item.text-accent {
+      background: #3a3a3c;
+      color: #f2f2f7 !important;
+    }
+
+    html[data-theme="dark"] .nav-item:hover [data-lucide],
+    html[data-theme="dark"] .nav-item.text-accent [data-lucide] {
+      color: #f2f2f7;
+    }
+
+    html[data-theme="dark"] header {
+      background: rgb(28 28 30 / 0.88) !important;
+      border-bottom-color: #48484a !important;
+    }
+
+    html[data-theme="dark"] h1,
+    html[data-theme="dark"] h2,
+    html[data-theme="dark"] h3,
+    html[data-theme="dark"] .text-slate-900 {
+      color: #f2f2f7 !important;
+    }
+
+    html[data-theme="dark"] .text-slate-700 {
+      color: #d1d1d6 !important;
+    }
+
+    html[data-theme="dark"] .text-slate-600,
+    html[data-theme="dark"] .text-slate-500 {
+      color: #c7c7cc !important;
+    }
+
+    html[data-theme="dark"] .text-slate-400 {
+      color: #aeaeb2 !important;
+    }
+
+    html[data-theme="dark"] .bg-white,
+    html[data-theme="dark"] .quick-link,
+    html[data-theme="dark"] #missionWeekly,
+    html[data-theme="dark"] #missionCalendar,
+    html[data-theme="dark"] #scaleCalendarGrid {
+      background: #1c1c1e !important;
+      color: var(--ink);
+    }
+
+    html[data-theme="dark"] .bg-slate-50 {
+      background: #2c2c2e !important;
+    }
+
+    html[data-theme="dark"] .bg-slate-100 {
+      background: #3a3a3c !important;
+    }
+
+    html[data-theme="dark"] [class*="border-slate-100"],
+    html[data-theme="dark"] [class*="border-slate-200"],
+    html[data-theme="dark"] [class*="border-gray-200"] {
+      border-color: #48484a !important;
+    }
+
+    html[data-theme="dark"] label,
+    html[data-theme="dark"] thead,
+    html[data-theme="dark"] th,
+    html[data-theme="dark"] td {
+      color: #c7c7cc !important;
+    }
+
+    html[data-theme="dark"] th,
+    html[data-theme="dark"] .scale-day-header,
+    html[data-theme="dark"] .scale-month-header {
+      background: #2c2c2e !important;
+    }
+
+    html[data-theme="dark"] .scale-person-cell,
+    html[data-theme="dark"] .scale-cell {
+      background: #1c1c1e !important;
+    }
+
+    html[data-theme="dark"] .scale-cell[data-scale-type="red"],
+    html[data-theme="dark"] .scale-day-header[data-scale-type="red"] {
+      background: #302525 !important;
+    }
+
+    html[data-theme="dark"] .scale-row:hover .scale-person-cell,
+    html[data-theme="dark"] .scale-row:hover .scale-cell,
+    html[data-theme="dark"] tbody tr:hover {
+      background: #3a3a3c !important;
+    }
+
+    html[data-theme="dark"] input,
+    html[data-theme="dark"] select,
+    html[data-theme="dark"] textarea {
+      background: #3a3a3c !important;
+      border-color: #636366 !important;
+      color: #f2f2f7 !important;
+    }
+
+    html[data-theme="dark"] input::placeholder,
+    html[data-theme="dark"] textarea::placeholder {
+      color: #8e8e93;
+    }
+
+    html[data-theme="dark"] input:focus,
+    html[data-theme="dark"] select:focus,
+    html[data-theme="dark"] textarea:focus {
+      border-color: #aeaeb2 !important;
+      box-shadow: 0 0 0 2px rgb(174 174 178 / 0.25);
+    }
+
+    html[data-theme="dark"] button[data-cancel],
+    html[data-theme="dark"] #logoutButton,
+    html[data-theme="dark"] #closeUserPermissions,
+    html[data-theme="dark"] #cancelUserPermissions,
+    html[data-theme="dark"] .calendar-icon-button {
+      background: #2c2c2e !important;
+      border-color: #636366 !important;
+      color: #d1d1d6 !important;
+    }
+
+    html[data-theme="dark"] button[data-cancel]:hover,
+    html[data-theme="dark"] #logoutButton:hover,
+    html[data-theme="dark"] .calendar-icon-button:hover {
+      background: #3a3a3c !important;
+      border-color: #8e8e93 !important;
+      color: #f2f2f7 !important;
+    }
+
+    html[data-theme="dark"] button[type="submit"],
+    html[data-theme="dark"] button[data-action="save-mission-operation"] {
+      background: #f2f2f7 !important;
+      color: #1c1c1e !important;
+    }
+
+    html[data-theme="dark"] button[type="submit"]:hover,
+    html[data-theme="dark"] button[data-action="save-mission-operation"]:hover {
+      background: #d1d1d6 !important;
+    }
+
+    html[data-theme="dark"] .popup-toast {
+      background: #2c2c2e;
+      border-color: #636366;
+      color: #f2f2f7;
+      box-shadow: 0 16px 34px rgb(0 0 0 / 0.28);
+    }
+
+    html[data-theme="dark"] #themeToggle {
+      color: #d1d1d6;
+      border-color: #636366;
+      background: #2c2c2e;
+    }
+
+    html[data-theme="dark"] #themeToggle:hover {
+      color: #f2f2f7;
+      background: #3a3a3c;
+    }
+
+    html:not([data-theme="dark"]) .text-accent,
+    html:not([data-theme="dark"]) .hover\:text-accent:hover {
+      color: #3a3a3c !important;
+    }
+
+    html:not([data-theme="dark"]) .bg-accent {
+      background: #3a3a3c !important;
+    }
+
+    html[data-theme="dark"] .text-accent,
+    html[data-theme="dark"] .hover\:text-accent:hover {
+      color: #d1d1d6 !important;
+    }
+
+    html[data-theme="dark"] .bg-accent {
+      background: #d1d1d6 !important;
+      color: #1c1c1e !important;
+    }
+
+    html[data-theme="dark"] .hover\:bg-accent-dark:hover {
+      background: #f2f2f7 !important;
+      color: #1c1c1e !important;
+    }
+
+    html[data-theme="dark"] .bg-blue-50 {
+      background: #3a3a3c !important;
+    }
+
+    html[data-theme="dark"] .border-blue-200 {
+      border-color: #636366 !important;
     }
   </style>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -964,6 +1201,9 @@
         </div>
         <div class="flex items-center gap-3">
           <span id="currentUserEmail" class="hidden text-sm text-slate-500 sm:inline"></span>
+          <button id="themeToggle" type="button" class="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 text-slate-600 transition hover:border-slate-300 hover:bg-slate-50" aria-label="Ativar modo escuro" title="Ativar modo escuro">
+            <i data-lucide="moon" class="h-4 w-4" aria-hidden="true"></i>
+          </button>
           <button id="logoutButton" type="button" class="rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600">
             Sair
           </button>
