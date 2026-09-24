@@ -685,12 +685,21 @@
       background: #fff7f7;
     }
 
+    .scale-day-header.scale-today {
+      background: #dbeafe;
+      box-shadow: inset 0 -3px 0 #2563eb;
+    }
+
     .scale-cell {
       background: #ffffff;
     }
 
     .scale-cell[data-scale-type="red"] {
       background: #fffafa;
+    }
+
+    .scale-cell.scale-today {
+      background: #eff6ff;
     }
 
     .scale-cell-button,
@@ -729,6 +738,37 @@
 
     .scale-remove-button:hover {
       color: #dc2626;
+    }
+
+    @media (max-width: 767px) {
+      #scaleCalendarGrid {
+        margin-inline: -0.25rem;
+        max-width: calc(100% + 0.5rem);
+        -webkit-overflow-scrolling: touch;
+      }
+
+      #scaleCalendarGrid table {
+        font-size: 0.75rem;
+      }
+
+      .scale-person-cell {
+        width: 9.5rem;
+        min-width: 9.5rem;
+        max-width: 9.5rem;
+      }
+
+      .scale-day-header {
+        min-width: 4.25rem;
+      }
+
+      .scale-day-header.scale-today {
+        background: #bfdbfe;
+      }
+
+      .scale-cell-button,
+      .scale-cell-static {
+        min-height: 3.75rem;
+      }
     }
 
     .status-pill {
@@ -1060,9 +1100,100 @@
     html[data-theme="dark"] .border-blue-200 {
       border-color: #636366 !important;
     }
+
+    #mobileNav {
+      display: none;
+    }
+
+    .tippy-box[data-theme~="pmt"] {
+      border: 1px solid rgb(255 255 255 / 0.12);
+      border-radius: 6px;
+      background: #1c1c1e;
+      color: #ffffff;
+      font-size: 0.75rem;
+      font-weight: 600;
+      line-height: 1.25;
+      box-shadow: 0 8px 20px rgb(0 0 0 / 0.2);
+    }
+
+    .tippy-box[data-theme~="pmt"] > .tippy-arrow::before {
+      color: #1c1c1e;
+    }
+
+    @media (max-width: 767px) {
+      #sidebar {
+        display: none;
+      }
+
+      #sidebarToggle {
+        display: none;
+      }
+
+      #mobileNav {
+        position: fixed;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 50;
+        display: flex;
+        gap: 0.25rem;
+        overflow-x: auto;
+        border-top: 1px solid var(--line);
+        background: rgb(255 255 255 / 0.94);
+        padding: 0.45rem 0.5rem calc(0.45rem + env(safe-area-inset-bottom));
+        backdrop-filter: blur(14px);
+        scrollbar-width: none;
+      }
+
+      #mobileNav::-webkit-scrollbar {
+        display: none;
+      }
+
+      .mobile-nav-item {
+        display: inline-flex;
+        min-width: 4.7rem;
+        flex: 0 0 auto;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.2rem;
+        border-radius: 6px;
+        padding: 0.45rem 0.55rem;
+        color: var(--muted);
+        font-size: 0.68rem;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .mobile-nav-item [data-lucide] {
+        height: 1.1rem;
+        width: 1.1rem;
+      }
+
+      .mobile-nav-item.is-active {
+        background: #e5e5ea;
+        color: #1c1c1e;
+      }
+
+      html[data-theme="dark"] #mobileNav {
+        background: rgb(28 28 30 / 0.94);
+      }
+
+      html[data-theme="dark"] .mobile-nav-item.is-active {
+        background: #3a3a3c;
+        color: #f2f2f7;
+      }
+
+      main {
+        padding-bottom: 6rem !important;
+      }
+    }
   </style>
+  <link rel="stylesheet" href="https://unpkg.com/tippy.js@6/animations/shift-away.css" />
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
+  <script src="https://unpkg.com/@popperjs/core@2"></script>
+  <script src="https://unpkg.com/tippy.js@6"></script>
 </head>
 
 <body class="bg-slate-50 text-slate-900">
@@ -1080,8 +1211,8 @@
         </div>
       </div>
       <div class="mt-5 flex justify-end gap-2">
-        <button id="confirmDialogCancel" type="button" class="rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">Cancelar</button>
-        <button id="confirmDialogConfirm" type="button" class="rounded-md bg-accent px-3 py-2 text-sm font-semibold text-white hover:bg-accent-dark">Confirmar</button>
+        <button id="confirmDialogCancel" type="button" title="Cancelar ação" class="rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">Cancelar</button>
+        <button id="confirmDialogConfirm" type="button" title="Confirmar ação" class="rounded-md bg-accent px-3 py-2 text-sm font-semibold text-white hover:bg-accent-dark">Confirmar</button>
       </div>
     </div>
   </div>
@@ -1116,7 +1247,7 @@
         </button>
       </form>
 
-      <button id="forgotPassword" type="button" class="mt-4 w-full text-center text-sm font-medium text-accent hover:underline">
+      <button id="forgotPassword" type="button" title="Enviar e-mail para redefinir a senha" class="mt-4 w-full text-center text-sm font-medium text-accent hover:underline">
         Esqueci minha senha
       </button>
     </div>
@@ -1191,7 +1322,7 @@
         <div class="flex items-center gap-3">
           <button id="sidebarToggle"
             class="md:hidden inline-flex items-center justify-center h-10 w-10 rounded-md border border-slate-200"
-            aria-label="Abrir menu">
+            aria-label="Abrir menu" title="Abrir menu de navegação">
             ☰
           </button>
           <div>
@@ -1204,25 +1335,38 @@
           <button id="themeToggle" type="button" class="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 text-slate-600 transition hover:border-slate-300 hover:bg-slate-50" aria-label="Ativar modo escuro" title="Ativar modo escuro">
             <i data-lucide="moon" class="h-4 w-4" aria-hidden="true"></i>
           </button>
-          <button id="logoutButton" type="button" class="rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600">
+          <button id="logoutButton" type="button" title="Encerrar sessão" class="rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600">
             Sair
           </button>
         </div>
       </header>
+
+      <nav id="mobileNav" aria-label="Navegação principal">
+        <button class="mobile-nav-item" data-target="dashboard" aria-label="Dashboard" title="Dashboard"><i data-lucide="layout-dashboard" aria-hidden="true"></i><span>Início</span></button>
+        <button class="mobile-nav-item" data-target="search" aria-label="Pesquisa geral" title="Pesquisa geral"><i data-lucide="search" aria-hidden="true"></i><span>Pesquisa</span></button>
+        <button class="mobile-nav-item" data-target="vehicles" aria-label="Veículos" title="Veículos"><i data-lucide="truck" aria-hidden="true"></i><span>Veículos</span></button>
+        <button class="mobile-nav-item" data-target="drivers" aria-label="Condutores" title="Condutores"><i data-lucide="id-card" aria-hidden="true"></i><span>Condutores</span></button>
+        <button class="mobile-nav-item" data-target="missions" aria-label="Missões" title="Missões"><i data-lucide="clipboard-list" aria-hidden="true"></i><span>Missões</span></button>
+        <button class="mobile-nav-item" data-target="monthlyCalendar" aria-label="Calendário" title="Calendário"><i data-lucide="calendar-days" aria-hidden="true"></i><span>Calendário</span></button>
+        <button class="mobile-nav-item" data-target="workOrders" aria-label="Operações" title="Operações"><i data-lucide="route" aria-hidden="true"></i><span>Operações</span></button>
+        <button class="mobile-nav-item" data-target="scale" aria-label="Escala" title="Escala"><i data-lucide="calendar-range" aria-hidden="true"></i><span>Escala</span></button>
+        <button class="mobile-nav-item" data-target="users" aria-label="Usuários" title="Usuários"><i data-lucide="users" aria-hidden="true"></i><span>Usuários</span></button>
+        <button class="mobile-nav-item" data-target="account" aria-label="Minha conta" title="Minha conta"><i data-lucide="key-round" aria-hidden="true"></i><span>Conta</span></button>
+      </nav>
 
       <main class="flex-1 p-6 space-y-8">
         <section id="dashboard" data-section>
           <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
             <button type="button"
               class="quick-link bg-white rounded-lg border border-slate-200 p-5 shadow-sm text-left transition hover:border-accent hover:shadow-md"
-              data-target="vehicles">
+              data-target="vehicles" title="Abrir veículos">
               <i data-lucide="truck" aria-hidden="true"></i>
               <p class="text-sm text-slate-500">Veículos</p>
               <p id="countVehicles" class="text-3xl font-semibold text-slate-900 mt-2">0</p>
             </button>
             <button type="button"
               class="quick-link bg-white rounded-lg border border-slate-200 p-5 shadow-sm text-left transition hover:border-accent hover:shadow-md"
-              data-target="drivers">
+              data-target="drivers" title="Abrir condutores">
               <i data-lucide="id-card" aria-hidden="true"></i>
               <p class="text-sm text-slate-500">Condutores</p>
               <p id="countDrivers" class="text-3xl font-semibold text-slate-900 mt-2">0</p>
@@ -1230,14 +1374,14 @@
 
             <button type="button"
               class="quick-link bg-white rounded-lg border border-slate-200 p-5 shadow-sm text-left transition hover:border-accent hover:shadow-md"
-              data-target="missions">
+              data-target="missions" title="Abrir missões">
               <i data-lucide="clipboard-list" aria-hidden="true"></i>
               <p class="text-sm text-slate-500">Missões</p>
               <p id="countMissions" class="text-3xl font-semibold text-slate-900 mt-2">0</p>
             </button>
             <button type="button"
               class="quick-link bg-white rounded-lg border border-slate-200 p-5 shadow-sm text-left transition hover:border-accent hover:shadow-md"
-              data-target="workOrders">
+              data-target="workOrders" title="Abrir operações">
               <i data-lucide="route" aria-hidden="true"></i>
               <p class="text-sm text-slate-500">Operações</p>
               <p id="countWorkOrders" class="text-3xl font-semibold text-slate-900 mt-2">0</p>
@@ -1430,6 +1574,10 @@
                 </form>
                 <label for="scaleCategorySelect" class="mt-4 block text-sm text-slate-600">Categoria ativa</label>
                 <select id="scaleCategorySelect" class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"></select>
+                <button id="scaleCategoryDelete" type="button" disabled class="mt-3 inline-flex items-center gap-2 rounded-md border border-red-200 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50" title="Excluir categoria ativa">
+                  <i data-lucide="trash-2" class="h-4 w-4" aria-hidden="true"></i>
+                  Excluir categoria
+                </button>
               </div>
 
               <div id="scaleMemberEditor" class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">

@@ -53,7 +53,10 @@ const sectionTitles = {
 let activeSectionId = "dashboard";
 let scaleStartDate = new Date();
 scaleStartDate.setHours(0, 0, 0, 0);
-let scaleLoadedDays = 60;
+const scaleIsMobile = window.matchMedia("(max-width: 767px)").matches;
+scaleStartDate.setDate(scaleStartDate.getDate() - (scaleIsMobile ? 7 : 30));
+let scaleLoadedDays = scaleIsMobile ? 14 : 60;
+let lastScaleCenteredDateKey = "";
 let activeScaleCategoryId = "";
 let scaleMembersUnsubscribe = null;
 let scaleServicesUnsubscribe = null;
@@ -137,6 +140,27 @@ function refreshIcons() {
   if (window.lucide?.createIcons) {
     window.lucide.createIcons();
   }
+  refreshTooltips();
+}
+
+function refreshTooltips() {
+  if (!window.tippy) return;
+  document.querySelectorAll("[title], button[aria-label]").forEach((element) => {
+    const content = element.getAttribute("title") || element.getAttribute("aria-label");
+    if (!content) return;
+    element.setAttribute("data-tippy-content", content);
+    if (element._tippy) {
+      element._tippy.setContent(content);
+    } else {
+      window.tippy(element, {
+        animation: "shift-away",
+        delay: [180, 0],
+        duration: [160, 120],
+        placement: "top",
+        theme: "pmt"
+      });
+    }
+  });
 }
 
 const themeStorageKey = "pmt-theme";
@@ -150,6 +174,7 @@ function applyTheme(theme) {
   themeToggle.setAttribute("title", nextThemeLabel);
   themeToggle.innerHTML = `<i data-lucide="${isDark ? "sun" : "moon"}" class="h-4 w-4" aria-hidden="true"></i>`;
   refreshIcons();
+  refreshTooltips();
 }
 
 function getStoredTheme() {
@@ -284,9 +309,9 @@ function getDefaultSectionId() {
 }
 
 function applyAccessVisibility() {
-  document.querySelectorAll(".nav-item").forEach((item) => {
-    item.classList.toggle("hidden", !canAccessSection(item.dataset.target));
-  });
+   document.querySelectorAll(".nav-item, .mobile-nav-item").forEach((item) => {
+     item.classList.toggle("hidden", !canAccessSection(item.dataset.target));
+   });
   if (!canAccessSection(activeSectionId)) {
     setActiveSection(getDefaultSectionId());
   }
@@ -452,7 +477,7 @@ function renderUsersTable() {
         <td class="py-3 pr-4"><p class="font-medium">${safeText(item.name, "Sem nome")}</p><p class="text-xs text-slate-500">${safeText(item.email)}</p></td>
         <td class="py-3 pr-4">${item.role === "admin" ? "Administrador" : "Operador"}</td>
         <td class="py-3 pr-4"><span class="rounded-full px-2 py-1 text-xs ${active ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}">${active ? "Ativo" : "Bloqueado"}</span></td>
-        <td class="py-3"><div class="flex flex-wrap gap-2">${item.role === "admin" ? "Administrador" : `<button type="button" class="text-accent hover:underline" data-user-action="permissions" data-id="${userId}">Permissões</button><button type="button" class="text-accent hover:underline" data-user-action="toggle" data-id="${userId}" ${isCurrentUser ? "disabled" : ""}>${active ? "Bloquear" : "Reativar"}</button>`}</div></td>
+        <td class="py-3"><div class="flex flex-wrap gap-2">${item.role === "admin" ? "Administrador" : `<button type="button" title="Gerenciar permissões do usuário" class="text-accent hover:underline" data-user-action="permissions" data-id="${userId}">Permissões</button><button type="button" title="${active ? "Bloquear usuário" : "Reativar usuário"}" class="text-accent hover:underline" data-user-action="toggle" data-id="${userId}" ${isCurrentUser ? "disabled" : ""}>${active ? "Bloquear" : "Reativar"}</button>`}</div></td>
       </tr>`;
     })
     .join("");
@@ -549,6 +574,7 @@ userPermissionsPanel?.addEventListener("click", (event) => {
 const scaleCategoryForm = document.getElementById("scaleCategoryForm");
 const scaleCategoryName = document.getElementById("scaleCategoryName");
 const scaleCategorySelect = document.getElementById("scaleCategorySelect");
+const scaleCategoryDelete = document.getElementById("scaleCategoryDelete");
 const scaleMemberForm = document.getElementById("scaleMemberForm");
 const scaleMemberEditor = document.getElementById("scaleMemberEditor");
 const scaleDriverSelect = document.getElementById("scaleDriverSelect");
@@ -632,6 +658,9 @@ function renderScaleCategories() {
     scaleCategorySelect.value = current;
   }
   scaleCategorySelect.disabled = !state.scaleCategories.length;
+  if (scaleCategoryDelete) {
+    scaleCategoryDelete.disabled = !state.scaleCategories.length || !hasPermission("scaleEdit");
+  }
 }
 
 function renderScaleDriverOptions() {
@@ -640,6 +669,15 @@ function renderScaleDriverOptions() {
   scaleDriverSelect.innerHTML = '<option value="">Selecione um condutor</option>'
     + state.drivers.map((driver) => `<option value="${safeText(driver.id, "")}">${safeText(formatDriverLabel(driver))}</option>`).join("");
   if (current) scaleDriverSelect.value = current;
+}
+
+function centerScaleToday() {
+  if (!scaleCalendarGrid || !scaleCalendarGrid.clientWidth) return;
+  const todayKey = toDateKey(new Date());
+  const todayCell = scaleCalendarGrid.querySelector(`.scale-day-header[data-scale-date="${todayKey}"]`);
+  if (!todayCell) return;
+  scaleCalendarGrid.scrollLeft = Math.max(0, todayCell.offsetLeft - (scaleCalendarGrid.clientWidth - todayCell.offsetWidth) / 2);
+  lastScaleCenteredDateKey = todayKey;
 }
 
 function renderScaleCalendar() {
@@ -651,6 +689,7 @@ function renderScaleCalendar() {
   const previousScrollLeft = scaleCalendarGrid.scrollLeft;
   const category = state.scaleCategories.find((item) => item.id === activeScaleCategoryId);
   const days = scaleVisibleDays();
+  const todayKey = toDateKey(new Date());
   const firstDayLabel = days[0]?.toLocaleDateString("pt-BR") || "";
   const lastDayLabel = days.at(-1)?.toLocaleDateString("pt-BR") || "";
   if (scaleCalendarTitle) scaleCalendarTitle.textContent = category ? `Escala - ${category.name}` : "Escala";
@@ -681,7 +720,8 @@ function renderScaleCalendar() {
     const type = scaleTypeForDate(dateKey);
     const label = date.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "");
     const isMonthStart = index === 0 || date.getDate() === 1;
-    return `<th class="scale-day-header ${isMonthStart ? "scale-month-start" : ""} border-b border-l border-slate-200 px-2 py-2 text-center" data-scale-type="${type}"><span class="block text-[11px] font-medium uppercase ${type === "red" ? "text-rose-700" : "text-slate-600"}">${label}</span><span class="block text-base font-semibold text-slate-900">${date.getDate()}</span><span class="block text-[10px] ${type === "red" ? "text-rose-600" : "text-slate-500"}">${scaleTypeLabel(type)}</span></th>`;
+    const isToday = dateKey === todayKey;
+    return `<th class="scale-day-header ${isMonthStart ? "scale-month-start" : ""} ${isToday ? "scale-today" : ""} border-b border-l border-slate-200 px-2 py-2 text-center" data-scale-type="${type}" data-scale-date="${dateKey}"><span class="block text-[11px] font-medium uppercase ${type === "red" ? "text-rose-700" : "text-slate-600"}">${label}</span><span class="block text-base font-semibold text-slate-900">${date.getDate()}</span><span class="block text-[10px] ${type === "red" ? "text-rose-600" : "text-slate-500"}">${isToday ? "Hoje" : scaleTypeLabel(type)}</span></th>`;
   }).join("");
 
   const rows = [...state.scaleMembers]
@@ -693,17 +733,24 @@ function renderScaleCalendar() {
       const service = state.scaleServices[member.id]?.[dateKey];
       const counter = String(scaleCounterFor(member, dateKey));
       const isMonthStart = date === days[0] || date.getDate() === 1;
+      const isToday = dateKey === todayKey;
       const content = service
         ? `<span class="block text-xs uppercase tracking-wide">Serviço</span>`
         : `<span class="block text-sm font-semibold">${counter}</span><span class="block text-[10px]">Folga</span>`;
-      return `<td class="scale-cell ${isMonthStart ? "scale-month-start" : ""} border-b border-l border-slate-200 p-1 text-center" data-scale-type="${type}">${hasPermission("scaleEdit") ? `<button type="button" class="scale-cell-button ${service ? "scale-service" : "text-slate-600"}" data-scale-service data-member-id="${safeText(member.id, "")}" data-date="${safeText(dateKey, "")}" aria-label="${safeText(`${service ? "Remover serviço" : "Marcar serviço"} em ${formatDate(dateKey)}`)}">${content}</button>` : `<div class="scale-cell-static ${service ? "scale-service" : "text-slate-600"}">${content}</div>`}</td>`;
+      return `<td class="scale-cell ${isMonthStart ? "scale-month-start" : ""} ${isToday ? "scale-today" : ""} border-b border-l border-slate-200 p-1 text-center" data-scale-type="${type}" data-scale-date="${dateKey}">${hasPermission("scaleEdit") ? `<button type="button" class="scale-cell-button ${service ? "scale-service" : "text-slate-600"}" data-scale-service data-member-id="${safeText(member.id, "")}" data-date="${safeText(dateKey, "")}" aria-label="${safeText(`${service ? "Remover serviço" : "Marcar serviço"} em ${formatDate(dateKey)}`)}">${content}</button>` : `<div class="scale-cell-static ${service ? "scale-service" : "text-slate-600"}">${content}</div>`}</td>`;
     }).join("");
     return `<tr class="scale-row"><th class="scale-person-cell sticky left-0 z-10 border-b border-slate-200 px-3 py-2 text-left"><span class="block truncate font-medium text-slate-900">${safeText(member.name, "Sem nome")}</span><span class="block truncate text-xs text-slate-500">${safeText(member.number, "---")} · ${safeText(member.rank, "Sem graduação")}</span>${hasPermission("scaleEdit") ? `<button type="button" class="scale-remove-button mt-1 inline-flex items-center gap-1 text-xs" data-scale-member-remove data-member-id="${safeText(member.id, "")}"><i data-lucide="x" class="h-3 w-3" aria-hidden="true"></i>Remover</button>` : ""}</th>${cells}</tr>`;
   }).join("");
   scaleCalendarGrid.innerHTML = `<table class="border-separate border-spacing-0 text-sm"><thead><tr><th class="scale-person-cell sticky left-0 z-20 border-b border-slate-200 px-3 py-2 text-left">Mês</th>${monthHeader}</tr><tr><th class="scale-person-cell sticky left-0 z-20 border-b border-slate-200 px-3 py-2 text-left">Militar</th>${header}</tr></thead><tbody>${rows}</tbody></table>`;
   refreshIcons();
+  const shouldCenterToday = lastScaleCenteredDateKey !== todayKey;
+  if (shouldCenterToday) lastScaleCenteredDateKey = todayKey;
   requestAnimationFrame(() => {
-    scaleCalendarGrid.scrollLeft = previousScrollLeft;
+    if (shouldCenterToday) {
+      centerScaleToday();
+    } else {
+      scaleCalendarGrid.scrollLeft = previousScrollLeft;
+    }
   });
 }
 
@@ -744,6 +791,31 @@ scaleCategoryForm?.addEventListener("submit", async (event) => {
   if (!name) return;
   await push(ref(db, "scaleCategories"), { name, createdAt: Date.now(), createdBy: auth.currentUser.uid });
   scaleCategoryForm.reset();
+});
+
+scaleCategoryDelete?.addEventListener("click", async () => {
+  if (!requirePermission("scaleEdit")) return;
+  const categoryId = activeScaleCategoryId;
+  const category = state.scaleCategories.find((item) => item.id === categoryId);
+  if (!category) return;
+  if (!await confirmPopup(`Deseja excluir a categoria "${category.name || "Sem nome"}"? Todos os militares e serviços dessa escala serão removidos.`)) return;
+
+  scaleCategoryDelete.disabled = true;
+  try {
+    await update(ref(db), {
+      [`scaleCategories/${categoryId}`]: null,
+      [`scaleMembers/${categoryId}`]: null,
+      [`scaleServices/${categoryId}`]: null
+    });
+    state.scaleCategories = state.scaleCategories.filter((item) => item.id !== categoryId);
+    activeScaleCategoryId = "";
+    detachScaleCategoryListeners();
+    renderScaleCategories();
+    renderScaleCalendar();
+    showPopup("Categoria de escala excluída.", "success");
+  } catch {
+    showPopup("Não foi possível excluir a categoria de escala.", "error");
+  }
 });
 
 scaleMemberForm?.addEventListener("submit", async (event) => {
@@ -839,13 +911,18 @@ function setActiveSection(sectionId) {
     }
   });
 
-  document.querySelectorAll(".nav-item").forEach((item) => {
+  document.querySelectorAll(".nav-item, .mobile-nav-item").forEach((item) => {
     item.classList.toggle("bg-blue-50", item.dataset.target === sectionId);
     item.classList.toggle("text-accent", item.dataset.target === sectionId);
+    item.classList.toggle("is-active", item.dataset.target === sectionId);
   });
 
   pageTitle.textContent = sectionTitles[sectionId] || "Dashboard";
   toggleSidebar(false);
+
+  if (sectionId === "scale") {
+    requestAnimationFrame(centerScaleToday);
+  }
 
   if (sectionId === "dashboard") {
     updateDashboard(true);
@@ -1183,8 +1260,8 @@ function renderVehiclesTable() {
         <td class="py-3 pr-4">${safeText(vehicle.model)}</td>
         <td class="py-3 pr-4">${safeText(vehicle.status)}</td>
         <td class="py-3" data-action-cell>
-          <button class="text-accent mr-3" data-action="edit" data-id="${safeText(vehicle.id, "")}">Editar</button>
-          <button class="text-red-600" data-action="delete" data-id="${safeText(vehicle.id, "")}">Excluir</button>
+          <button class="text-accent mr-3" title="Editar veículo" data-action="edit" data-id="${safeText(vehicle.id, "")}">Editar</button>
+          <button class="text-red-600" title="Excluir veículo" data-action="delete" data-id="${safeText(vehicle.id, "")}">Excluir</button>
         </td>
       </tr>`
     )
@@ -1206,8 +1283,8 @@ function renderDriversTable() {
         <td class="py-3 pr-4">${safeText(driver.phone)}</td>
         <td class="py-3 pr-4">${safeText(getDriverStatusLabel(driver))}</td>
         <td class="py-3" data-action-cell>
-          <button class="text-accent mr-3" data-action="edit" data-id="${safeText(driver.id, "")}">Editar</button>
-          <button class="text-red-600" data-action="delete" data-id="${safeText(driver.id, "")}">Excluir</button>
+          <button class="text-accent mr-3" title="Editar condutor" data-action="edit" data-id="${safeText(driver.id, "")}">Editar</button>
+          <button class="text-red-600" title="Excluir condutor" data-action="delete" data-id="${safeText(driver.id, "")}">Excluir</button>
         </td>
       </tr>`
     )
@@ -1253,9 +1330,9 @@ function renderMissionsTable() {
           <span class="text-xs px-2 py-1 rounded-full ${statusClass}">${safeText(status)}</span>
         </td>
         <td class="py-3 whitespace-nowrap" data-action-cell>
-          <button class="text-accent mr-3" data-action="toggle" data-id="${safeText(mission.id, "")}">${safeText(toggleLabel)}</button>
-          <button class="text-accent mr-3" data-action="edit" data-id="${safeText(mission.id, "")}">Editar</button>
-          <button class="text-red-600" data-action="delete" data-id="${safeText(mission.id, "")}">Excluir</button>
+          <button class="text-accent mr-3" title="${toggleLabel} missão" data-action="toggle" data-id="${safeText(mission.id, "")}">${safeText(toggleLabel)}</button>
+          <button class="text-accent mr-3" title="Editar missão" data-action="edit" data-id="${safeText(mission.id, "")}">Editar</button>
+          <button class="text-red-600" title="Excluir missão" data-action="delete" data-id="${safeText(mission.id, "")}">Excluir</button>
         </td>
       </tr>`;
     })
@@ -1311,8 +1388,8 @@ function renderOngoingMissionsPanel() {
           </div>
         </div>
         <div class="flex flex-wrap justify-end gap-2 mt-4">
-           <button type="button" data-action="complete-mission-operation" data-id="${safeText(mission.id, "")}" class="px-3 py-2 rounded-md border border-slate-200 text-slate-600 text-xs hover:text-accent hover:border-accent transition">Concluir missão</button>
-           <button type="button" data-action="save-mission-operation" data-id="${safeText(mission.id, "")}" class="px-3 py-2 rounded-md bg-accent text-white text-xs shadow-sm shadow-blue-500/20 hover:bg-accent-dark transition">Salvar equipe</button>
+           <button type="button" title="Marcar operação como concluída" data-action="complete-mission-operation" data-id="${safeText(mission.id, "")}" class="px-3 py-2 rounded-md border border-slate-200 text-slate-600 text-xs hover:text-accent hover:border-accent transition">Concluir missão</button>
+           <button type="button" title="Salvar veículo e condutor da operação" data-action="save-mission-operation" data-id="${safeText(mission.id, "")}" class="px-3 py-2 rounded-md bg-accent text-white text-xs shadow-sm shadow-blue-500/20 hover:bg-accent-dark transition">Salvar equipe</button>
         </div>
       </div>`;
     })
@@ -1347,8 +1424,8 @@ function renderWorkOrdersTable() {
          <td class="py-3 pr-4">${safeText(arrivalDateTime)}</td>
          <td class="py-3 pr-4">${safeText(item.status)}</td>
         <td class="py-3 whitespace-nowrap" data-action-cell>
-           ${canClose ? `<button class="text-accent mr-3" data-action="close" data-id="${safeText(item.id, "")}">Fechar</button>` : ""}
-           <button class="text-red-600" data-action="delete" data-id="${safeText(item.id, "")}">Excluir</button>
+           ${canClose ? `<button class="text-accent mr-3" title="Fechar operação" data-action="close" data-id="${safeText(item.id, "")}">Fechar</button>` : ""}
+           <button class="text-red-600" title="Excluir operação" data-action="delete" data-id="${safeText(item.id, "")}">Excluir</button>
         </td>
       </tr>`;
     })
@@ -1973,6 +2050,10 @@ document.querySelectorAll(".nav-item").forEach((item) => {
   item.addEventListener("click", () => setActiveSection(item.dataset.target));
 });
 
+document.querySelectorAll(".mobile-nav-item").forEach((item) => {
+  item.addEventListener("click", () => setActiveSection(item.dataset.target));
+});
+
 document.querySelectorAll(".quick-link").forEach((button) => {
   if (!button.classList.contains("calendar-icon-button")) {
     button.classList.add(
@@ -2134,12 +2215,6 @@ themeToggle?.addEventListener("click", () => {
     // Theme switching still works when browser storage is unavailable.
   }
   applyTheme(nextTheme);
-});
-
-document.querySelector("header")?.addEventListener("click", (event) => {
-  if (window.innerWidth >= 768) return;
-  if (event.target.closest("button, a, input, select, textarea")) return;
-  toggleSidebar();
 });
 
 if (sidebarOverlay) {
@@ -2419,6 +2494,7 @@ function attachUserAccessListener(user) {
     usersAccessMessage?.classList.toggle("hidden", isAdmin);
     applyAccessVisibility();
     applyPermissionUi();
+    renderScaleCategories();
     scaleCategoryForm?.classList.toggle("hidden", !hasPermission("scaleEdit"));
     scaleMemberEditor?.classList.toggle("hidden", !hasPermission("scaleEdit"));
     renderScaleCalendar();
