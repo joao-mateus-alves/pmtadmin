@@ -138,6 +138,19 @@ function refreshIcons() {
   }
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function safeText(value, fallback = "-") {
+  return escapeHtml(value === undefined || value === null || value === "" ? fallback : value);
+}
+
 function showPopup(message, type = "info") {
   if (!message || !popupLayer) return;
   const icons = {
@@ -410,11 +423,12 @@ function renderUsersTable() {
     .map((item) => {
       const active = item.active !== false;
       const isCurrentUser = item.id === auth.currentUser?.uid;
+      const userId = safeText(item.id, "");
       return `<tr class="border-t border-slate-100">
-        <td class="py-3 pr-4"><p class="font-medium">${item.name || "Sem nome"}</p><p class="text-xs text-slate-500">${item.email || "-"}</p></td>
+        <td class="py-3 pr-4"><p class="font-medium">${safeText(item.name, "Sem nome")}</p><p class="text-xs text-slate-500">${safeText(item.email)}</p></td>
         <td class="py-3 pr-4">${item.role === "admin" ? "Administrador" : "Operador"}</td>
         <td class="py-3 pr-4"><span class="rounded-full px-2 py-1 text-xs ${active ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}">${active ? "Ativo" : "Bloqueado"}</span></td>
-        <td class="py-3"><div class="flex flex-wrap gap-2">${item.role === "admin" ? "Administrador" : `<button type="button" class="text-accent hover:underline" data-user-action="permissions" data-id="${item.id}">Permissões</button><button type="button" class="text-accent hover:underline" data-user-action="toggle" data-id="${item.id}" ${isCurrentUser ? "disabled" : ""}>${active ? "Bloquear" : "Reativar"}</button>`}</div></td>
+        <td class="py-3"><div class="flex flex-wrap gap-2">${item.role === "admin" ? "Administrador" : `<button type="button" class="text-accent hover:underline" data-user-action="permissions" data-id="${userId}">Permissões</button><button type="button" class="text-accent hover:underline" data-user-action="toggle" data-id="${userId}" ${isCurrentUser ? "disabled" : ""}>${active ? "Bloquear" : "Reativar"}</button>`}</div></td>
       </tr>`;
     })
     .join("");
@@ -588,7 +602,7 @@ function renderScaleCategories() {
   if (!scaleCategorySelect) return;
   const current = activeScaleCategoryId;
   scaleCategorySelect.innerHTML = state.scaleCategories.length
-    ? state.scaleCategories.map((category) => `<option value="${category.id}">${category.name}</option>`).join("")
+    ? state.scaleCategories.map((category) => `<option value="${safeText(category.id, "")}">${safeText(category.name, "Sem nome")}</option>`).join("")
     : '<option value="">Nenhuma categoria criada</option>';
   if (state.scaleCategories.some((category) => category.id === current)) {
     scaleCategorySelect.value = current;
@@ -600,7 +614,7 @@ function renderScaleDriverOptions() {
   if (!scaleDriverSelect) return;
   const current = scaleDriverSelect.value;
   scaleDriverSelect.innerHTML = '<option value="">Selecione um condutor</option>'
-    + state.drivers.map((driver) => `<option value="${driver.id}">${formatDriverLabel(driver)}</option>`).join("");
+    + state.drivers.map((driver) => `<option value="${safeText(driver.id, "")}">${safeText(formatDriverLabel(driver))}</option>`).join("");
   if (current) scaleDriverSelect.value = current;
 }
 
@@ -635,7 +649,7 @@ function renderScaleCalendar() {
   }, []);
 
   const monthHeader = monthGroups
-    .map((group) => `<th class="scale-month-header border-b border-l border-slate-200 px-3 py-2 text-left" colspan="${group.count}">${group.label}</th>`)
+    .map((group) => `<th class="scale-month-header border-b border-l border-slate-200 px-3 py-2 text-left" colspan="${group.count}">${safeText(group.label)}</th>`)
     .join("");
 
   const header = days.map((date, index) => {
@@ -658,9 +672,9 @@ function renderScaleCalendar() {
       const content = service
         ? `<span class="block text-xs uppercase tracking-wide">Serviço</span>`
         : `<span class="block text-sm font-semibold">${counter}</span><span class="block text-[10px]">Folga</span>`;
-      return `<td class="scale-cell ${isMonthStart ? "scale-month-start" : ""} border-b border-l border-slate-200 p-1 text-center" data-scale-type="${type}">${hasPermission("scaleEdit") ? `<button type="button" class="scale-cell-button ${service ? "scale-service" : "text-slate-600"}" data-scale-service data-member-id="${member.id}" data-date="${dateKey}" aria-label="${service ? "Remover serviço" : "Marcar serviço"} em ${formatDate(dateKey)}">${content}</button>` : `<div class="scale-cell-static ${service ? "scale-service" : "text-slate-600"}">${content}</div>`}</td>`;
+      return `<td class="scale-cell ${isMonthStart ? "scale-month-start" : ""} border-b border-l border-slate-200 p-1 text-center" data-scale-type="${type}">${hasPermission("scaleEdit") ? `<button type="button" class="scale-cell-button ${service ? "scale-service" : "text-slate-600"}" data-scale-service data-member-id="${safeText(member.id, "")}" data-date="${safeText(dateKey, "")}" aria-label="${safeText(`${service ? "Remover serviço" : "Marcar serviço"} em ${formatDate(dateKey)}`)}">${content}</button>` : `<div class="scale-cell-static ${service ? "scale-service" : "text-slate-600"}">${content}</div>`}</td>`;
     }).join("");
-    return `<tr class="scale-row"><th class="scale-person-cell sticky left-0 z-10 border-b border-slate-200 px-3 py-2 text-left"><span class="block truncate font-medium text-slate-900">${member.name || "Sem nome"}</span><span class="block truncate text-xs text-slate-500">${member.number || "---"} · ${member.rank || "Sem graduação"}</span>${hasPermission("scaleEdit") ? `<button type="button" class="scale-remove-button mt-1 inline-flex items-center gap-1 text-xs" data-scale-member-remove data-member-id="${member.id}"><i data-lucide="x" class="h-3 w-3" aria-hidden="true"></i>Remover</button>` : ""}</th>${cells}</tr>`;
+    return `<tr class="scale-row"><th class="scale-person-cell sticky left-0 z-10 border-b border-slate-200 px-3 py-2 text-left"><span class="block truncate font-medium text-slate-900">${safeText(member.name, "Sem nome")}</span><span class="block truncate text-xs text-slate-500">${safeText(member.number, "---")} · ${safeText(member.rank, "Sem graduação")}</span>${hasPermission("scaleEdit") ? `<button type="button" class="scale-remove-button mt-1 inline-flex items-center gap-1 text-xs" data-scale-member-remove data-member-id="${safeText(member.id, "")}"><i data-lucide="x" class="h-3 w-3" aria-hidden="true"></i>Remover</button>` : ""}</th>${cells}</tr>`;
   }).join("");
   scaleCalendarGrid.innerHTML = `<table class="border-separate border-spacing-0 text-sm"><thead><tr><th class="scale-person-cell sticky left-0 z-20 border-b border-slate-200 px-3 py-2 text-left">Mês</th>${monthHeader}</tr><tr><th class="scale-person-cell sticky left-0 z-20 border-b border-slate-200 px-3 py-2 text-left">Militar</th>${header}</tr></thead><tbody>${rows}</tbody></table>`;
   refreshIcons();
@@ -965,7 +979,7 @@ function getMissionOperationTimestamp(mission) {
 function renderTimeline(container, events, emptyMessage) {
   if (!container) return;
   if (!events.length) {
-    container.innerHTML = `<p class="text-slate-500">${emptyMessage}</p>`;
+    container.innerHTML = `<p class="text-slate-500">${safeText(emptyMessage)}</p>`;
     return;
   }
   container.innerHTML = events
@@ -973,8 +987,8 @@ function renderTimeline(container, events, emptyMessage) {
       (event) => `<div class="flex gap-3">
         <i data-lucide="history" class="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden="true"></i>
         <div>
-          <p class="font-medium">${event.title}</p>
-          <p class="text-xs text-slate-500">${event.meta}</p>
+          <p class="font-medium">${safeText(event.title)}</p>
+          <p class="text-xs text-slate-500">${safeText(event.meta)}</p>
         </div>
       </div>`
     )
@@ -1025,19 +1039,19 @@ function openMissionCalendarModal(dateKey) {
           const { mission } = item;
           const status = normalizeMissionStatus(mission.status);
           const statusClass = getMissionStatusClass(status);
-          const timeLabel = mission.time || "Sem hora";
-          const locationLabel = mission.location || "Sem local";
-          const priorityLabel = getMissionPriorityLabel(mission.priority);
-          const endLabel = mission.endDate ? ` • Fim: ${formatDate(mission.endDate)}` : "";
-          const notesLabel = mission.notes ? `<p class="text-sm text-slate-500 mt-1">${mission.notes}</p>` : "";
+          const timeLabel = safeText(mission.time, "Sem hora");
+          const locationLabel = safeText(mission.location, "Sem local");
+          const priorityLabel = safeText(getMissionPriorityLabel(mission.priority));
+          const endLabel = mission.endDate ? ` • Fim: ${safeText(formatDate(mission.endDate))}` : "";
+          const notesLabel = mission.notes ? `<p class="text-sm text-slate-500 mt-1">${safeText(mission.notes)}</p>` : "";
           return `<div class="rounded-xl border border-slate-200 p-4 bg-slate-50">
             <div class="flex items-start justify-between gap-3">
               <div>
-                <p class="font-semibold text-slate-900">${mission.title || "Missão"}</p>
+                <p class="font-semibold text-slate-900">${safeText(mission.title, "Missão")}</p>
                 <p class="text-sm text-slate-600 mt-1">${timeLabel} • ${locationLabel}${endLabel}</p>
                 <p class="text-xs text-slate-500 mt-1">Prioridade: ${priorityLabel}</p>
               </div>
-              <span class="text-xs px-2 py-1 rounded-full ${statusClass}">${status}</span>
+              <span class="text-xs px-2 py-1 rounded-full ${statusClass}">${safeText(status)}</span>
             </div>
             ${notesLabel}
           </div>`;
@@ -1050,10 +1064,10 @@ function openMissionCalendarModal(dateKey) {
         return `<div class="rounded-xl border border-slate-200 p-4 bg-slate-50">
           <div class="flex items-start justify-between gap-3">
             <div>
-              <p class="font-semibold text-slate-900">${order.destination || "Operação"}</p>
-              <p class="text-sm text-slate-600 mt-1">${timeLabel}${meta ? ` • ${meta}` : ""}</p>
+            <p class="font-semibold text-slate-900">${safeText(order.destination, "Operação")}</p>
+            <p class="text-sm text-slate-600 mt-1">${safeText(timeLabel)}${meta ? ` • ${safeText(meta)}` : ""}</p>
             </div>
-            <span class="text-xs px-2 py-1 rounded-full bg-sky-50 text-sky-700">${order.status || "Aberta"}</span>
+            <span class="text-xs px-2 py-1 rounded-full bg-sky-50 text-sky-700">${safeText(order.status, "Aberta")}</span>
           </div>
         </div>`;
       })
@@ -1114,7 +1128,7 @@ function updateDriverSelects() {
 }
 
 function renderEmptyRow(tbody, colspan, message) {
-  tbody.innerHTML = `<tr><td colspan="${colspan}" class="py-6 text-center text-slate-500">${message}</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="${colspan}" class="py-6 text-center text-slate-500">${safeText(message)}</td></tr>`;
 }
 
 function getMissionStatusClass(status) {
@@ -1141,12 +1155,12 @@ function renderVehiclesTable() {
   tbody.innerHTML = state.vehicles
     .map(
       (vehicle) => `<tr class="border-t border-slate-100">
-        <td class="py-3 pr-4">${vehicle.eb || "-"}</td>
-        <td class="py-3 pr-4">${vehicle.model || "-"}</td>
-        <td class="py-3 pr-4">${vehicle.status || "-"}</td>
+        <td class="py-3 pr-4">${safeText(vehicle.eb)}</td>
+        <td class="py-3 pr-4">${safeText(vehicle.model)}</td>
+        <td class="py-3 pr-4">${safeText(vehicle.status)}</td>
         <td class="py-3" data-action-cell>
-          <button class="text-accent mr-3" data-action="edit" data-id="${vehicle.id}">Editar</button>
-          <button class="text-red-600" data-action="delete" data-id="${vehicle.id}">Excluir</button>
+          <button class="text-accent mr-3" data-action="edit" data-id="${safeText(vehicle.id, "")}">Editar</button>
+          <button class="text-red-600" data-action="delete" data-id="${safeText(vehicle.id, "")}">Excluir</button>
         </td>
       </tr>`
     )
@@ -1163,13 +1177,13 @@ function renderDriversTable() {
   tbody.innerHTML = state.drivers
     .map(
       (driver) => `<tr class="border-t border-slate-100">
-        <td class="py-3 pr-4">${formatDriverLabel(driver)}</td>
-        <td class="py-3 pr-4">${driver.number || "-"}</td>
-        <td class="py-3 pr-4">${driver.phone || "-"}</td>
-        <td class="py-3 pr-4">${getDriverStatusLabel(driver)}</td>
+        <td class="py-3 pr-4">${safeText(formatDriverLabel(driver))}</td>
+        <td class="py-3 pr-4">${safeText(driver.number)}</td>
+        <td class="py-3 pr-4">${safeText(driver.phone)}</td>
+        <td class="py-3 pr-4">${safeText(getDriverStatusLabel(driver))}</td>
         <td class="py-3" data-action-cell>
-          <button class="text-accent mr-3" data-action="edit" data-id="${driver.id}">Editar</button>
-          <button class="text-red-600" data-action="delete" data-id="${driver.id}">Excluir</button>
+          <button class="text-accent mr-3" data-action="edit" data-id="${safeText(driver.id, "")}">Editar</button>
+          <button class="text-red-600" data-action="delete" data-id="${safeText(driver.id, "")}">Excluir</button>
         </td>
       </tr>`
     )
@@ -1202,22 +1216,22 @@ function renderMissionsTable() {
       const statusClass = getMissionStatusClass(status);
       return `<tr class="border-t border-slate-100">
         <td class="py-3 pr-4">
-          <p class="font-medium">${mission.title || "-"}</p>
-          <p class="text-xs text-slate-500">${mission.location || ""}${mission.location && mission.notes ? " • " : ""}${mission.notes || ""}</p>
+          <p class="font-medium">${safeText(mission.title)}</p>
+          <p class="text-xs text-slate-500">${safeText(mission.location, "")}${mission.location && mission.notes ? " • " : ""}${safeText(mission.notes, "")}</p>
         </td>
         <td class="py-3 pr-4">
-          <span class="text-xs px-2 py-1 rounded-full ${getMissionPriorityClass(priority)}">${priority}</span>
+          <span class="text-xs px-2 py-1 rounded-full ${getMissionPriorityClass(priority)}">${safeText(priority)}</span>
         </td>
-        <td class="py-3 pr-4">${mission.location || "-"}</td>
-        <td class="py-3 pr-4">${formatDateTime(formatDate(mission.date), mission.time)}</td>
-        <td class="py-3 pr-4">${formatDate(mission.endDate)}</td>
+        <td class="py-3 pr-4">${safeText(mission.location)}</td>
+        <td class="py-3 pr-4">${safeText(formatDateTime(formatDate(mission.date), mission.time))}</td>
+        <td class="py-3 pr-4">${safeText(formatDate(mission.endDate))}</td>
         <td class="py-3 pr-4">
-          <span class="text-xs px-2 py-1 rounded-full ${statusClass}">${status}</span>
+          <span class="text-xs px-2 py-1 rounded-full ${statusClass}">${safeText(status)}</span>
         </td>
         <td class="py-3 whitespace-nowrap" data-action-cell>
-          <button class="text-accent mr-3" data-action="toggle" data-id="${mission.id}">${toggleLabel}</button>
-          <button class="text-accent mr-3" data-action="edit" data-id="${mission.id}">Editar</button>
-          <button class="text-red-600" data-action="delete" data-id="${mission.id}">Excluir</button>
+          <button class="text-accent mr-3" data-action="toggle" data-id="${safeText(mission.id, "")}">${safeText(toggleLabel)}</button>
+          <button class="text-accent mr-3" data-action="edit" data-id="${safeText(mission.id, "")}">Editar</button>
+          <button class="text-red-600" data-action="delete" data-id="${safeText(mission.id, "")}">Excluir</button>
         </td>
       </tr>`;
     })
@@ -1235,23 +1249,23 @@ function renderOngoingMissionsPanel() {
     return;
   }
   const vehicleOptions = ['<option value="">Selecione um veículo</option>']
-    .concat(state.vehicles.map((vehicle) => `<option value="${vehicle.id}">${formatVehicleLabel(vehicle)}</option>`))
+    .concat(state.vehicles.map((vehicle) => `<option value="${safeText(vehicle.id, "")}">${safeText(formatVehicleLabel(vehicle))}</option>`))
     .join("");
   const driverOptions = ['<option value="">Selecione um condutor</option>']
-    .concat(state.drivers.map((driver) => `<option value="${driver.id}">${formatDriverLabel(driver)}</option>`))
+    .concat(state.drivers.map((driver) => `<option value="${safeText(driver.id, "")}">${safeText(formatDriverLabel(driver))}</option>`))
     .join("");
   container.innerHTML = ongoingMissions
     .map((mission) => {
       const vehicle = state.vehicles.find((item) => item.id === mission.vehicleId);
       const driver = state.drivers.find((item) => item.id === mission.driverId);
       const dateLabel = formatDateTime(formatDate(mission.date), mission.time);
-      const locationLabel = mission.location || "Sem local";
-      const notesLabel = mission.notes ? `<p class="text-xs text-slate-500 mt-1">${mission.notes}</p>` : "";
+      const locationLabel = safeText(mission.location, "Sem local");
+      const notesLabel = mission.notes ? `<p class="text-xs text-slate-500 mt-1">${safeText(mission.notes)}</p>` : "";
       return `<div class="rounded-md border border-slate-100 p-4 bg-white">
         <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
           <div>
-            <p class="font-medium text-slate-900">${mission.title || "Operação"}</p>
-            <p class="text-xs text-slate-500">${dateLabel} • ${locationLabel}</p>
+            <p class="font-medium text-slate-900">${safeText(mission.title, "Operação")}</p>
+            <p class="text-xs text-slate-500">${safeText(dateLabel)} • ${locationLabel}</p>
             ${notesLabel}
           </div>
           <span class="text-xs px-2 py-1 rounded-full ${getMissionStatusClass("Em andamento")}">Em andamento</span>
@@ -1259,22 +1273,22 @@ function renderOngoingMissionsPanel() {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
           <div>
             <label class="text-xs text-slate-500">Veículo</label>
-            <select data-mission-vehicle data-id="${mission.id}" class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2 text-sm">
+            <select data-mission-vehicle data-id="${safeText(mission.id, "")}" class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2 text-sm">
               ${vehicleOptions}
             </select>
-            <p class="text-[11px] text-slate-400 mt-1">${vehicle ? formatVehicleLabel(vehicle) : "Nenhum veículo vinculado"}</p>
+            <p class="text-[11px] text-slate-400 mt-1">${safeText(vehicle ? formatVehicleLabel(vehicle) : "Nenhum veículo vinculado")}</p>
           </div>
           <div>
             <label class="text-xs text-slate-500">Condutor</label>
-            <select data-mission-driver data-id="${mission.id}" class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2 text-sm">
+            <select data-mission-driver data-id="${safeText(mission.id, "")}" class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2 text-sm">
               ${driverOptions}
             </select>
-            <p class="text-[11px] text-slate-400 mt-1">${driver ? formatDriverLabel(driver) : "Nenhum condutor vinculado"}</p>
+            <p class="text-[11px] text-slate-400 mt-1">${safeText(driver ? formatDriverLabel(driver) : "Nenhum condutor vinculado")}</p>
           </div>
         </div>
         <div class="flex flex-wrap justify-end gap-2 mt-4">
-          <button type="button" data-action="complete-mission-operation" data-id="${mission.id}" class="px-3 py-2 rounded-md border border-slate-200 text-slate-600 text-xs hover:text-accent hover:border-accent transition">Concluir missão</button>
-          <button type="button" data-action="save-mission-operation" data-id="${mission.id}" class="px-3 py-2 rounded-md bg-accent text-white text-xs shadow-sm shadow-blue-500/20 hover:bg-accent-dark transition">Salvar equipe</button>
+           <button type="button" data-action="complete-mission-operation" data-id="${safeText(mission.id, "")}" class="px-3 py-2 rounded-md border border-slate-200 text-slate-600 text-xs hover:text-accent hover:border-accent transition">Concluir missão</button>
+           <button type="button" data-action="save-mission-operation" data-id="${safeText(mission.id, "")}" class="px-3 py-2 rounded-md bg-accent text-white text-xs shadow-sm shadow-blue-500/20 hover:bg-accent-dark transition">Salvar equipe</button>
         </div>
       </div>`;
     })
@@ -1302,15 +1316,15 @@ function renderWorkOrdersTable() {
       const arrivalDateTime = formatDateTime(item.arrivalDate, item.arrivalTime);
       const canClose = (item.status || "Aberta") === "Aberta";
       return `<tr class="border-t border-slate-100">
-        <td class="py-3 pr-4">${formatVehicleLabel(vehicle)}</td>
-        <td class="py-3 pr-4">${formatDriverLabel(driver)}</td>
-        <td class="py-3 pr-4">${item.destination || "-"}</td>
-        <td class="py-3 pr-4">${departureDateTime}</td>
-        <td class="py-3 pr-4">${arrivalDateTime}</td>
-        <td class="py-3 pr-4">${item.status || "-"}</td>
+         <td class="py-3 pr-4">${safeText(formatVehicleLabel(vehicle))}</td>
+         <td class="py-3 pr-4">${safeText(formatDriverLabel(driver))}</td>
+         <td class="py-3 pr-4">${safeText(item.destination)}</td>
+         <td class="py-3 pr-4">${safeText(departureDateTime)}</td>
+         <td class="py-3 pr-4">${safeText(arrivalDateTime)}</td>
+         <td class="py-3 pr-4">${safeText(item.status)}</td>
         <td class="py-3 whitespace-nowrap" data-action-cell>
-          ${canClose ? `<button class="text-accent mr-3" data-action="close" data-id="${item.id}">Fechar</button>` : ""}
-          <button class="text-red-600" data-action="delete" data-id="${item.id}">Excluir</button>
+           ${canClose ? `<button class="text-accent mr-3" data-action="close" data-id="${safeText(item.id, "")}">Fechar</button>` : ""}
+           <button class="text-red-600" data-action="delete" data-id="${safeText(item.id, "")}">Excluir</button>
         </td>
       </tr>`;
     })
@@ -1451,12 +1465,12 @@ function buildCompactCalendarCell({
       const iconClass = status === "Concluída" ? "text-emerald-600" : "text-amber-500";
       return `<div class="flex items-center gap-1 text-[11px] text-slate-600">
         <i data-lucide="${icon}" class="h-3 w-3 ${iconClass}" aria-hidden="true"></i>
-        <span class="truncate">${mission.title || "Missão"}${mission.priority ? ` • ${mission.priority}` : ""}</span>
+        <span class="truncate">${safeText(mission.title, "Missão")}${mission.priority ? ` • ${safeText(mission.priority)}` : ""}</span>
       </div>`;
     }),
     ...workOrderPreview.map((order) => `<div class="flex items-center gap-1 text-[11px] text-slate-600">
       <i data-lucide="route" class="h-3 w-3 text-sky-600" aria-hidden="true"></i>
-      <span class="truncate">${order.destination || "Operação"}</span>
+      <span class="truncate">${safeText(order.destination, "Operação")}</span>
     </div>`)
   ];
   if (missions.length > missionPreview.length) {
@@ -1468,7 +1482,7 @@ function buildCompactCalendarCell({
   const detailBlock = detailLines.length
     ? `<div class="hidden lg:flex flex-col gap-1 mt-2">${detailLines.join("")}</div>`
     : "";
-  return `<button type="button" data-calendar-date="${dateKey}" aria-label="Abrir agenda de ${formatDate(dateKey)}" class="group aspect-square lg:aspect-auto lg:min-h-[6rem] rounded-lg border border-slate-200 bg-white p-2 text-left flex flex-col transition hover:border-accent hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-accent">
+  return `<button type="button" data-calendar-date="${safeText(dateKey, "")}" aria-label="${safeText(`Abrir agenda de ${formatDate(dateKey)}`)}" class="group aspect-square lg:aspect-auto lg:min-h-[6rem] rounded-lg border border-slate-200 bg-white p-2 text-left flex flex-col transition hover:border-accent hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-accent">
     ${dayNumber}
     ${detailBlock}
     <div class="mt-auto">${indicatorRow}</div>
@@ -1687,14 +1701,14 @@ function updateDashboard(animate = false) {
         return `<div class="flex flex-col gap-3 border border-slate-100 rounded-md p-3 md:flex-row md:items-center md:justify-between">
           <div class="min-w-0">
             <div class="flex flex-wrap items-center gap-2">
-              <p class="font-medium text-slate-900">${mission.title || "Operação"}</p>
+              <p class="font-medium text-slate-900">${safeText(mission.title, "Operação")}</p>
               <span class="text-xs px-2 py-1 rounded-full ${getMissionStatusClass("Em andamento")}">Em andamento</span>
             </div>
-            <p class="text-xs text-slate-500 mt-1">${formatVehicleLabel(vehicle)} • ${formatDriverLabel(driver)}</p>
+            <p class="text-xs text-slate-500 mt-1">${safeText(formatVehicleLabel(vehicle))} • ${safeText(formatDriverLabel(driver))}</p>
           </div>
           <div class="flex flex-col items-start gap-2 md:items-end">
-            <span class="text-xs text-slate-500">${operationDateTime}</span>
-            <button class="text-xs px-2 py-1 rounded-md border border-slate-200 text-slate-600 hover:text-accent hover:border-accent transition" data-action="complete-mission-operation" data-id="${mission.id}">Concluir</button>
+            <span class="text-xs text-slate-500">${safeText(operationDateTime)}</span>
+            <button class="text-xs px-2 py-2 rounded-md border border-slate-200 text-slate-600 hover:text-accent hover:border-accent transition" data-action="complete-mission-operation" data-id="${safeText(mission.id, "")}">Concluir</button>
           </div>
         </div>`;
       }).join("");
@@ -1903,16 +1917,16 @@ function renderGeneralSearch() {
   generalSearchResults.innerHTML = items
     .map((item) => {
       const statusBadge = item.status
-        ? `<span class="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600">${item.status}</span>`
+        ? `<span class="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600">${safeText(item.status)}</span>`
         : "";
-      const details = item.description ? ` • ${item.description}` : "";
+      const details = item.description ? ` • ${safeText(item.description)}` : "";
       const actionLabel = item.typeId === "workOrders" ? "Abrir" : "Editar";
-      const editButton = `<button class="text-accent text-xs font-medium" data-action="edit" data-type="${item.typeId}" data-id="${item.id}">${actionLabel}</button>`;
+      const editButton = `<button class="text-accent text-xs font-medium" data-action="edit" data-type="${safeText(item.typeId, "")}" data-id="${safeText(item.id, "")}">${safeText(actionLabel)}</button>`;
       const actions = `<div class="flex items-center gap-2">${statusBadge}${editButton}</div>`;
       return `<div class="flex items-start justify-between gap-3 border border-slate-100 rounded-md p-3">
         <div>
-          <p class="font-medium">${item.title}</p>
-          <p class="text-xs text-slate-500">${item.typeLabel}${details}</p>
+          <p class="font-medium">${safeText(item.title)}</p>
+          <p class="text-xs text-slate-500">${safeText(item.typeLabel)}${details}</p>
         </div>
         ${actions}
       </div>`;
