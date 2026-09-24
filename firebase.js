@@ -1,4 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 import { getDatabase } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 const firebaseConfig = {
@@ -12,6 +13,9 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const userManagementApp = initializeApp(firebaseConfig, "user-management");
+const userManagementAuth = getAuth(userManagementApp);
 const db = getDatabase(app);
 
-export { app, db };
+export { app, auth, db, userManagementAuth };

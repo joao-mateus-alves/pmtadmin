@@ -381,12 +381,511 @@
         padding: 1rem !important;
       }
     }
+
+    #authScreen {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #eef4ff 0%, #f8faff 52%, #ffffff 100%);
+    }
+
+    #authScreen[hidden] {
+      display: none;
+    }
+
+    #appShell[hidden] {
+      display: none;
+    }
+
+    .auth-tab[aria-selected="true"] {
+      color: var(--cobalt);
+      border-bottom-color: var(--cobalt);
+    }
+
+    .auth-tab[aria-selected="false"] {
+      color: var(--muted);
+      border-bottom-color: transparent;
+    }
+
+    /* Clean workspace direction: closer to Notion, with quiet surfaces and icon-led navigation. */
+    :root {
+      --cobalt: #2563eb;
+      --cobalt-dark: #1d4ed8;
+      --cobalt-soft: #eff6ff;
+      --ink: #1f2937;
+      --line: #e5e7eb;
+      --muted: #6b7280;
+      --surface: #ffffff;
+      --page: #f7f7f5;
+      --shadow: 0 1px 2px rgb(15 23 42 / 0.06);
+    }
+
+    body {
+      background: var(--page);
+      color: var(--ink);
+    }
+
+    body > .min-h-screen {
+      width: 100vw;
+      min-height: 100vh;
+      margin: 0;
+      border: 0;
+      border-radius: 0;
+      background: var(--surface);
+      box-shadow: none;
+    }
+
+    #sidebar {
+      width: 16rem;
+      border-right: 1px solid var(--line);
+      background: #fbfbfa;
+      color: var(--ink);
+    }
+
+    #sidebar > div:first-child {
+      border-bottom-color: var(--line);
+    }
+
+    #sidebar .h-10.w-10 {
+      border-radius: 8px;
+      background: #111827;
+      color: #ffffff;
+      box-shadow: none;
+    }
+
+    #sidebar p,
+    #sidebar p.text-lg,
+    #sidebar > div:last-child {
+      color: var(--muted);
+    }
+
+    .nav-item {
+      min-height: 2.35rem;
+      gap: 0.65rem;
+      border-radius: 6px;
+      padding: 0.55rem 0.75rem;
+      color: #4b5563 !important;
+      font-size: 0.875rem;
+      font-weight: 500;
+      box-shadow: none !important;
+      transform: none !important;
+    }
+
+    .nav-item::before {
+      display: none;
+    }
+
+    .nav-item [data-lucide] {
+      width: 1rem;
+      height: 1rem;
+      color: #6b7280;
+      stroke-width: 1.9;
+    }
+
+    .nav-item:hover,
+    .nav-item.text-accent {
+      background: #eeeeec;
+      color: #111827 !important;
+    }
+
+    .nav-item:hover [data-lucide],
+    .nav-item.text-accent [data-lucide] {
+      color: #111827;
+    }
+
+    header {
+      min-height: 4rem;
+      background: rgba(255, 255, 255, 0.86) !important;
+      backdrop-filter: blur(12px);
+    }
+
+    main {
+      background: var(--page);
+    }
+
+    main > section > .flex:first-child {
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      padding: 0;
+      box-shadow: none;
+    }
+
+    main > section > .flex:first-child:has(h2.text-2xl) {
+      display: none;
+    }
+
+    [class*="bg-white"][class*="border"][class*="shadow"],
+    [class*="bg-white"][class*="border"][class*="shadow-sm"] {
+      border-color: var(--line) !important;
+      border-radius: 8px !important;
+      box-shadow: var(--shadow) !important;
+    }
+
+    .quick-link {
+      display: grid;
+      min-height: 6.25rem;
+      border-color: var(--line) !important;
+      border-radius: 8px !important;
+      background: #ffffff !important;
+      box-shadow: var(--shadow) !important;
+    }
+
+    .quick-link::after {
+      display: none;
+    }
+
+    .quick-link:hover {
+      border-color: #d1d5db !important;
+      transform: none;
+      background: #fafafa !important;
+    }
+
+    .quick-link [data-lucide] {
+      width: 1.05rem;
+      height: 1.05rem;
+      color: #6b7280;
+      margin-bottom: 0.45rem;
+    }
+
+    .quick-link p[id] {
+      color: #111827 !important;
+      font-size: 2rem;
+    }
+
+    label {
+      color: #4b5563 !important;
+      font-weight: 500;
+    }
+
+    input,
+    select,
+    textarea {
+      border-color: var(--line) !important;
+      border-radius: 6px !important;
+      background: #ffffff !important;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: #9ca3af !important;
+      box-shadow: 0 0 0 2px rgb(37 99 235 / 0.12);
+    }
+
+    button[type="submit"],
+    button[data-action="save-mission-operation"] {
+      border-radius: 6px !important;
+      background: #111827 !important;
+      box-shadow: none !important;
+      font-weight: 600;
+    }
+
+    button[type="submit"]:hover,
+    button[data-action="save-mission-operation"]:hover {
+      background: #374151 !important;
+    }
+
+    button[data-cancel],
+    #logoutButton,
+    #closeUserPermissions,
+    #cancelUserPermissions {
+      border-radius: 6px !important;
+      background: #ffffff;
+      box-shadow: none !important;
+    }
+
+    thead {
+      color: #6b7280 !important;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+    }
+
+    th {
+      background: #fafafa;
+      font-weight: 600;
+    }
+
+    th:first-child,
+    th:last-child {
+      border-radius: 0;
+    }
+
+    td {
+      color: #374151;
+    }
+
+    tbody tr:hover {
+      background: #fafafa;
+    }
+
+    .calendar-icon-button {
+      border-radius: 6px;
+      border-color: var(--line);
+      color: #4b5563;
+      box-shadow: none !important;
+      transform: none !important;
+    }
+
+    .calendar-icon-button:hover {
+      border-color: #d1d5db;
+      background: #f3f4f6;
+      color: #111827;
+    }
+
+    #missionWeekly,
+    #missionCalendar {
+      border-radius: 8px !important;
+      background: #ffffff !important;
+    }
+
+    [data-calendar-date] {
+      border-radius: 6px !important;
+      box-shadow: none;
+    }
+
+    #scaleCalendarGrid {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    #scaleCalendarGrid table {
+      min-width: max-content;
+    }
+
+    .scale-person-cell {
+      width: 15rem;
+      min-width: 15rem;
+      max-width: 15rem;
+      background: #ffffff !important;
+      box-shadow: 1px 0 0 var(--line);
+      vertical-align: middle;
+    }
+
+    .scale-day-header {
+      min-width: 5.25rem;
+      background: #fafafa;
+      vertical-align: top;
+    }
+
+    .scale-month-header {
+      background: #f3f4f6;
+      color: #374151;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: capitalize;
+      letter-spacing: 0;
+    }
+
+    .scale-month-start {
+      border-left-width: 2px !important;
+      border-left-color: #9ca3af !important;
+    }
+
+    .scale-day-header[data-scale-type="red"] {
+      background: #fff7f7;
+    }
+
+    .scale-cell {
+      background: #ffffff;
+    }
+
+    .scale-cell[data-scale-type="red"] {
+      background: #fffafa;
+    }
+
+    .scale-cell-button,
+    .scale-cell-static {
+      display: flex;
+      min-height: 3.5rem;
+      width: 100%;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.15rem;
+      border-radius: 6px;
+      transition: background 120ms ease;
+    }
+
+    .scale-cell-button:hover {
+      background: #f3f4f6;
+    }
+
+    .scale-service {
+      border: 1px solid #059669;
+      background: #d1fae5;
+      color: #065f46;
+      font-weight: 700;
+      box-shadow: inset 0 0 0 1px rgb(5 150 105 / 0.12);
+    }
+
+    .scale-row:hover .scale-person-cell,
+    .scale-row:hover .scale-cell {
+      background: #fafafa;
+    }
+
+    .scale-remove-button {
+      color: #6b7280;
+    }
+
+    .scale-remove-button:hover {
+      color: #dc2626;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      padding: 0.125rem 0.5rem;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: #4b5563;
+      background: #ffffff;
+    }
+
+    #popupLayer {
+      pointer-events: none;
+    }
+
+    .popup-toast {
+      pointer-events: auto;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.7rem;
+      border: 1px solid var(--line);
+      border-left-width: 3px;
+      border-radius: 8px;
+      background: #ffffff;
+      padding: 0.78rem 0.9rem;
+      color: var(--ink);
+      box-shadow: 0 16px 34px rgb(25 35 60 / 0.14);
+      animation: popupIn 180ms ease-out;
+    }
+
+    .popup-toast[data-type="success"] {
+      border-left-color: #059669;
+    }
+
+    .popup-toast[data-type="error"] {
+      border-left-color: #dc2626;
+    }
+
+    .popup-toast[data-type="info"] {
+      border-left-color: var(--cobalt);
+    }
+
+    .popup-toast [data-lucide] {
+      margin-top: 0.08rem;
+      height: 1.05rem;
+      width: 1.05rem;
+      flex: 0 0 auto;
+      stroke-width: 2.2;
+    }
+
+    .popup-toast[data-type="success"] [data-lucide] {
+      color: #059669;
+    }
+
+    .popup-toast[data-type="error"] [data-lucide] {
+      color: #dc2626;
+    }
+
+    .popup-toast[data-type="info"] [data-lucide] {
+      color: var(--cobalt);
+    }
+
+    .popup-toast.is-leaving {
+      animation: popupOut 160ms ease-in forwards;
+    }
+
+    @keyframes popupIn {
+      from {
+        opacity: 0;
+        transform: translateY(-0.4rem);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes popupOut {
+      to {
+        opacity: 0;
+        transform: translateY(-0.35rem);
+      }
+    }
+
+    @media (max-width: 767px) {
+      #sidebar {
+        width: 18rem;
+      }
+    }
   </style>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
 </head>
 
 <body class="bg-slate-50 text-slate-900">
-  <div class="min-h-screen flex">
+  <div id="popupLayer" class="fixed right-4 top-4 z-[80] flex w-[calc(100%-2rem)] max-w-sm flex-col gap-2"></div>
+
+  <div id="confirmDialog" class="fixed inset-0 z-[90] hidden items-center justify-center bg-slate-900/30 px-4" aria-hidden="true">
+    <div class="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-5 shadow-xl">
+      <div class="flex items-start gap-3">
+        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-accent">
+          <i data-lucide="circle-alert" class="h-5 w-5" aria-hidden="true"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-semibold text-slate-900">Confirmar ação</h3>
+          <p id="confirmDialogMessage" class="mt-1 text-sm leading-6 text-slate-600"></p>
+        </div>
+      </div>
+      <div class="mt-5 flex justify-end gap-2">
+        <button id="confirmDialogCancel" type="button" class="rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">Cancelar</button>
+        <button id="confirmDialogConfirm" type="button" class="rounded-md bg-accent px-3 py-2 text-sm font-semibold text-white hover:bg-accent-dark">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <section id="authScreen" class="flex items-center justify-center px-4 py-8">
+    <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl sm:p-8">
+      <div class="mb-8 flex items-center gap-3">
+        <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-accent font-semibold text-white">PMT</div>
+        <div>
+          <p class="text-sm text-slate-500">Operações</p>
+          <h1 class="text-xl font-semibold text-slate-900">Painel PMT</h1>
+        </div>
+      </div>
+
+      <div>
+        <h2 id="authTitle" class="text-2xl font-semibold text-slate-900">Entrar no sistema</h2>
+        <p id="authSubtitle" class="mt-1 text-sm text-slate-500">Use as credenciais fornecidas pelo administrador.</p>
+      </div>
+
+      <form id="authForm" class="mt-6 space-y-4">
+        <div>
+          <label for="authEmail" class="text-sm font-medium text-slate-700">E-mail</label>
+          <input id="authEmail" type="email" autocomplete="email" required class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2.5 outline-none transition focus:border-accent focus:ring-2 focus:ring-blue-100" placeholder="você@exemplo.com" />
+        </div>
+        <div>
+          <label for="authPassword" class="text-sm font-medium text-slate-700">Senha</label>
+          <input id="authPassword" type="password" minlength="6" autocomplete="current-password" required class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2.5 outline-none transition focus:border-accent focus:ring-2 focus:ring-blue-100" placeholder="Mínimo de 6 caracteres" />
+        </div>
+        <p id="authMessage" class="hidden rounded-md px-3 py-2 text-sm" role="alert"></p>
+        <button id="authSubmit" type="submit" class="w-full rounded-md bg-accent px-4 py-2.5 font-semibold text-white transition hover:bg-accent-dark disabled:cursor-wait disabled:opacity-60">
+          Entrar
+        </button>
+      </form>
+
+      <button id="forgotPassword" type="button" class="mt-4 w-full text-center text-sm font-medium text-accent hover:underline">
+        Esqueci minha senha
+      </button>
+    </div>
+  </section>
+
+  <div id="appShell" class="min-h-screen flex" hidden>
     <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/30 hidden z-20 md:hidden"></div>
     <aside id="sidebar"
       class="fixed inset-y-0 left-0 w-72 bg-white border-r border-slate-200 z-30 transform -translate-x-full transition md:translate-x-0 md:static md:inset-auto">
@@ -403,29 +902,45 @@
       </div>
       <nav class="px-4 py-4 space-y-1">
         <button class="nav-item" data-target="dashboard" data-title="Dashboard">
+          <i data-lucide="layout-dashboard" aria-hidden="true"></i>
           Dashboard
         </button>
         <button class="nav-item" data-target="search" data-title="Pesquisa geral">
+          <i data-lucide="search" aria-hidden="true"></i>
           Pesquisa geral
         </button>
         <button class="nav-item" data-target="vehicles" data-title="Veículos">
+          <i data-lucide="truck" aria-hidden="true"></i>
           Veículos
         </button>
         <button class="nav-item" data-target="drivers" data-title="Condutores">
+          <i data-lucide="id-card" aria-hidden="true"></i>
           Condutores
         </button>
 
         <button class="nav-item" data-target="missions" data-title="Missões">
+          <i data-lucide="clipboard-list" aria-hidden="true"></i>
           Missões
         </button>
-        <button class="nav-item" data-target="flowcharts" data-title="Fluxogramas">
-          Fluxogramas
-        </button>
         <button class="nav-item" data-target="monthlyCalendar" data-title="Calendário">
+          <i data-lucide="calendar-days" aria-hidden="true"></i>
           Calendário do mês
         </button>
         <button class="nav-item" data-target="workOrders" data-title="Operações">
+          <i data-lucide="route" aria-hidden="true"></i>
           Operações
+        </button>
+        <button class="nav-item" data-target="scale" data-title="Escala">
+          <i data-lucide="calendar-range" aria-hidden="true"></i>
+          Escala
+        </button>
+        <button id="usersNavItem" class="nav-item hidden" data-target="users" data-title="Usuários">
+          <i data-lucide="users" aria-hidden="true"></i>
+          Usuários
+        </button>
+        <button class="nav-item" data-target="account" data-title="Minha conta">
+          <i data-lucide="key-round" aria-hidden="true"></i>
+          Minha conta
         </button>
       </nav>
       <div class="px-6 py-6 text-xs text-slate-400">
@@ -447,6 +962,12 @@
             <h1 id="pageTitle" class="text-xl font-semibold">Dashboard</h1>
           </div>
         </div>
+        <div class="flex items-center gap-3">
+          <span id="currentUserEmail" class="hidden text-sm text-slate-500 sm:inline"></span>
+          <button id="logoutButton" type="button" class="rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600">
+            Sair
+          </button>
+        </div>
       </header>
 
       <main class="flex-1 p-6 space-y-8">
@@ -455,12 +976,14 @@
             <button type="button"
               class="quick-link bg-white rounded-lg border border-slate-200 p-5 shadow-sm text-left transition hover:border-accent hover:shadow-md"
               data-target="vehicles">
+              <i data-lucide="truck" aria-hidden="true"></i>
               <p class="text-sm text-slate-500">Veículos</p>
               <p id="countVehicles" class="text-3xl font-semibold text-slate-900 mt-2">0</p>
             </button>
             <button type="button"
               class="quick-link bg-white rounded-lg border border-slate-200 p-5 shadow-sm text-left transition hover:border-accent hover:shadow-md"
               data-target="drivers">
+              <i data-lucide="id-card" aria-hidden="true"></i>
               <p class="text-sm text-slate-500">Condutores</p>
               <p id="countDrivers" class="text-3xl font-semibold text-slate-900 mt-2">0</p>
             </button>
@@ -468,12 +991,14 @@
             <button type="button"
               class="quick-link bg-white rounded-lg border border-slate-200 p-5 shadow-sm text-left transition hover:border-accent hover:shadow-md"
               data-target="missions">
+              <i data-lucide="clipboard-list" aria-hidden="true"></i>
               <p class="text-sm text-slate-500">Missões</p>
               <p id="countMissions" class="text-3xl font-semibold text-slate-900 mt-2">0</p>
             </button>
             <button type="button"
               class="quick-link bg-white rounded-lg border border-slate-200 p-5 shadow-sm text-left transition hover:border-accent hover:shadow-md"
               data-target="workOrders">
+              <i data-lucide="route" aria-hidden="true"></i>
               <p class="text-sm text-slate-500">Operações</p>
               <p id="countWorkOrders" class="text-3xl font-semibold text-slate-900 mt-2">0</p>
             </button>
@@ -493,10 +1018,6 @@
                   </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3 text-xs">
-                    <div class="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2">
-                      <span>Fluxogramas</span>
-                      <span id="countFlowcharts" class="font-semibold">0</span>
-                    </div>
                   <div class="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2">
                     <span>Disponíveis</span>
                     <span id="fleetAvailable" class="font-semibold">0</span>
@@ -562,6 +1083,171 @@
         </section>
 
         <!-- Calendário do mês -->
+        <section id="users" data-section class="hidden">
+          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
+            <div>
+              <h2 class="text-2xl font-semibold">Usuários</h2>
+              <p class="text-sm text-slate-500">Controle quem pode acessar o sistema.</p>
+            </div>
+          </div>
+          <div id="usersAccessMessage" class="hidden mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            Somente administradores podem gerenciar os acessos.
+          </div>
+          <div id="usersAdminContent" class="hidden grid-cols-1 gap-6 mt-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+            <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+              <h3 class="text-lg font-semibold mb-4">Adicionar pessoa</h3>
+              <form id="userForm" class="space-y-4">
+                <div>
+                  <label for="userName" class="text-sm text-slate-600">Nome</label>
+                  <input id="userName" required class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2" placeholder="Nome da pessoa" />
+                </div>
+                <div>
+                  <label for="userEmail" class="text-sm text-slate-600">E-mail</label>
+                  <input id="userEmail" type="email" required class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2" placeholder="pessoa@exemplo.com" />
+                </div>
+                <div>
+                  <label for="userPassword" class="text-sm text-slate-600">Senha inicial</label>
+                  <input id="userPassword" type="password" minlength="6" required class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2" placeholder="Mínimo de 6 caracteres" />
+                </div>
+                <div>
+                  <label for="userRole" class="text-sm text-slate-600">Perfil</label>
+                  <select id="userRole" class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2">
+                    <option value="operator">Operador</option>
+                  </select>
+                </div>
+                <fieldset class="space-y-2">
+                  <legend class="text-sm font-medium text-slate-700">Permissões</legend>
+                  <label class="flex items-center gap-2 text-sm text-slate-600"><input id="permissionView" type="checkbox" checked class="rounded border-slate-300 text-accent focus:ring-accent" /> Visualizar dados gerais</label>
+                  <label class="flex items-center gap-2 text-sm text-slate-600"><input id="permissionScaleView" type="checkbox" checked class="rounded border-slate-300 text-accent focus:ring-accent" /> Visualizar escala</label>
+                  <label class="flex items-center gap-2 text-sm text-slate-600"><input id="permissionCreate" type="checkbox" class="rounded border-slate-300 text-accent focus:ring-accent" /> Adicionar registros</label>
+                  <label class="flex items-center gap-2 text-sm text-slate-600"><input id="permissionEdit" type="checkbox" class="rounded border-slate-300 text-accent focus:ring-accent" /> Editar registros</label>
+                  <label class="flex items-center gap-2 text-sm text-slate-600"><input id="permissionDelete" type="checkbox" class="rounded border-slate-300 text-accent focus:ring-accent" /> Excluir registros</label>
+                  <label class="flex items-center gap-2 text-sm text-slate-600"><input id="permissionScaleEdit" type="checkbox" class="rounded border-slate-300 text-accent focus:ring-accent" /> Editar escala</label>
+                </fieldset>
+                <p id="userMessage" class="hidden rounded-md px-3 py-2 text-sm" role="alert"></p>
+                <button type="submit" class="w-full rounded-md bg-accent px-4 py-2 font-semibold text-white transition hover:bg-accent-dark">
+                  Cadastrar acesso
+                </button>
+              </form>
+            </div>
+            <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+              <h3 class="text-lg font-semibold mb-4">Pessoas autorizadas</h3>
+              <div class="overflow-auto">
+                <table class="min-w-full text-sm">
+                  <thead class="text-left text-slate-500">
+                    <tr>
+                      <th class="pb-2 pr-4">Pessoa</th>
+                      <th class="pb-2 pr-4">Perfil</th>
+                      <th class="pb-2 pr-4">Status</th>
+                      <th class="pb-2">Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody id="usersTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div id="userPermissionsPanel" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-900/60 px-4 py-6" aria-hidden="true">
+            <div class="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+              <div class="flex items-center justify-between gap-3 mb-5">
+                <div>
+                  <h3 class="text-lg font-semibold">Editar permissões</h3>
+                  <p id="userPermissionsTarget" class="text-sm text-slate-500"></p>
+                </div>
+                <button id="closeUserPermissions" type="button" class="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:border-accent hover:text-accent">Fechar</button>
+              </div>
+              <form id="userPermissionsForm" class="space-y-4">
+                <label class="flex items-center gap-2 text-sm text-slate-600"><input id="editPermissionView" type="checkbox" class="rounded border-slate-300 text-accent focus:ring-accent" /> Visualizar dados gerais</label>
+                <label class="flex items-center gap-2 text-sm text-slate-600"><input id="editPermissionScaleView" type="checkbox" class="rounded border-slate-300 text-accent focus:ring-accent" /> Visualizar escala</label>
+                <label class="flex items-center gap-2 text-sm text-slate-600"><input id="editPermissionCreate" type="checkbox" class="rounded border-slate-300 text-accent focus:ring-accent" /> Adicionar registros</label>
+                <label class="flex items-center gap-2 text-sm text-slate-600"><input id="editPermissionEdit" type="checkbox" class="rounded border-slate-300 text-accent focus:ring-accent" /> Editar registros</label>
+                <label class="flex items-center gap-2 text-sm text-slate-600"><input id="editPermissionDelete" type="checkbox" class="rounded border-slate-300 text-accent focus:ring-accent" /> Excluir registros</label>
+                <label class="flex items-center gap-2 text-sm text-slate-600"><input id="editPermissionScaleEdit" type="checkbox" class="rounded border-slate-300 text-accent focus:ring-accent" /> Editar escala</label>
+                <div class="flex justify-end gap-3 pt-2">
+                  <button id="cancelUserPermissions" type="button" class="rounded-md border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:border-accent hover:text-accent">Cancelar</button>
+                  <button type="submit" class="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-dark">Salvar permissões</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <section id="scale" data-section class="hidden">
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h2 class="text-2xl font-semibold">Escala</h2>
+              <p class="text-sm text-slate-500">Acompanhe a escala preta durante a semana e a escala vermelha no fim de semana.</p>
+            </div>
+          </div>
+
+          <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)]">
+            <div class="space-y-6">
+              <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+                <h3 class="text-lg font-semibold mb-4">Categorias de escala</h3>
+                <form id="scaleCategoryForm" class="flex gap-2">
+                  <input id="scaleCategoryName" required class="min-w-0 flex-1 rounded-md border border-slate-200 px-3 py-2" placeholder="Ex.: Motoristas" />
+                  <button type="submit" class="rounded-md bg-accent px-4 py-2 font-semibold text-white hover:bg-accent-dark">Adicionar</button>
+                </form>
+                <label for="scaleCategorySelect" class="mt-4 block text-sm text-slate-600">Categoria ativa</label>
+                <select id="scaleCategorySelect" class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"></select>
+              </div>
+
+              <div id="scaleMemberEditor" class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+                <h3 class="text-lg font-semibold mb-4">Adicionar militar</h3>
+                <form id="scaleMemberForm" class="space-y-4">
+                  <div>
+                    <label for="scaleDriverSelect" class="text-sm text-slate-600">Condutor</label>
+                    <select id="scaleDriverSelect" required class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"></select>
+                  </div>
+                  <p id="scaleMessage" class="hidden rounded-md px-3 py-2 text-sm" role="alert"></p>
+                  <button type="submit" class="w-full rounded-md bg-accent px-4 py-2 font-semibold text-white hover:bg-accent-dark">Adicionar à escala</button>
+                </form>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+              <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 id="scaleCalendarTitle" class="text-lg font-semibold">Escala</h3>
+                  <p id="scaleCalendarSummary" class="text-sm text-slate-500"></p>
+                </div>
+                <div class="flex items-center gap-3 text-xs text-slate-500">
+                  <span class="inline-flex items-center gap-1"><i data-lucide="calendar-days" class="h-3.5 w-3.5 text-slate-700" aria-hidden="true"></i>Preta</span>
+                  <span class="inline-flex items-center gap-1"><i data-lucide="calendar-range" class="h-3.5 w-3.5 text-rose-600" aria-hidden="true"></i>Vermelha</span>
+                </div>
+              </div>
+              <div id="scaleCalendarGrid" class="overflow-x-auto"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="account" data-section class="hidden">
+          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
+            <div>
+              <h2 class="text-2xl font-semibold">Minha conta</h2>
+              <p class="text-sm text-slate-500">Altere sua senha de acesso.</p>
+            </div>
+          </div>
+          <div class="mt-6 max-w-xl bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
+            <form id="passwordForm" class="space-y-4">
+              <div>
+                <label for="currentPassword" class="text-sm text-slate-600">Senha atual</label>
+                <input id="currentPassword" type="password" autocomplete="current-password" required class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2" />
+              </div>
+              <div>
+                <label for="newPassword" class="text-sm text-slate-600">Nova senha</label>
+                <input id="newPassword" type="password" minlength="6" autocomplete="new-password" required class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2" placeholder="Mínimo de 6 caracteres" />
+              </div>
+              <div>
+                <label for="confirmNewPassword" class="text-sm text-slate-600">Confirmar nova senha</label>
+                <input id="confirmNewPassword" type="password" minlength="6" autocomplete="new-password" required class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2" />
+              </div>
+              <p id="passwordMessage" class="hidden rounded-md px-3 py-2 text-sm" role="alert"></p>
+              <button type="submit" class="rounded-md bg-accent px-4 py-2 font-semibold text-white hover:bg-accent-dark">Alterar senha</button>
+            </form>
+          </div>
+        </section>
+
         <section id="monthlyCalendar" data-section class="hidden">
           <div class="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
@@ -570,15 +1256,15 @@
                 <p id="missionCalendarSummary" class="text-sm text-slate-500"></p>
               </div>
               <div class="flex flex-wrap items-center gap-2">
-                <button id="missionCalendarPrev" type="button" class="calendar-icon-button" aria-label="Mes anterior"
-                  title="Mes anterior">
+                <button id="missionCalendarPrev" type="button" class="calendar-icon-button" aria-label="Mês anterior"
+                  title="Mês anterior">
                   <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="m15 18-6-6 6-6" />
                   </svg>
                   Mês anterior
                 </button>
-                <button id="missionCalendarToday" type="button" class="calendar-icon-button" aria-label="Mes atual"
-                  title="Mes atual">
+                <button id="missionCalendarToday" type="button" class="calendar-icon-button" aria-label="Mês atual"
+                  title="Mês atual">
                   <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M8 2v4" />
                     <path d="M16 2v4" />
@@ -587,8 +1273,8 @@
                   </svg>
                   Mês atual
                 </button>
-                <button id="missionCalendarNext" type="button" class="calendar-icon-button" aria-label="Proximo mes"
-                  title="Proximo mes">
+                <button id="missionCalendarNext" type="button" class="calendar-icon-button" aria-label="Próximo mês"
+                  title="Próximo mês">
                   <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="m9 18 6-6-6-6" />
                   </svg>
@@ -698,7 +1384,7 @@
                       <th class="pb-2">EB</th>
                       <th class="pb-2">Modelo</th>
                       <th class="pb-2">Status da viatura</th>
-                      <th class="pb-2">Ações</th>
+                      <th class="pb-2" data-action-column>Ações</th>
                     </tr>
                   </thead>
                   <tbody id="vehiclesTableBody"></tbody>
@@ -732,9 +1418,14 @@
               <h3 class="text-lg font-semibold mb-4">Cadastrar / editar</h3>
               <form id="driverForm" class="space-y-4">
                 <div>
-                  <label class="text-sm text-slate-600">Cargo</label>
+                  <label class="text-sm text-slate-600">Graduação</label>
                   <input id="driverRole" required class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                    placeholder="Cargo militar" />
+                    placeholder="Soldado, Cabo, Sargento..." />
+                </div>
+                <div>
+                  <label class="text-sm text-slate-600">Número</label>
+                  <input id="driverNumber" inputmode="numeric" maxlength="3" pattern="[0-9]{0,3}" class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
+                    placeholder="001" />
                 </div>
                 <div>
                   <label class="text-sm text-slate-600">Nome</label>
@@ -767,25 +1458,16 @@
                   <thead class="text-left text-slate-500">
                     <tr>
                       <th class="pb-2">Condutor</th>
+                      <th class="pb-2">Número</th>
                       <th class="pb-2">Telefone</th>
                       <th class="pb-2">Situação</th>
-                      <th class="pb-2">Ações</th>
+                      <th class="pb-2" data-action-column>Ações</th>
                     </tr>
                   </thead>
                   <tbody id="driversTableBody"></tbody>
                 </table>
               </div>
             </div>
-          </div>
-          <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm mt-6">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-              <h3 class="text-lg font-semibold">Histórico do condutor</h3>
-              <select id="driverHistorySelect" data-driver-select
-                class="w-full md:w-72 rounded-md border border-slate-200 px-3 py-2 text-sm">
-                <option value="">Selecione um condutor</option>
-              </select>
-            </div>
-            <div id="driverHistoryList" class="space-y-3 text-sm text-slate-600"></div>
           </div>
         </section>
 
@@ -842,7 +1524,6 @@
                 <div>
                   <label class="text-sm text-slate-600">Status</label>
                   <select id="missionStatus" class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2">
-                    <option value="Pendente">Pendente</option>
                     <option value="Em andamento">Em andamento</option>
                     <option value="Concluída">Concluída</option>
                   </select>
@@ -872,7 +1553,6 @@
                   <label for="missionStatusFilter" class="text-sm text-slate-600">Status</label>
                   <select id="missionStatusFilter" class="w-48 rounded-md border border-slate-200 px-3 py-2 text-sm">
                     <option value="all">Todos</option>
-                    <option value="Pendente">Pendente</option>
                     <option value="Em andamento">Em andamento</option>
                     <option value="Concluída">Concluída</option>
                   </select>
@@ -888,65 +1568,12 @@
                       <th class="pb-2">Início</th>
                       <th class="pb-2">Fim</th>
                       <th class="pb-2">Status</th>
-                      <th class="pb-2">Ações</th>
+                      <th class="pb-2" data-action-column>Ações</th>
                     </tr>
                   </thead>
                   <tbody id="missionsTableBody"></tbody>
                 </table>
               </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="flowcharts" data-section class="hidden">
-          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
-            <div>
-              <h2 class="text-2xl font-semibold">Fluxogramas</h2>
-              <p class="text-sm text-slate-500">
-                Cadastre fluxogramas como imagem e visualize no próprio sistema.
-              </p>
-            </div>
-          </div>
-          <div class="grid grid-cols-1 gap-6 mt-6">
-            <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
-              <h3 class="text-lg font-semibold mb-4">Cadastrar / editar</h3>
-              <form id="flowchartForm" class="space-y-4">
-                <div>
-                  <label class="text-sm text-slate-600">Título</label>
-                  <input id="flowchartTitle" required class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2"
-                    placeholder="Nome do fluxograma" />
-                </div>
-                <div>
-                  <label class="text-sm text-slate-600">Descrição</label>
-                  <textarea id="flowchartDescription" class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2" rows="3"
-                    placeholder="Detalhe o conteúdo do fluxograma"></textarea>
-                </div>
-                <div>
-                  <label class="text-sm text-slate-600">Imagem do fluxograma</label>
-                  <input id="flowchartImage" type="file" accept="image/*" class="w-full mt-1 rounded-md border border-slate-200 px-3 py-2" />
-                </div>
-                <div id="flowchartFormPreview" class="hidden rounded-xl border border-slate-200 bg-slate-50 p-3">
-                  <p class="text-xs font-medium text-slate-500 mb-2">Pré-visualização</p>
-                  <img id="flowchartFormPreviewImage" alt="Pré-visualização do fluxograma" class="max-h-64 w-full object-contain rounded-lg bg-white" />
-                </div>
-                <div class="flex flex-wrap gap-3">
-                  <button type="submit" data-submit data-default-text="Cadastrar fluxograma"
-                    data-edit-text="Salvar alterações"
-                    class="px-4 py-2 rounded-md bg-accent text-white shadow-sm shadow-blue-500/20 hover:bg-accent-dark transition">
-                    Cadastrar fluxograma
-                  </button>
-                  <button type="button" data-cancel
-                    class="px-4 py-2 rounded-md border border-slate-200 text-slate-600 hidden">
-                    Cancelar edição
-                  </button>
-                </div>
-              </form>
-            </div>
-            <div class="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
-              <div class="flex items-center justify-between gap-3 mb-4">
-                <h3 class="text-lg font-semibold">Fluxogramas cadastrados</h3>
-              </div>
-              <div id="flowchartsList" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
             </div>
           </div>
         </section>
@@ -987,21 +1614,6 @@
         </button>
       </div>
       <div id="missionCalendarModalList" class="space-y-3 overflow-auto px-5 py-5 text-sm text-slate-600"></div>
-    </div>
-  </div>
-
-  <div id="flowchartModal" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-900/70 px-4 py-6" aria-hidden="true">
-    <div class="w-full max-w-5xl rounded-2xl border border-slate-200 bg-white shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
-      <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
-        <div>
-          <h3 id="flowchartModalTitle" class="text-lg font-semibold text-slate-900">Fluxograma</h3>
-          <p id="flowchartModalDescription" class="text-sm text-slate-500"></p>
-        </div>
-        <button id="flowchartModalClose" type="button" class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-accent hover:text-accent" aria-label="Fechar popup">✕</button>
-      </div>
-      <div class="p-4 overflow-auto">
-        <img id="flowchartModalImage" alt="Fluxograma ampliado" class="w-full h-auto rounded-xl bg-slate-50 object-contain" />
-      </div>
     </div>
   </div>
 

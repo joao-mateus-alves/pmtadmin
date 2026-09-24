@@ -1,18 +1,32 @@
-import { db } from "./firebase.js";
+import { auth, db, userManagementAuth } from "./firebase.js";
+import {
+  EmailAuthProvider,
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  reauthenticateWithCredential,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  signOut,
+  updatePassword
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 import {
   ref,
   push,
+  get,
   onValue,
   update,
   remove
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 const state = {
+  users: [],
+  scaleCategories: [],
+  scaleMembers: [],
+  scaleServices: {},
   vehicles: [],
   drivers: [],
   missions: [],
-  workOrders: [],
-  flowcharts: []
+  workOrders: []
 };
 
 let missionCalendarDate = new Date();
@@ -21,28 +35,35 @@ missionCalendarDate.setDate(1);
 let missionWeeklyDate = new Date();
 missionWeeklyDate.setDate(missionWeeklyDate.getDate() - missionWeeklyDate.getDay());
 
-const sectionIds = ["dashboard", "search", "vehicles", "drivers", "missions", "flowcharts", "monthlyCalendar", "workOrders"];
+const dataSectionIds = ["dashboard", "search", "vehicles", "drivers", "missions", "monthlyCalendar", "workOrders"];
+const sectionIds = ["dashboard", "users", "scale", "account", "search", "vehicles", "drivers", "missions", "monthlyCalendar", "workOrders"];
 const sectionTitles = {
   dashboard: "Dashboard",
+  users: "Usuários",
+  scale: "Escala",
+  account: "Minha conta",
   search: "Pesquisa geral",
   vehicles: "Veículos",
   drivers: "Condutores",
   missions: "Missões",
-  flowcharts: "Fluxogramas",
   monthlyCalendar: "Calendário do mês",
   workOrders: "Operações"
 };
 
 let activeSectionId = "dashboard";
+let scaleStartDate = new Date();
+scaleStartDate.setHours(0, 0, 0, 0);
+let scaleLoadedDays = 60;
+let activeScaleCategoryId = "";
+let scaleMembersUnsubscribe = null;
+let scaleServicesUnsubscribe = null;
 
 const sidebar = document.getElementById("sidebar");
 const sidebarOverlay = document.getElementById("sidebarOverlay");
 const pageTitle = document.getElementById("pageTitle");
 const sidebarToggle = document.getElementById("sidebarToggle");
 const vehicleHistorySelect = document.getElementById("vehicleHistorySelect");
-const driverHistorySelect = document.getElementById("driverHistorySelect");
 const vehicleHistoryList = document.getElementById("vehicleHistoryList");
-const driverHistoryList = document.getElementById("driverHistoryList");
 const generalSearchInput = document.getElementById("generalSearchInput");
 const generalSearchType = document.getElementById("generalSearchType");
 const generalSearchStatus = document.getElementById("generalSearchStatus");
@@ -54,16 +75,708 @@ const missionCalendarModalSummary = document.getElementById("missionCalendarModa
 const missionCalendarModalList = document.getElementById("missionCalendarModalList");
 const missionCalendarModalClose = document.getElementById("missionCalendarModalClose");
 const missionStatusFilter = document.getElementById("missionStatusFilter");
-const flowchartForm = document.getElementById("flowchartForm");
-const flowchartImageInput = document.getElementById("flowchartImage");
-const flowchartFormPreview = document.getElementById("flowchartFormPreview");
-const flowchartFormPreviewImage = document.getElementById("flowchartFormPreviewImage");
-const flowchartList = document.getElementById("flowchartsList");
-const flowchartModal = document.getElementById("flowchartModal");
-const flowchartModalImage = document.getElementById("flowchartModalImage");
-const flowchartModalTitle = document.getElementById("flowchartModalTitle");
-const flowchartModalDescription = document.getElementById("flowchartModalDescription");
-const flowchartModalClose = document.getElementById("flowchartModalClose");
+const authScreen = document.getElementById("authScreen");
+const appShell = document.getElementById("appShell");
+const authForm = document.getElementById("authForm");
+const authEmail = document.getElementById("authEmail");
+const authPassword = document.getElementById("authPassword");
+const authMessage = document.getElementById("authMessage");
+const authSubmit = document.getElementById("authSubmit");
+const authTitle = document.getElementById("authTitle");
+const authSubtitle = document.getElementById("authSubtitle");
+const forgotPassword = document.getElementById("forgotPassword");
+const logoutButton = document.getElementById("logoutButton");
+const currentUserEmail = document.getElementById("currentUserEmail");
+const passwordForm = document.getElementById("passwordForm");
+const currentPasswordInput = document.getElementById("currentPassword");
+const newPasswordInput = document.getElementById("newPassword");
+const confirmNewPasswordInput = document.getElementById("confirmNewPassword");
+const passwordMessage = document.getElementById("passwordMessage");
+const usersNavItem = document.getElementById("usersNavItem");
+const usersAdminContent = document.getElementById("usersAdminContent");
+const usersAccessMessage = document.getElementById("usersAccessMessage");
+const userForm = document.getElementById("userForm");
+const userMessage = document.getElementById("userMessage");
+const usersTableBody = document.getElementById("usersTableBody");
+const userPermissionsPanel = document.getElementById("userPermissionsPanel");
+const userPermissionsTarget = document.getElementById("userPermissionsTarget");
+const userPermissionsForm = document.getElementById("userPermissionsForm");
+const closeUserPermissions = document.getElementById("closeUserPermissions");
+const cancelUserPermissions = document.getElementById("cancelUserPermissions");
+const permissionInputs = {
+  view: document.getElementById("permissionView"),
+  scaleView: document.getElementById("permissionScaleView"),
+  create: document.getElementById("permissionCreate"),
+  edit: document.getElementById("permissionEdit"),
+  delete: document.getElementById("permissionDelete"),
+  scaleEdit: document.getElementById("permissionScaleEdit")
+};
+const editPermissionInputs = {
+  view: document.getElementById("editPermissionView"),
+  scaleView: document.getElementById("editPermissionScaleView"),
+  create: document.getElementById("editPermissionCreate"),
+  edit: document.getElementById("editPermissionEdit"),
+  delete: document.getElementById("editPermissionDelete"),
+  scaleEdit: document.getElementById("editPermissionScaleEdit")
+};
+
+let dataUnsubscribers = [];
+let userAccessUnsubscribe = null;
+let managedUsersUnsubscribe = null;
+let currentUserProfile = null;
+let selectedPermissionsUserId = "";
+const popupLayer = document.getElementById("popupLayer");
+const confirmDialog = document.getElementById("confirmDialog");
+const confirmDialogMessage = document.getElementById("confirmDialogMessage");
+const confirmDialogConfirm = document.getElementById("confirmDialogConfirm");
+const confirmDialogCancel = document.getElementById("confirmDialogCancel");
+let pendingConfirmResolve = null;
+
+function refreshIcons() {
+  if (window.lucide?.createIcons) {
+    window.lucide.createIcons();
+  }
+}
+
+function showPopup(message, type = "info") {
+  if (!message || !popupLayer) return;
+  const icons = {
+    success: "circle-check",
+    error: "circle-alert",
+    info: "info"
+  };
+  const toast = document.createElement("div");
+  toast.className = "popup-toast";
+  toast.dataset.type = type;
+
+  const icon = document.createElement("i");
+  icon.setAttribute("data-lucide", icons[type] || icons.info);
+  icon.setAttribute("aria-hidden", "true");
+
+  const text = document.createElement("p");
+  text.className = "text-sm leading-5";
+  text.textContent = message;
+
+  toast.append(icon, text);
+  popupLayer.appendChild(toast);
+  refreshIcons();
+
+  setTimeout(() => {
+    toast.classList.add("is-leaving");
+    setTimeout(() => toast.remove(), 180);
+  }, 4200);
+}
+
+function closeConfirmDialog(result) {
+  confirmDialog?.classList.add("hidden");
+  confirmDialog?.classList.remove("flex");
+  confirmDialog?.setAttribute("aria-hidden", "true");
+  pendingConfirmResolve?.(result);
+  pendingConfirmResolve = null;
+}
+
+function confirmPopup(message) {
+  if (!confirmDialog || !confirmDialogMessage) return Promise.resolve(false);
+  if (pendingConfirmResolve) closeConfirmDialog(false);
+  confirmDialogMessage.textContent = message;
+  confirmDialog.classList.remove("hidden");
+  confirmDialog.classList.add("flex");
+  confirmDialog.setAttribute("aria-hidden", "false");
+  confirmDialogConfirm?.focus();
+  return new Promise((resolve) => {
+    pendingConfirmResolve = resolve;
+  });
+}
+
+confirmDialogConfirm?.addEventListener("click", () => closeConfirmDialog(true));
+confirmDialogCancel?.addEventListener("click", () => closeConfirmDialog(false));
+confirmDialog?.addEventListener("click", (event) => {
+  if (event.target === confirmDialog) closeConfirmDialog(false);
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && pendingConfirmResolve) closeConfirmDialog(false);
+});
+
+const permissionNames = {
+  view: "visualizar os dados gerais",
+  scaleView: "visualizar a escala",
+  create: "adicionar",
+  edit: "editar",
+  delete: "excluir",
+  scaleEdit: "editar a escala"
+};
+
+function hasPermission(permission) {
+  if (currentUserProfile?.role === "admin") return true;
+  if (currentUserProfile?.active === false) return false;
+  if (permission === "view") {
+    if (currentUserProfile?.permissions?.create === true || currentUserProfile?.permissions?.edit === true || currentUserProfile?.permissions?.delete === true) return true;
+    if (currentUserProfile?.permissions?.view === undefined) return true;
+  }
+  if (permission === "scaleView") {
+    if (currentUserProfile?.permissions?.scaleView === true || currentUserProfile?.permissions?.scaleEdit === true) return true;
+    if (currentUserProfile?.permissions?.scaleView === undefined) return currentUserProfile?.permissions?.view !== false;
+    return false;
+  }
+  return currentUserProfile?.active !== false && currentUserProfile?.permissions?.[permission] === true;
+}
+
+function requirePermission(permission) {
+  if (hasPermission(permission)) return true;
+  showPopup(`Você não tem permissão para ${permissionNames[permission] || "executar esta ação"}.`, "error");
+  return false;
+}
+
+function canModifyRecords() {
+  return hasPermission("edit") || hasPermission("delete");
+}
+
+function canAccessSection(sectionId) {
+  if (!currentUserProfile) return true;
+  if (sectionId === "account") return true;
+  if (sectionId === "users") return currentUserProfile.role === "admin" && currentUserProfile.active !== false;
+  if (sectionId === "scale") return hasPermission("scaleView") || hasPermission("scaleEdit");
+  if (dataSectionIds.includes(sectionId)) return hasPermission("view");
+  return true;
+}
+
+function getDefaultSectionId() {
+  if (hasPermission("view")) return "dashboard";
+  if (hasPermission("scaleView") || hasPermission("scaleEdit")) return "scale";
+  return "account";
+}
+
+function applyAccessVisibility() {
+  document.querySelectorAll(".nav-item").forEach((item) => {
+    item.classList.toggle("hidden", !canAccessSection(item.dataset.target));
+  });
+  if (!canAccessSection(activeSectionId)) {
+    setActiveSection(getDefaultSectionId());
+  }
+}
+
+function getPermissionsFromInputs(inputs) {
+  const permissions = Object.fromEntries(Object.entries(inputs).map(([key, input]) => [key, Boolean(input?.checked)]));
+  if (permissions.create || permissions.edit || permissions.delete) permissions.view = true;
+  if (permissions.scaleEdit) permissions.scaleView = true;
+  return permissions;
+}
+
+function setPermissionInputs(inputs, permissions) {
+  const normalizedPermissions = {
+    ...permissions,
+    view: permissions.view === true || permissions.create === true || permissions.edit === true || permissions.delete === true,
+    scaleView: permissions.scaleView === true || permissions.scaleEdit === true
+  };
+  Object.entries(inputs).forEach(([key, input]) => {
+    if (input) input.checked = normalizedPermissions[key] === true;
+  });
+}
+
+function applyPermissionUi() {
+  const formPermissions = {
+    vehicleForm: ["create", "edit"],
+    driverForm: ["create", "edit"],
+    missionForm: ["create", "edit"]
+  };
+  Object.entries(formPermissions).forEach(([formId, permissions]) => {
+    const form = document.getElementById(formId);
+    const panel = form?.closest(".bg-white");
+    if (panel) panel.classList.toggle("hidden", !permissions.some((permission) => hasPermission(permission)));
+  });
+  document.querySelectorAll("[data-action=edit]").forEach((button) => button.classList.toggle("hidden", !hasPermission("edit")));
+  document.querySelectorAll("[data-action=delete]").forEach((button) => button.classList.toggle("hidden", !hasPermission("delete")));
+  document.querySelectorAll("[data-action=toggle], [data-action=close], [data-action=save-mission-operation], [data-action=complete-mission-operation]")
+    .forEach((button) => button.classList.toggle("hidden", !hasPermission("edit")));
+  document.querySelectorAll("[data-action-column], [data-action-cell]")
+    .forEach((element) => element.classList.toggle("hidden", !canModifyRecords()));
+  document.querySelectorAll("[data-mission-vehicle], [data-mission-driver]")
+    .forEach((field) => { field.disabled = !hasPermission("edit"); });
+}
+
+document.getElementById("userRole")?.addEventListener("change", (event) => {
+  const isAdmin = event.target.value === "admin";
+  setPermissionInputs(permissionInputs, isAdmin
+    ? { view: true, scaleView: true, create: true, edit: true, delete: true, scaleEdit: true }
+    : { view: true, scaleView: true, create: false, edit: false, delete: false, scaleEdit: false });
+  Object.values(permissionInputs).forEach((input) => { if (input) input.disabled = isAdmin; });
+});
+
+function setAuthMessage(message, type = "error") {
+  authMessage?.classList.add("hidden");
+  showPopup(message, type);
+}
+
+function getAuthErrorMessage(error) {
+  const messages = {
+    "auth/invalid-credential": "E-mail ou senha incorretos.",
+    "auth/invalid-email": "Informe um e-mail válido.",
+    "auth/email-already-in-use": "Este e-mail já está cadastrado.",
+    "auth/weak-password": "A senha precisa ter pelo menos 6 caracteres.",
+    "auth/too-many-requests": "Muitas tentativas. Aguarde alguns minutos e tente novamente.",
+    "auth/user-not-found": "Não existe uma conta com este e-mail.",
+    "auth/wrong-password": "Senha atual incorreta.",
+    "auth/requires-recent-login": "Entre novamente no sistema e tente alterar a senha.",
+    "auth/operation-not-allowed": "Ative o login por e-mail e senha nas configurações do Firebase.",
+    "auth/network-request-failed": "Não foi possível conectar ao Firebase. Verifique sua internet."
+  };
+  return messages[error?.code] || "Não foi possível concluir a operação. Tente novamente.";
+}
+
+authForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const email = authEmail.value.trim();
+  const password = authPassword.value;
+  authSubmit.disabled = true;
+  authMessage.classList.add("hidden");
+
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    authForm.reset();
+  } catch (error) {
+    setAuthMessage(error.code ? getAuthErrorMessage(error) : error.message);
+  } finally {
+    authSubmit.disabled = false;
+  }
+});
+
+forgotPassword?.addEventListener("click", async () => {
+  const email = authEmail.value.trim();
+  if (!email) {
+    setAuthMessage("Informe seu e-mail para receber o link de recuperação.");
+    authEmail.focus();
+    return;
+  }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    setAuthMessage("Enviamos um link de recuperação para seu e-mail.", "success");
+  } catch (error) {
+    setAuthMessage(getAuthErrorMessage(error));
+  }
+});
+
+logoutButton?.addEventListener("click", () => signOut(auth));
+
+function setPasswordMessage(message, type = "error") {
+  passwordMessage?.classList.add("hidden");
+  showPopup(message, type);
+}
+
+passwordForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const user = auth.currentUser;
+  const currentPassword = currentPasswordInput?.value || "";
+  const newPassword = newPasswordInput?.value || "";
+  const confirmPassword = confirmNewPasswordInput?.value || "";
+
+  if (!user?.email) {
+    setPasswordMessage("Não foi possível identificar o usuário logado.");
+    return;
+  }
+  if (newPassword !== confirmPassword) {
+    setPasswordMessage("A confirmação da nova senha não confere.");
+    return;
+  }
+
+  const submit = passwordForm.querySelector("button[type=submit]");
+  submit.disabled = true;
+  passwordMessage?.classList.add("hidden");
+  try {
+    const credential = EmailAuthProvider.credential(user.email, currentPassword);
+    await reauthenticateWithCredential(user, credential);
+    await updatePassword(user, newPassword);
+    passwordForm.reset();
+    setPasswordMessage("Senha alterada com sucesso.", "success");
+  } catch (error) {
+    setPasswordMessage(getAuthErrorMessage(error));
+  } finally {
+    submit.disabled = false;
+  }
+});
+
+function setUserMessage(message, type = "error") {
+  userMessage?.classList.add("hidden");
+  showPopup(message, type);
+}
+
+function renderUsersTable() {
+  if (!usersTableBody) return;
+  if (!state.users.length) {
+    usersTableBody.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-slate-500">Nenhuma pessoa cadastrada.</td></tr>';
+    return;
+  }
+  usersTableBody.innerHTML = [...state.users]
+    .sort((a, b) => (a.name || a.email || "").localeCompare(b.name || b.email || ""))
+    .map((item) => {
+      const active = item.active !== false;
+      const isCurrentUser = item.id === auth.currentUser?.uid;
+      return `<tr class="border-t border-slate-100">
+        <td class="py-3 pr-4"><p class="font-medium">${item.name || "Sem nome"}</p><p class="text-xs text-slate-500">${item.email || "-"}</p></td>
+        <td class="py-3 pr-4">${item.role === "admin" ? "Administrador" : "Operador"}</td>
+        <td class="py-3 pr-4"><span class="rounded-full px-2 py-1 text-xs ${active ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}">${active ? "Ativo" : "Bloqueado"}</span></td>
+        <td class="py-3"><div class="flex flex-wrap gap-2">${item.role === "admin" ? "Administrador" : `<button type="button" class="text-accent hover:underline" data-user-action="permissions" data-id="${item.id}">Permissões</button><button type="button" class="text-accent hover:underline" data-user-action="toggle" data-id="${item.id}" ${isCurrentUser ? "disabled" : ""}>${active ? "Bloquear" : "Reativar"}</button>`}</div></td>
+      </tr>`;
+    })
+    .join("");
+  applyPermissionUi();
+}
+
+userForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (currentUserProfile?.role !== "admin") return;
+  const submit = userForm.querySelector("button[type=submit]");
+  const email = document.getElementById("userEmail").value.trim();
+  const name = document.getElementById("userName").value.trim();
+  const password = document.getElementById("userPassword").value;
+  const role = "operator";
+  const permissions = getPermissionsFromInputs(permissionInputs);
+  submit.disabled = true;
+  userMessage.classList.add("hidden");
+
+  try {
+    const credential = await createUserWithEmailAndPassword(userManagementAuth, email, password);
+    await update(ref(db, `users/${credential.user.uid}`), {
+      name,
+      email,
+      role,
+      permissions,
+      active: true,
+      createdAt: Date.now(),
+      createdBy: auth.currentUser.uid
+    });
+    userForm.reset();
+    setUserMessage("Acesso cadastrado com sucesso.", "success");
+  } catch (error) {
+    setUserMessage(getAuthErrorMessage(error));
+  } finally {
+    await signOut(userManagementAuth).catch(() => {});
+    submit.disabled = false;
+  }
+});
+
+usersTableBody?.addEventListener("click", async (event) => {
+  const button = event.target.closest("button[data-user-action]");
+  if (!button || currentUserProfile?.role !== "admin") return;
+  const item = state.users.find((entry) => entry.id === button.dataset.id);
+  if (!item) return;
+  if (button.dataset.userAction === "permissions") {
+    selectedPermissionsUserId = item.id;
+    userPermissionsTarget.textContent = `${item.name || "Sem nome"} (${item.email || "sem e-mail"})`;
+    setPermissionInputs(editPermissionInputs, item.role === "admin"
+      ? { view: true, scaleView: true, create: true, edit: true, delete: true, scaleEdit: true }
+      : {
+        view: item.permissions?.view !== false,
+        scaleView: item.permissions?.scaleView === true || item.permissions?.scaleEdit === true || (item.permissions?.scaleView === undefined && item.permissions?.view !== false),
+        create: item.permissions?.create === true,
+        edit: item.permissions?.edit === true,
+        delete: item.permissions?.delete === true,
+        scaleEdit: item.permissions?.scaleEdit === true
+      });
+    Object.values(editPermissionInputs).forEach((input) => { if (input) input.disabled = false; });
+    userPermissionsPanel?.classList.remove("hidden");
+    userPermissionsPanel?.classList.add("flex");
+    userPermissionsPanel?.setAttribute("aria-hidden", "false");
+    userPermissionsPanel?.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+  if (button.dataset.userAction === "toggle" && !button.disabled) {
+    await update(ref(db, `users/${item.id}`), { active: item.active === false, updatedAt: Date.now() });
+  }
+});
+
+userPermissionsForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (currentUserProfile?.role !== "admin" || !selectedPermissionsUserId) return;
+  const item = state.users.find((entry) => entry.id === selectedPermissionsUserId);
+  if (!item || item.role === "admin") return;
+  await update(ref(db, `users/${selectedPermissionsUserId}`), {
+    permissions: getPermissionsFromInputs(editPermissionInputs),
+    updatedAt: Date.now()
+  });
+  userPermissionsPanel?.classList.add("hidden");
+});
+
+closeUserPermissions?.addEventListener("click", () => {
+  selectedPermissionsUserId = "";
+  userPermissionsPanel?.classList.add("hidden");
+  userPermissionsPanel?.classList.remove("flex");
+  userPermissionsPanel?.setAttribute("aria-hidden", "true");
+});
+
+cancelUserPermissions?.addEventListener("click", () => closeUserPermissions?.click());
+userPermissionsPanel?.addEventListener("click", (event) => {
+  if (event.target === userPermissionsPanel) closeUserPermissions?.click();
+});
+
+const scaleCategoryForm = document.getElementById("scaleCategoryForm");
+const scaleCategoryName = document.getElementById("scaleCategoryName");
+const scaleCategorySelect = document.getElementById("scaleCategorySelect");
+const scaleMemberForm = document.getElementById("scaleMemberForm");
+const scaleMemberEditor = document.getElementById("scaleMemberEditor");
+const scaleDriverSelect = document.getElementById("scaleDriverSelect");
+const scaleMessage = document.getElementById("scaleMessage");
+const scaleCalendarGrid = document.getElementById("scaleCalendarGrid");
+const scaleCalendarTitle = document.getElementById("scaleCalendarTitle");
+const scaleCalendarSummary = document.getElementById("scaleCalendarSummary");
+
+function setScaleMessage(message, type = "error") {
+  scaleMessage?.classList.add("hidden");
+  showPopup(message, type);
+}
+
+function toDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function fromDateKey(dateKey) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function scaleTypeForDate(dateKey) {
+  const day = fromDateKey(dateKey).getDay();
+  return day === 0 || day === 6 ? "red" : "black";
+}
+
+function scaleTypeLabel(type) {
+  return type === "red" ? "Vermelha" : "Preta";
+}
+
+function scaleVisibleDays() {
+  return Array.from({ length: scaleLoadedDays }, (_, index) => {
+    const date = new Date(scaleStartDate);
+    date.setDate(scaleStartDate.getDate() + index);
+    return date;
+  });
+}
+
+function countScaleDays(startDateKey, endDateKey, type) {
+  let count = 0;
+  const cursor = fromDateKey(startDateKey);
+  const end = fromDateKey(endDateKey);
+  while (cursor <= end) {
+    if (scaleTypeForDate(toDateKey(cursor)) === type) count += 1;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return count;
+}
+
+function scaleMemberStartDate(member) {
+  if (member.startedDate) return member.startedDate;
+  if (member.createdAt) return toDateKey(new Date(member.createdAt));
+  return toDateKey(scaleStartDate);
+}
+
+function scaleCounterFor(member, dateKey) {
+  const type = scaleTypeForDate(dateKey);
+  const services = Object.entries(state.scaleServices[member.id] || {})
+    .filter(([serviceDate, service]) => service?.scaleType === type && serviceDate <= dateKey)
+    .sort(([a], [b]) => a.localeCompare(b));
+  const lastServiceDate = services.at(-1)?.[0] || "";
+  if (lastServiceDate === dateKey) return 0;
+  const startDate = lastServiceDate
+    ? toDateKey(new Date(fromDateKey(lastServiceDate).setDate(fromDateKey(lastServiceDate).getDate() + 1)))
+    : scaleMemberStartDate(member);
+  if (startDate > dateKey) return "-";
+  return countScaleDays(startDate, dateKey, type);
+}
+
+function renderScaleCategories() {
+  if (!scaleCategorySelect) return;
+  const current = activeScaleCategoryId;
+  scaleCategorySelect.innerHTML = state.scaleCategories.length
+    ? state.scaleCategories.map((category) => `<option value="${category.id}">${category.name}</option>`).join("")
+    : '<option value="">Nenhuma categoria criada</option>';
+  if (state.scaleCategories.some((category) => category.id === current)) {
+    scaleCategorySelect.value = current;
+  }
+  scaleCategorySelect.disabled = !state.scaleCategories.length;
+}
+
+function renderScaleDriverOptions() {
+  if (!scaleDriverSelect) return;
+  const current = scaleDriverSelect.value;
+  scaleDriverSelect.innerHTML = '<option value="">Selecione um condutor</option>'
+    + state.drivers.map((driver) => `<option value="${driver.id}">${formatDriverLabel(driver)}</option>`).join("");
+  if (current) scaleDriverSelect.value = current;
+}
+
+function renderScaleCalendar() {
+  if (!scaleCalendarGrid) return;
+  if (!hasPermission("scaleView") && !hasPermission("scaleEdit")) {
+    scaleCalendarGrid.innerHTML = '<p class="py-8 text-center text-sm text-slate-500">Você não tem permissão para visualizar a escala.</p>';
+    return;
+  }
+  const previousScrollLeft = scaleCalendarGrid.scrollLeft;
+  const category = state.scaleCategories.find((item) => item.id === activeScaleCategoryId);
+  const days = scaleVisibleDays();
+  const firstDayLabel = days[0]?.toLocaleDateString("pt-BR") || "";
+  const lastDayLabel = days.at(-1)?.toLocaleDateString("pt-BR") || "";
+  if (scaleCalendarTitle) scaleCalendarTitle.textContent = category ? `Escala - ${category.name}` : "Escala";
+  if (scaleCalendarSummary) scaleCalendarSummary.textContent = `${firstDayLabel} até ${lastDayLabel} | ${state.scaleMembers.length} militar(es)`;
+  if (!category || !state.scaleMembers.length) {
+    scaleCalendarGrid.innerHTML = '<p class="py-8 text-center text-sm text-slate-500">Crie uma categoria e adicione militares para montar a escala.</p>';
+    return;
+  }
+
+  const monthGroups = days.reduce((groups, date) => {
+    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    const label = date.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+    const lastGroup = groups.at(-1);
+    if (lastGroup?.monthKey === monthKey) {
+      lastGroup.count += 1;
+    } else {
+      groups.push({ monthKey, label, count: 1 });
+    }
+    return groups;
+  }, []);
+
+  const monthHeader = monthGroups
+    .map((group) => `<th class="scale-month-header border-b border-l border-slate-200 px-3 py-2 text-left" colspan="${group.count}">${group.label}</th>`)
+    .join("");
+
+  const header = days.map((date, index) => {
+    const dateKey = toDateKey(date);
+    const type = scaleTypeForDate(dateKey);
+    const label = date.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "");
+    const isMonthStart = index === 0 || date.getDate() === 1;
+    return `<th class="scale-day-header ${isMonthStart ? "scale-month-start" : ""} border-b border-l border-slate-200 px-2 py-2 text-center" data-scale-type="${type}"><span class="block text-[11px] font-medium uppercase ${type === "red" ? "text-rose-700" : "text-slate-600"}">${label}</span><span class="block text-base font-semibold text-slate-900">${date.getDate()}</span><span class="block text-[10px] ${type === "red" ? "text-rose-600" : "text-slate-500"}">${scaleTypeLabel(type)}</span></th>`;
+  }).join("");
+
+  const rows = [...state.scaleMembers]
+    .sort((a, b) => (a.number || "").localeCompare(b.number || "", "pt-BR", { numeric: true }) || (a.name || "").localeCompare(b.name || "", "pt-BR"))
+    .map((member) => {
+    const cells = days.map((date) => {
+      const dateKey = toDateKey(date);
+      const type = scaleTypeForDate(dateKey);
+      const service = state.scaleServices[member.id]?.[dateKey];
+      const counter = String(scaleCounterFor(member, dateKey));
+      const isMonthStart = date === days[0] || date.getDate() === 1;
+      const content = service
+        ? `<span class="block text-xs uppercase tracking-wide">Serviço</span>`
+        : `<span class="block text-sm font-semibold">${counter}</span><span class="block text-[10px]">Folga</span>`;
+      return `<td class="scale-cell ${isMonthStart ? "scale-month-start" : ""} border-b border-l border-slate-200 p-1 text-center" data-scale-type="${type}">${hasPermission("scaleEdit") ? `<button type="button" class="scale-cell-button ${service ? "scale-service" : "text-slate-600"}" data-scale-service data-member-id="${member.id}" data-date="${dateKey}" aria-label="${service ? "Remover serviço" : "Marcar serviço"} em ${formatDate(dateKey)}">${content}</button>` : `<div class="scale-cell-static ${service ? "scale-service" : "text-slate-600"}">${content}</div>`}</td>`;
+    }).join("");
+    return `<tr class="scale-row"><th class="scale-person-cell sticky left-0 z-10 border-b border-slate-200 px-3 py-2 text-left"><span class="block truncate font-medium text-slate-900">${member.name || "Sem nome"}</span><span class="block truncate text-xs text-slate-500">${member.number || "---"} · ${member.rank || "Sem graduação"}</span>${hasPermission("scaleEdit") ? `<button type="button" class="scale-remove-button mt-1 inline-flex items-center gap-1 text-xs" data-scale-member-remove data-member-id="${member.id}"><i data-lucide="x" class="h-3 w-3" aria-hidden="true"></i>Remover</button>` : ""}</th>${cells}</tr>`;
+  }).join("");
+  scaleCalendarGrid.innerHTML = `<table class="border-separate border-spacing-0 text-sm"><thead><tr><th class="scale-person-cell sticky left-0 z-20 border-b border-slate-200 px-3 py-2 text-left">Mês</th>${monthHeader}</tr><tr><th class="scale-person-cell sticky left-0 z-20 border-b border-slate-200 px-3 py-2 text-left">Militar</th>${header}</tr></thead><tbody>${rows}</tbody></table>`;
+  refreshIcons();
+  requestAnimationFrame(() => {
+    scaleCalendarGrid.scrollLeft = previousScrollLeft;
+  });
+}
+
+function detachScaleCategoryListeners() {
+  scaleMembersUnsubscribe?.();
+  scaleServicesUnsubscribe?.();
+  scaleMembersUnsubscribe = null;
+  scaleServicesUnsubscribe = null;
+  state.scaleMembers = [];
+  state.scaleServices = {};
+}
+
+function attachScaleCategoryListeners() {
+  detachScaleCategoryListeners();
+  if (!activeScaleCategoryId) {
+    renderScaleCalendar();
+    return;
+  }
+  scaleMembersUnsubscribe = onValue(ref(db, `scaleMembers/${activeScaleCategoryId}`), (snapshot) => {
+    state.scaleMembers = toArray(snapshot);
+    renderScaleCalendar();
+  });
+  scaleServicesUnsubscribe = onValue(ref(db, `scaleServices/${activeScaleCategoryId}`), (snapshot) => {
+    state.scaleServices = snapshot.val() || {};
+    renderScaleCalendar();
+  });
+}
+
+scaleCategorySelect?.addEventListener("change", () => {
+  activeScaleCategoryId = scaleCategorySelect.value;
+  attachScaleCategoryListeners();
+});
+
+scaleCategoryForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!requirePermission("scaleEdit")) return;
+  const name = scaleCategoryName.value.trim();
+  if (!name) return;
+  await push(ref(db, "scaleCategories"), { name, createdAt: Date.now(), createdBy: auth.currentUser.uid });
+  scaleCategoryForm.reset();
+});
+
+scaleMemberForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!requirePermission("scaleEdit")) return;
+  if (!activeScaleCategoryId) {
+    setScaleMessage("Crie ou selecione uma categoria primeiro.");
+    return;
+  }
+  const driver = state.drivers.find((item) => item.id === scaleDriverSelect.value);
+  if (!driver) {
+    setScaleMessage("Selecione um condutor cadastrado.");
+    return;
+  }
+  if (state.scaleMembers.some((member) => member.driverId === driver.id)) {
+    setScaleMessage("Este condutor já está nesta categoria de escala.");
+    return;
+  }
+  const name = (driver.name || "").trim();
+  const number = (driver.number || "").trim();
+  const rank = (driver.rank || driver.role || "").trim();
+  if (number && !/^\d{1,3}$/.test(number)) {
+    setScaleMessage("O número do condutor deve ter no máximo 3 dígitos.");
+    return;
+  }
+  await update(ref(db, `scaleMembers/${activeScaleCategoryId}/${driver.id}`), {
+    driverId: driver.id,
+    name,
+    number,
+    rank,
+    startedDate: toDateKey(new Date()),
+    createdAt: Date.now(),
+    createdBy: auth.currentUser.uid
+  });
+  scaleMemberForm.reset();
+  setScaleMessage("Militar adicionado à escala.", "success");
+});
+
+scaleCalendarGrid?.addEventListener("click", async (event) => {
+  const serviceButton = event.target.closest("[data-scale-service]");
+  const removeButton = event.target.closest("[data-scale-member-remove]");
+  if (removeButton) {
+    if (!requirePermission("scaleEdit")) return;
+    const memberId = removeButton.dataset.memberId;
+    if (await confirmPopup("Deseja remover este militar da escala?")) {
+      await remove(ref(db, `scaleMembers/${activeScaleCategoryId}/${memberId}`));
+      await remove(ref(db, `scaleServices/${activeScaleCategoryId}/${memberId}`));
+    }
+    return;
+  }
+  if (!serviceButton || !requirePermission("scaleEdit")) return;
+  const memberId = serviceButton.dataset.memberId;
+  const dateKey = serviceButton.dataset.date;
+  const path = ref(db, `scaleServices/${activeScaleCategoryId}/${memberId}/${dateKey}`);
+  if (state.scaleServices[memberId]?.[dateKey]) {
+    await remove(path);
+  } else {
+    await update(path, { scaleType: scaleTypeForDate(dateKey), createdAt: Date.now(), createdBy: auth.currentUser.uid });
+  }
+});
+
+scaleCalendarGrid?.addEventListener("scroll", () => {
+  const distanceToEnd = scaleCalendarGrid.scrollWidth - scaleCalendarGrid.scrollLeft - scaleCalendarGrid.clientWidth;
+  if (distanceToEnd > 360 || scaleCalendarGrid.dataset.loadingMore === "true") return;
+  scaleCalendarGrid.dataset.loadingMore = "true";
+  scaleLoadedDays += 30;
+  renderScaleCalendar();
+  requestAnimationFrame(() => {
+    delete scaleCalendarGrid.dataset.loadingMore;
+  });
+});
 
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -77,6 +790,9 @@ function toggleSidebar(open) {
 }
 
 function setActiveSection(sectionId) {
+  if (!canAccessSection(sectionId)) {
+    sectionId = getDefaultSectionId();
+  }
   activeSectionId = sectionId;
   sectionIds.forEach((id) => {
     const section = document.getElementById(id);
@@ -112,9 +828,10 @@ function formatVehicleLabel(vehicle) {
 
 function formatDriverLabel(driver) {
   if (!driver) return "Não definido";
-  const role = driver.role ? `${driver.role} - ` : "";
+  const number = driver.number ? `${driver.number} - ` : "";
+  const role = (driver.rank || driver.role) ? `${driver.rank || driver.role} - ` : "";
   const name = driver.name || "Sem nome";
-  return `${role}${name}`.trim();
+  return `${number}${role}${name}`.trim();
 }
 
 function normalizeText(value) {
@@ -254,7 +971,7 @@ function renderTimeline(container, events, emptyMessage) {
   container.innerHTML = events
     .map(
       (event) => `<div class="flex gap-3">
-        <div class="mt-2 h-2 w-2 rounded-full bg-accent"></div>
+        <i data-lucide="history" class="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden="true"></i>
         <div>
           <p class="font-medium">${event.title}</p>
           <p class="text-xs text-slate-500">${event.meta}</p>
@@ -262,6 +979,7 @@ function renderTimeline(container, events, emptyMessage) {
       </div>`
     )
     .join("");
+  refreshIcons();
 }
 
 function closeMissionCalendarModal() {
@@ -281,13 +999,13 @@ function openMissionCalendarModal(dateKey) {
   const workOrders = state.workOrders
     .filter((order) => order.departureDate === dateKey)
     .sort((a, b) => (a.departureTime || "").localeCompare(b.departureTime || ""));
-  const completed = missions.filter((mission) => mission.status === "Concluída").length;
-  const pending = missions.length - completed;
+  const completed = missions.filter((mission) => normalizeMissionStatus(mission.status) === "Concluída").length;
+  const inProgress = missions.length - completed;
   const totalItems = missions.length + workOrders.length;
 
   missionCalendarModalTitle.textContent = `Agenda de ${formatDate(dateKey)}`;
   missionCalendarModalSummary.textContent = totalItems
-    ? `${missions.length} missão(ões) • ${pending} pendente(s) • ${completed} concluída(s) • ${workOrders.length} operação(ões).`
+    ? `${missions.length} missão(ões) • ${inProgress} em andamento • ${completed} concluída(s) • ${workOrders.length} operação(ões).`
     : "Nenhuma missão ou operação cadastrada para este dia.";
 
   if (!totalItems) {
@@ -305,7 +1023,8 @@ function openMissionCalendarModal(dateKey) {
       .map((item) => {
         if (item.type === "mission") {
           const { mission } = item;
-          const statusClass = getMissionStatusClass(mission.status || "Pendente");
+          const status = normalizeMissionStatus(mission.status);
+          const statusClass = getMissionStatusClass(status);
           const timeLabel = mission.time || "Sem hora";
           const locationLabel = mission.location || "Sem local";
           const priorityLabel = getMissionPriorityLabel(mission.priority);
@@ -318,7 +1037,7 @@ function openMissionCalendarModal(dateKey) {
                 <p class="text-sm text-slate-600 mt-1">${timeLabel} • ${locationLabel}${endLabel}</p>
                 <p class="text-xs text-slate-500 mt-1">Prioridade: ${priorityLabel}</p>
               </div>
-              <span class="text-xs px-2 py-1 rounded-full ${statusClass}">${mission.status || "Pendente"}</span>
+              <span class="text-xs px-2 py-1 rounded-full ${statusClass}">${status}</span>
             </div>
             ${notesLabel}
           </div>`;
@@ -399,13 +1118,17 @@ function renderEmptyRow(tbody, colspan, message) {
 }
 
 function getMissionStatusClass(status) {
+  status = normalizeMissionStatus(status);
   if (status === "Concluída") return "bg-emerald-50 text-emerald-700";
-  if (status === "Em andamento") return "bg-sky-50 text-sky-700";
-  return "bg-amber-50 text-amber-700";
+  return "bg-sky-50 text-sky-700";
+}
+
+function normalizeMissionStatus(status) {
+  return status === "Concluída" ? "Concluída" : "Em andamento";
 }
 
 function isMissionInProgress(mission) {
-  return (mission.status || "Pendente") === "Em andamento";
+  return normalizeMissionStatus(mission.status) === "Em andamento";
 }
 
 function renderVehiclesTable() {
@@ -421,7 +1144,7 @@ function renderVehiclesTable() {
         <td class="py-3 pr-4">${vehicle.eb || "-"}</td>
         <td class="py-3 pr-4">${vehicle.model || "-"}</td>
         <td class="py-3 pr-4">${vehicle.status || "-"}</td>
-        <td class="py-3">
+        <td class="py-3" data-action-cell>
           <button class="text-accent mr-3" data-action="edit" data-id="${vehicle.id}">Editar</button>
           <button class="text-red-600" data-action="delete" data-id="${vehicle.id}">Excluir</button>
         </td>
@@ -434,16 +1157,17 @@ function renderDriversTable() {
   const tbody = document.getElementById("driversTableBody");
   if (!tbody) return;
   if (!state.drivers.length) {
-    renderEmptyRow(tbody, 4, "Nenhum condutor cadastrado.");
+    renderEmptyRow(tbody, 5, "Nenhum condutor cadastrado.");
     return;
   }
   tbody.innerHTML = state.drivers
     .map(
       (driver) => `<tr class="border-t border-slate-100">
         <td class="py-3 pr-4">${formatDriverLabel(driver)}</td>
+        <td class="py-3 pr-4">${driver.number || "-"}</td>
         <td class="py-3 pr-4">${driver.phone || "-"}</td>
         <td class="py-3 pr-4">${getDriverStatusLabel(driver)}</td>
-        <td class="py-3">
+        <td class="py-3" data-action-cell>
           <button class="text-accent mr-3" data-action="edit" data-id="${driver.id}">Editar</button>
           <button class="text-red-600" data-action="delete" data-id="${driver.id}">Excluir</button>
         </td>
@@ -463,7 +1187,7 @@ function renderMissionsTable() {
   const statusFilter = missionStatusFilter?.value || "all";
   const filteredMissions = [...state.missions].filter((mission) => {
     if (statusFilter === "all") return true;
-    return (mission.status || "Pendente") === statusFilter;
+    return normalizeMissionStatus(mission.status) === statusFilter;
   });
   if (!filteredMissions.length) {
     renderEmptyRow(tbody, 7, "Nenhuma missão encontrada para este status.");
@@ -472,13 +1196,9 @@ function renderMissionsTable() {
   tbody.innerHTML = filteredMissions
     .sort((a, b) => (toTimestamp(a.date, a.time) || 0) - (toTimestamp(b.date, b.time) || 0))
     .map((mission) => {
-      const status = mission.status || "Pendente";
+      const status = normalizeMissionStatus(mission.status);
       const priority = getMissionPriorityLabel(mission.priority);
-      const toggleLabel = status === "Pendente"
-        ? "Iniciar"
-        : status === "Em andamento"
-          ? "Concluir"
-          : "Marcar pendente";
+      const toggleLabel = status === "Concluída" ? "Reabrir" : "Concluir";
       const statusClass = getMissionStatusClass(status);
       return `<tr class="border-t border-slate-100">
         <td class="py-3 pr-4">
@@ -494,7 +1214,7 @@ function renderMissionsTable() {
         <td class="py-3 pr-4">
           <span class="text-xs px-2 py-1 rounded-full ${statusClass}">${status}</span>
         </td>
-        <td class="py-3 whitespace-nowrap">
+        <td class="py-3 whitespace-nowrap" data-action-cell>
           <button class="text-accent mr-3" data-action="toggle" data-id="${mission.id}">${toggleLabel}</button>
           <button class="text-accent mr-3" data-action="edit" data-id="${mission.id}">Editar</button>
           <button class="text-red-600" data-action="delete" data-id="${mission.id}">Excluir</button>
@@ -552,7 +1272,8 @@ function renderOngoingMissionsPanel() {
             <p class="text-[11px] text-slate-400 mt-1">${driver ? formatDriverLabel(driver) : "Nenhum condutor vinculado"}</p>
           </div>
         </div>
-        <div class="flex justify-end mt-4">
+        <div class="flex flex-wrap justify-end gap-2 mt-4">
+          <button type="button" data-action="complete-mission-operation" data-id="${mission.id}" class="px-3 py-2 rounded-md border border-slate-200 text-slate-600 text-xs hover:text-accent hover:border-accent transition">Concluir missão</button>
           <button type="button" data-action="save-mission-operation" data-id="${mission.id}" class="px-3 py-2 rounded-md bg-accent text-white text-xs shadow-sm shadow-blue-500/20 hover:bg-accent-dark transition">Salvar equipe</button>
         </div>
       </div>`;
@@ -587,7 +1308,7 @@ function renderWorkOrdersTable() {
         <td class="py-3 pr-4">${departureDateTime}</td>
         <td class="py-3 pr-4">${arrivalDateTime}</td>
         <td class="py-3 pr-4">${item.status || "-"}</td>
-        <td class="py-3 whitespace-nowrap">
+        <td class="py-3 whitespace-nowrap" data-action-cell>
           ${canClose ? `<button class="text-accent mr-3" data-action="close" data-id="${item.id}">Fechar</button>` : ""}
           <button class="text-red-600" data-action="delete" data-id="${item.id}">Excluir</button>
         </td>
@@ -642,51 +1363,6 @@ function buildVehicleTimeline(vehicleId) {
   return events.sort((a, b) => (b.sortKey || 0) - (a.sortKey || 0));
 }
 
-function buildDriverTimeline(driverId) {
-  const events = [];
-  const driver = state.drivers.find((item) => item.id === driverId);
-  if (driver?.createdAt) {
-    events.push({
-      sortKey: driver.createdAt,
-      title: "Condutor cadastrado",
-      meta: `${formatDriverLabel(driver)} • ${formatTimestamp(driver.createdAt)}`
-    });
-  }
-  if (driver?.updatedAt) {
-    events.push({
-      sortKey: driver.updatedAt,
-      title: "Condutor atualizado",
-      meta: `${formatDriverLabel(driver)} • ${formatTimestamp(driver.updatedAt)}`
-    });
-  }
-
-  state.workOrders
-    .filter((item) => item.driverId === driverId)
-    .forEach((item) => {
-      const vehicle = state.vehicles.find((entry) => entry.id === item.vehicleId);
-      const departureLabel = formatDateTime(item.departureDate, item.departureTime);
-      const timestamp = toTimestamp(item.departureDate, item.departureTime) || item.createdAt || item.updatedAt || 0;
-      events.push({
-        sortKey: timestamp,
-        title: "Operação atribuída",
-        meta: `${departureLabel} • ${item.destination || "-"} • ${formatVehicleLabel(vehicle)} • ${item.status || "Aberta"}`
-      });
-
-      if (item.status === "Concluída" && (item.arrivalDate || item.arrivalTime)) {
-        const arrivalLabel = formatDateTime(item.arrivalDate, item.arrivalTime);
-        const arrivalTimestamp =
-          toTimestamp(item.arrivalDate, item.arrivalTime) || item.updatedAt || timestamp;
-        events.push({
-          sortKey: arrivalTimestamp,
-          title: "Operação concluída",
-          meta: `${arrivalLabel} • ${item.destination || "-"} • ${formatVehicleLabel(vehicle)}`
-        });
-      }
-    });
-
-  return events.sort((a, b) => (b.sortKey || 0) - (a.sortKey || 0));
-}
-
 function getOrderReferenceTimestamp(order) {
   return order.createdAt || toTimestamp(order.departureDate, order.departureTime) || 0;
 }
@@ -699,16 +1375,6 @@ function renderVehicleHistory() {
   }
   const events = buildVehicleTimeline(vehicleId);
   renderTimeline(vehicleHistoryList, events, "Sem eventos registrados para este veículo.");
-}
-
-function renderDriverHistory() {
-  const driverId = driverHistorySelect?.value;
-  if (!driverId) {
-    renderTimeline(driverHistoryList, [], "Selecione um condutor para visualizar o histórico.");
-    return;
-  }
-  const events = buildDriverTimeline(driverId);
-  renderTimeline(driverHistoryList, events, "Sem eventos registrados para este condutor.");
 }
 
 function getCurrentMonthInfo() {
@@ -761,17 +1427,17 @@ function buildCompactCalendarCell({
   isToday
 }) {
   const dayNumber = isToday
-    ? `<span class="h-6 w-6 rounded-full bg-accent text-white text-xs font-semibold leading-none flex items-center justify-center">${dayLabel}</span>`
+    ? `<span class="inline-flex h-6 min-w-6 items-center justify-center rounded-md bg-slate-900 px-1.5 text-xs font-semibold leading-none text-white">${dayLabel}</span>`
     : `<span class="text-sm font-semibold text-slate-700 leading-none">${dayLabel}</span>`;
   const indicators = [];
   if (pendingCount > 0) {
-    indicators.push('<span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>');
+    indicators.push('<i data-lucide="clock-3" class="h-3 w-3 text-amber-500" aria-hidden="true"></i>');
   }
   if (completedCount > 0) {
-    indicators.push('<span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>');
+    indicators.push('<i data-lucide="check-check" class="h-3 w-3 text-emerald-600" aria-hidden="true"></i>');
   }
   if (operationCount > 0) {
-    indicators.push('<span class="h-1.5 w-1.5 rounded-full bg-sky-400"></span>');
+    indicators.push('<i data-lucide="route" class="h-3 w-3 text-sky-600" aria-hidden="true"></i>');
   }
   const indicatorRow = indicators.length
     ? `<div class="flex items-center gap-1 md:hidden">${indicators.join("")}</div>`
@@ -780,14 +1446,16 @@ function buildCompactCalendarCell({
   const workOrderPreview = workOrders.slice(0, 2);
   const detailLines = [
     ...missionPreview.map((mission) => {
-      const dotClass = mission.status === "Concluída" ? "bg-emerald-400" : "bg-amber-400";
+      const status = normalizeMissionStatus(mission.status);
+      const icon = status === "Concluída" ? "check-check" : "clock-3";
+      const iconClass = status === "Concluída" ? "text-emerald-600" : "text-amber-500";
       return `<div class="flex items-center gap-1 text-[11px] text-slate-600">
-        <span class="h-1.5 w-1.5 rounded-full ${dotClass}"></span>
+        <i data-lucide="${icon}" class="h-3 w-3 ${iconClass}" aria-hidden="true"></i>
         <span class="truncate">${mission.title || "Missão"}${mission.priority ? ` • ${mission.priority}` : ""}</span>
       </div>`;
     }),
     ...workOrderPreview.map((order) => `<div class="flex items-center gap-1 text-[11px] text-slate-600">
-      <span class="h-1.5 w-1.5 rounded-full bg-sky-400"></span>
+      <i data-lucide="route" class="h-3 w-3 text-sky-600" aria-hidden="true"></i>
       <span class="truncate">${order.destination || "Operação"}</span>
     </div>`)
   ];
@@ -842,7 +1510,7 @@ function renderMissionWeekly() {
     const dateKey = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
     const dayMissions = missionsByDate.get(dateKey) || [];
     totalMissions += dayMissions.length;
-    completedMissions += dayMissions.filter((m) => m.status === "Conclu\u00edda").length;
+    completedMissions += dayMissions.filter((m) => normalizeMissionStatus(m.status) === "Concluída").length;
   }
 
   if (weeklyTitle) {
@@ -850,7 +1518,7 @@ function renderMissionWeekly() {
   }
   if (weeklySummary) {
     weeklySummary.textContent = totalMissions
-      ? `${totalMissions} miss\u00e3o(ões) • ${totalMissions - completedMissions} pendente(s) • ${completedMissions} conclu\u00edda(s).`
+      ? `${totalMissions} missão(ões) • ${totalMissions - completedMissions} em andamento • ${completedMissions} concluída(s).`
       : "Nenhuma miss\u00e3o cadastrada para esta semana.";
   }
 
@@ -868,7 +1536,7 @@ function renderMissionWeekly() {
       .sort((a, b) => (a.time || "").localeCompare(b.time || ""));
     const workOrders = (workOrdersByDate.get(dateKey) || [])
       .sort((a, b) => (a.departureTime || "").localeCompare(b.departureTime || ""));
-    const completedCount = missions.filter((mission) => mission.status === "Conclu\u00edda").length;
+    const completedCount = missions.filter((mission) => normalizeMissionStatus(mission.status) === "Concluída").length;
     const pendingCount = missions.length - completedCount;
     const dayLabel = String(day.getDate()).padStart(2, "0");
     cells.push(buildCompactCalendarCell({
@@ -884,6 +1552,7 @@ function renderMissionWeekly() {
   }
 
   weeklyContainer.innerHTML = cells.join("");
+  refreshIcons();
 }
 
 function renderMissionCalendar() {
@@ -894,8 +1563,8 @@ function renderMissionCalendar() {
 
   const { year, month, monthKey, monthName } = getCurrentMonthInfo();
   const monthMissions = state.missions.filter((mission) => (mission.date || "").startsWith(monthKey));
-  const completed = monthMissions.filter((mission) => mission.status === "Concluída").length;
-  const pending = monthMissions.length - completed;
+  const completed = monthMissions.filter((mission) => normalizeMissionStatus(mission.status) === "Concluída").length;
+  const inProgress = monthMissions.length - completed;
   const missionsByDate = new Map();
   const monthWorkOrders = state.workOrders.filter((order) => (order.departureDate || "").startsWith(monthKey));
   const workOrdersByDate = new Map();
@@ -917,7 +1586,7 @@ function renderMissionCalendar() {
     title.textContent = `Missões de ${monthName}`;
   }
   if (summary) {
-    summary.textContent = `${monthMissions.length} no mês • ${pending} pendente(s) • ${completed} concluída(s).`;
+    summary.textContent = `${monthMissions.length} no mês • ${inProgress} em andamento • ${completed} concluída(s).`;
   }
 
   const todayKey = getTodayKey();
@@ -938,7 +1607,7 @@ function renderMissionCalendar() {
       .sort((a, b) => (a.time || "").localeCompare(b.time || ""));
     const workOrders = (workOrdersByDate.get(dateKey) || [])
       .sort((a, b) => (a.departureTime || "").localeCompare(b.departureTime || ""));
-    const completedCount = missions.filter((mission) => mission.status === "Concluída").length;
+    const completedCount = missions.filter((mission) => normalizeMissionStatus(mission.status) === "Concluída").length;
     const pendingCount = missions.length - completedCount;
     const dayLabel = String(day).padStart(2, "0");
     cells.push(buildCompactCalendarCell({
@@ -954,6 +1623,7 @@ function renderMissionCalendar() {
   }
 
   calendar.innerHTML = cells.join("");
+  refreshIcons();
 }
 
 function updateDashboard(animate = false) {
@@ -972,8 +1642,6 @@ function updateDashboard(animate = false) {
   setCountText("countDrivers", state.drivers.length);
   setCountText("countMissions", state.missions.length);
   setCountText("countWorkOrders", ongoingMissions.length);
-  setCountText("countFlowcharts", state.flowcharts.length);
-
   const totalVehicles = state.vehicles.length;
   const availableVehicles = state.vehicles.filter((vehicle) => vehicle.status === "Disponível").length;
   const availableRestricted = state.vehicles.filter((vehicle) => vehicle.status === "Disponível (restrição)").length;
@@ -1038,6 +1706,7 @@ function updateDashboard(animate = false) {
 }
 
 function animateDashboard() {
+  return;
   if (typeof anime === "undefined") return;
 
   const fleetAvailabilityBar = document.getElementById("fleetAvailabilityBar");
@@ -1115,7 +1784,6 @@ const statusOptionsByType = {
 
   missions: [
     { value: "all", label: "Todos" },
-    { value: "Pendente", label: "Pendente" },
     { value: "Em andamento", label: "Em andamento" },
     { value: "Concluída", label: "Concluída" }
   ],
@@ -1178,7 +1846,7 @@ function buildSearchItems() {
       typeLabel: "Missão",
       title: mission.title || "Missão",
       description: details.join(" • "),
-      status: mission.status || "Pendente"
+      status: normalizeMissionStatus(mission.status)
     });
   });
 
@@ -1287,6 +1955,8 @@ document.querySelectorAll(".quick-link").forEach((button) => {
   button.addEventListener("click", () => setActiveSection(button.dataset.target));
 });
 
+refreshIcons();
+
 document.getElementById("missionWeeklyPrev")?.addEventListener("click", () => {
   changeMissionWeeklyWeek(-1);
 });
@@ -1342,7 +2012,6 @@ document.addEventListener("keydown", (event) => {
 });
 
 vehicleHistorySelect?.addEventListener("change", renderVehicleHistory);
-driverHistorySelect?.addEventListener("change", renderDriverHistory);
 generalSearchInput?.addEventListener("input", renderGeneralSearch);
 generalSearchType?.addEventListener("change", () => {
   updateSearchStatusOptions(generalSearchType.value);
@@ -1354,6 +2023,7 @@ generalSearchResults?.addEventListener("click", (event) => {
   const button = event.target.closest("button");
   if (!button) return;
   if (button.dataset.action !== "edit") return;
+  if (!requirePermission("edit")) return;
   const id = button.dataset.id;
   const type = button.dataset.type;
   if (!id || !type) return;
@@ -1375,21 +2045,30 @@ generalSearchResults?.addEventListener("click", (event) => {
 });
 
 const latestWorkOrdersContainer = document.getElementById("latestWorkOrders");
-latestWorkOrdersContainer?.addEventListener("click", async (event) => {
-  const button = event.target.closest("button");
-  if (!button) return;
-  if (button.dataset.action !== "complete-mission-operation") return;
-  const id = button.dataset.id;
-  if (!id) return;
+async function completeMissionOperation(id) {
+  if (!id || !requirePermission("edit")) return;
   await update(ref(db, `missions/${id}`), {
     status: "Concluída",
     updatedAt: Date.now()
   });
+}
+
+latestWorkOrdersContainer?.addEventListener("click", async (event) => {
+  const button = event.target.closest("button");
+  if (!button) return;
+  if (button.dataset.action !== "complete-mission-operation") return;
+  await completeMissionOperation(button.dataset.id);
 });
 
 document.getElementById("ongoingMissionsPanel")?.addEventListener("click", async (event) => {
   const button = event.target.closest("button");
-  if (!button || button.dataset.action !== "save-mission-operation") return;
+  if (!button) return;
+  if (button.dataset.action === "complete-mission-operation") {
+    await completeMissionOperation(button.dataset.id);
+    return;
+  }
+  if (button.dataset.action !== "save-mission-operation") return;
+  if (!requirePermission("edit")) return;
 
   const missionId = button.dataset.id;
   const mission = state.missions.find((item) => item.id === missionId);
@@ -1439,6 +2118,7 @@ function startEditDriver(id) {
   const driver = state.drivers.find((item) => item.id === id);
   if (!driver || !driverForm) return;
   document.getElementById("driverRole").value = driver.role || "";
+  document.getElementById("driverNumber").value = driver.number || "";
   document.getElementById("driverName").value = driver.name || "";
   document.getElementById("driverPhone").value = driver.phone || "";
   driverForm.dataset.editId = id;
@@ -1456,7 +2136,7 @@ function startEditMission(id) {
   document.getElementById("missionTime").value = mission.time || "";
   document.getElementById("missionEndDate").value = mission.endDate || "";
   document.getElementById("missionPriority").value = mission.priority || "Média";
-  document.getElementById("missionStatus").value = mission.status || "Pendente";
+  document.getElementById("missionStatus").value = normalizeMissionStatus(mission.status);
   document.getElementById("missionNotes").value = mission.notes || "";
   missionForm.dataset.editId = id;
   setFormMode(missionForm, true);
@@ -1482,100 +2162,6 @@ function startEditWorkOrder(id) {
   workOrderForm.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function clearFlowchartPreview() {
-  if (flowchartFormPreviewImage) {
-    flowchartFormPreviewImage.src = "";
-  }
-  flowchartFormPreview?.classList.add("hidden");
-  if (flowchartForm) {
-    delete flowchartForm.dataset.selectedImageDataUrl;
-    delete flowchartForm.dataset.selectedImageName;
-    delete flowchartForm.dataset.existingImageDataUrl;
-  }
-  if (flowchartImageInput) {
-    flowchartImageInput.value = "";
-  }
-}
-
-function setFlowchartPreview(imageDataUrl) {
-  if (!flowchartFormPreview || !flowchartFormPreviewImage) return;
-  if (!imageDataUrl) {
-    clearFlowchartPreview();
-    return;
-  }
-  flowchartFormPreviewImage.src = imageDataUrl;
-  flowchartFormPreview.classList.remove("hidden");
-}
-
-function readFileAsDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
-    reader.onerror = () => reject(new Error("Não foi possível ler a imagem selecionada."));
-    reader.readAsDataURL(file);
-  });
-}
-
-function openFlowchartModal(flowchart) {
-  if (!flowchartModal || !flowchartModalImage || !flowchartModalTitle || !flowchartModalDescription) return;
-  flowchartModalImage.src = flowchart.imageDataUrl || "";
-  flowchartModalImage.alt = flowchart.title ? `Fluxograma ${flowchart.title}` : "Fluxograma";
-  flowchartModalTitle.textContent = flowchart.title || "Fluxograma";
-  flowchartModalDescription.textContent = flowchart.description || "Sem descrição.";
-  flowchartModal.classList.remove("hidden");
-  flowchartModal.setAttribute("aria-hidden", "false");
-}
-
-function closeFlowchartModal() {
-  if (!flowchartModal) return;
-  flowchartModal.classList.add("hidden");
-  flowchartModal.setAttribute("aria-hidden", "true");
-}
-
-function startEditFlowchart(id) {
-  const flowchart = state.flowcharts.find((item) => item.id === id);
-  if (!flowchart || !flowchartForm) return;
-  document.getElementById("flowchartTitle").value = flowchart.title || "";
-  document.getElementById("flowchartDescription").value = flowchart.description || "";
-  flowchartForm.dataset.editId = id;
-  flowchartForm.dataset.existingImageDataUrl = flowchart.imageDataUrl || "";
-  setFormMode(flowchartForm, true);
-  setFlowchartPreview(flowchart.imageDataUrl || "");
-  flowchartForm.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-function renderFlowchartsList() {
-  if (!flowchartList) return;
-  if (!state.flowcharts.length) {
-    flowchartList.innerHTML = '<p class="text-slate-500">Nenhum fluxograma cadastrado.</p>';
-    return;
-  }
-  flowchartList.innerHTML = [...state.flowcharts]
-    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
-    .map((flowchart) => {
-      const imageSrc = flowchart.imageDataUrl || "";
-      return `<article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <button type="button" class="block w-full text-left" data-action="view" data-id="${flowchart.id}">
-          <img src="${imageSrc}" alt="${flowchart.title || "Fluxograma"}" class="h-56 w-full object-cover bg-slate-100" />
-        </button>
-        <div class="p-4">
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <h4 class="font-semibold text-slate-900">${flowchart.title || "Fluxograma"}</h4>
-              <p class="text-sm text-slate-500 mt-1">${flowchart.description || "Sem descrição."}</p>
-            </div>
-          </div>
-          <div class="mt-4 flex flex-wrap gap-2">
-            <button type="button" class="px-3 py-2 rounded-md border border-slate-200 text-sm text-slate-700 hover:border-accent hover:text-accent transition" data-action="view" data-id="${flowchart.id}">Visualizar</button>
-            <button type="button" class="px-3 py-2 rounded-md border border-slate-200 text-sm text-slate-700 hover:border-accent hover:text-accent transition" data-action="edit" data-id="${flowchart.id}">Editar</button>
-            <button type="button" class="px-3 py-2 rounded-md border border-red-200 text-sm text-red-600 hover:border-red-300 hover:bg-red-50 transition" data-action="delete" data-id="${flowchart.id}">Excluir</button>
-          </div>
-        </div>
-      </article>`;
-    })
-    .join("");
-}
-
 vehicleForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const payload = {
@@ -1584,6 +2170,7 @@ vehicleForm?.addEventListener("submit", async (event) => {
     status: document.getElementById("vehicleStatus").value
   };
   const editId = vehicleForm.dataset.editId;
+  if (!requirePermission(editId ? "edit" : "create")) return;
   if (editId) {
     await update(ref(db, `vehicles/${editId}`), {
       ...payload,
@@ -1600,10 +2187,13 @@ driverForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const payload = {
     role: document.getElementById("driverRole").value.trim(),
+    rank: document.getElementById("driverRole").value.trim(),
+    number: document.getElementById("driverNumber").value.trim(),
     name: document.getElementById("driverName").value.trim(),
     phone: document.getElementById("driverPhone").value.trim()
   };
   const editId = driverForm.dataset.editId;
+  if (!requirePermission(editId ? "edit" : "create")) return;
   if (editId) {
     await update(ref(db, `drivers/${editId}`), { ...payload, updatedAt: Date.now() });
     setFormMode(driverForm, false);
@@ -1626,6 +2216,7 @@ missionForm?.addEventListener("submit", async (event) => {
     notes: document.getElementById("missionNotes").value.trim()
   };
   const editId = missionForm.dataset.editId;
+  if (!requirePermission(editId ? "edit" : "create")) return;
   if (editId) {
     await update(ref(db, `missions/${editId}`), { ...payload, updatedAt: Date.now() });
     setFormMode(missionForm, false);
@@ -1635,58 +2226,11 @@ missionForm?.addEventListener("submit", async (event) => {
   }
 });
 
-flowchartImageInput?.addEventListener("change", async () => {
-  if (!flowchartForm) return;
-  const file = flowchartImageInput.files?.[0];
-  if (!file) {
-    delete flowchartForm.dataset.selectedImageDataUrl;
-    delete flowchartForm.dataset.selectedImageName;
-    if (!flowchartForm.dataset.existingImageDataUrl) {
-      clearFlowchartPreview();
-    }
-    return;
-  }
-  const imageDataUrl = await readFileAsDataUrl(file);
-  flowchartForm.dataset.selectedImageDataUrl = imageDataUrl;
-  flowchartForm.dataset.selectedImageName = file.name;
-  setFlowchartPreview(imageDataUrl);
-});
-
-flowchartForm?.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const title = document.getElementById("flowchartTitle").value.trim();
-  const description = document.getElementById("flowchartDescription").value.trim();
-  const imageDataUrl = flowchartForm.dataset.selectedImageDataUrl || flowchartForm.dataset.existingImageDataUrl || "";
-  if (!imageDataUrl) {
-    alert("Selecione uma imagem para o fluxograma.");
-    return;
-  }
-  const payload = {
-    title,
-    description,
-    imageDataUrl,
-    imageName: flowchartForm.dataset.selectedImageName || "",
-    updatedAt: Date.now()
-  };
-  const editId = flowchartForm.dataset.editId;
-  if (editId) {
-    await update(ref(db, `flowcharts/${editId}`), payload);
-    setFormMode(flowchartForm, false);
-  } else {
-    await push(ref(db, "flowcharts"), { ...payload, createdAt: Date.now() });
-    flowchartForm.reset();
-  }
-  clearFlowchartPreview();
-});
-
 document.querySelectorAll("form [data-cancel]").forEach((button) => {
   button.addEventListener("click", () => {
     const form = button.closest("form");
     if (form) {
       setFormMode(form, false);
-      if (form.id === "flowchartForm") {
-        clearFlowchartPreview();
-      }
     }
   });
 });
@@ -1697,10 +2241,12 @@ document.getElementById("vehiclesTableBody")?.addEventListener("click", async (e
   const id = button.dataset.id;
   if (!id) return;
   if (button.dataset.action === "edit") {
+    if (!requirePermission("edit")) return;
     startEditVehicle(id);
   }
   if (button.dataset.action === "delete") {
-    if (confirm("Deseja excluir este veículo?")) {
+    if (!requirePermission("delete")) return;
+    if (await confirmPopup("Deseja excluir este veículo?")) {
       await remove(ref(db, `vehicles/${id}`));
     }
   }
@@ -1712,10 +2258,12 @@ document.getElementById("driversTableBody")?.addEventListener("click", async (ev
   const id = button.dataset.id;
   if (!id) return;
   if (button.dataset.action === "edit") {
+    if (!requirePermission("edit")) return;
     startEditDriver(id);
   }
   if (button.dataset.action === "delete") {
-    if (confirm("Deseja excluir este condutor?")) {
+    if (!requirePermission("delete")) return;
+    if (await confirmPopup("Deseja excluir este condutor?")) {
       await remove(ref(db, `drivers/${id}`));
     }
   }
@@ -1729,54 +2277,24 @@ document.getElementById("missionsTableBody")?.addEventListener("click", async (e
   const id = button.dataset.id;
   if (!id) return;
   if (button.dataset.action === "toggle") {
+    if (!requirePermission("edit")) return;
     const mission = state.missions.find((item) => item.id === id);
-    const currentStatus = mission?.status || "Pendente";
-    const nextStatus = currentStatus === "Pendente"
-      ? "Em andamento"
-      : currentStatus === "Em andamento"
-        ? "Concluída"
-        : "Pendente";
+    const currentStatus = normalizeMissionStatus(mission?.status);
+    const nextStatus = currentStatus === "Concluída" ? "Em andamento" : "Concluída";
     await update(ref(db, `missions/${id}`), {
       status: nextStatus,
       updatedAt: Date.now()
     });
   }
   if (button.dataset.action === "edit") {
+    if (!requirePermission("edit")) return;
     startEditMission(id);
   }
   if (button.dataset.action === "delete") {
-    if (confirm("Deseja excluir esta missão?")) {
+    if (!requirePermission("delete")) return;
+    if (await confirmPopup("Deseja excluir esta missão?")) {
       await remove(ref(db, `missions/${id}`));
     }
-  }
-});
-
-flowchartList?.addEventListener("click", async (event) => {
-  const button = event.target.closest("button[data-id]");
-  const target = button || event.target.closest("[data-action][data-id]");
-  if (!target) return;
-  const cardAction = target.dataset.action || (target.tagName === "BUTTON" ? "view" : "");
-  const id = target.dataset.id;
-  if (!id) return;
-  const flowchart = state.flowcharts.find((item) => item.id === id);
-  if (!flowchart) return;
-  if (cardAction === "view") {
-    openFlowchartModal(flowchart);
-  }
-  if (cardAction === "edit") {
-    startEditFlowchart(id);
-  }
-  if (cardAction === "delete") {
-    if (confirm("Deseja excluir este fluxograma?")) {
-      await remove(ref(db, `flowcharts/${id}`));
-    }
-  }
-});
-
-flowchartModalClose?.addEventListener("click", closeFlowchartModal);
-flowchartModal?.addEventListener("click", (event) => {
-  if (event.target === flowchartModal) {
-    closeFlowchartModal();
   }
 });
 
@@ -1786,6 +2304,7 @@ document.getElementById("workOrdersTableBody")?.addEventListener("click", async 
   const id = button.dataset.id;
   if (!id) return;
   if (button.dataset.action === "close") {
+    if (!requirePermission("edit")) return;
     const { date, time } = getCurrentDateTime();
     await update(ref(db, `workOrders/${id}`), {
       arrivalDate: date,
@@ -1795,49 +2314,163 @@ document.getElementById("workOrdersTableBody")?.addEventListener("click", async 
     });
   }
   if (button.dataset.action === "delete") {
-    if (confirm("Deseja excluir esta operação?")) {
+    if (!requirePermission("delete")) return;
+    if (await confirmPopup("Deseja excluir esta operação?")) {
       await remove(ref(db, `workOrders/${id}`));
     }
   }
 });
 
-onValue(ref(db, "vehicles"), (snapshot) => {
-  state.vehicles = toArray(snapshot);
-  renderVehiclesTable();
-  updateVehicleSelects();
-  renderVehicleHistory();
-  updateDashboard(activeSectionId === "dashboard");
-  renderGeneralSearch();
+function detachDataListeners() {
+  detachScaleCategoryListeners();
+  dataUnsubscribers.forEach((unsubscribe) => unsubscribe());
+  dataUnsubscribers = [];
+}
+
+function detachUserAccessListeners() {
+  userAccessUnsubscribe?.();
+  managedUsersUnsubscribe?.();
+  userAccessUnsubscribe = null;
+  managedUsersUnsubscribe = null;
+  currentUserProfile = null;
+  state.users = [];
+}
+
+function attachUserAccessListener(user) {
+  detachUserAccessListeners();
+  userAccessUnsubscribe = onValue(ref(db, `users/${user.uid}`), async (snapshot) => {
+    currentUserProfile = snapshot.val() || null;
+
+    // Migra a primeira conta autenticada para administrador quando o cadastro de perfis ainda esta vazio.
+    if (!currentUserProfile) {
+      try {
+        const usersSnapshot = await get(ref(db, "users"));
+        const users = usersSnapshot.val() || {};
+        if (!Object.keys(users).length) {
+          await update(ref(db, `users/${user.uid}`), {
+            name: user.email?.split("@")[0] || "Administrador",
+            email: user.email || "",
+            role: "admin",
+            active: true,
+            createdAt: Date.now(),
+            createdBy: user.uid
+          });
+          return;
+        }
+      } catch (error) {
+        setAuthMessage(getAuthErrorMessage(error));
+        await signOut(auth);
+        return;
+      }
+    }
+
+    const isAdmin = currentUserProfile?.role === "admin" && currentUserProfile?.active !== false;
+    usersNavItem?.classList.toggle("hidden", !isAdmin);
+    usersAdminContent?.classList.toggle("hidden", !isAdmin);
+    usersAdminContent?.classList.toggle("grid", isAdmin);
+    usersAccessMessage?.classList.toggle("hidden", isAdmin);
+    applyAccessVisibility();
+    applyPermissionUi();
+    scaleCategoryForm?.classList.toggle("hidden", !hasPermission("scaleEdit"));
+    scaleMemberEditor?.classList.toggle("hidden", !hasPermission("scaleEdit"));
+    renderScaleCalendar();
+
+    if (!isAdmin) {
+      if (activeSectionId === "users") setActiveSection("dashboard");
+      state.users = [];
+      managedUsersUnsubscribe?.();
+      managedUsersUnsubscribe = null;
+      renderUsersTable();
+      if (!currentUserProfile || currentUserProfile.active === false) {
+        setAuthMessage("Seu acesso ainda não foi liberado pelo administrador.");
+        await signOut(auth);
+      }
+      return;
+    }
+
+    if (!managedUsersUnsubscribe) {
+      managedUsersUnsubscribe = onValue(ref(db, "users"), (usersSnapshot) => {
+        state.users = toArray(usersSnapshot);
+        renderUsersTable();
+      });
+    }
+  });
+}
+
+function attachDataListeners() {
+  detachDataListeners();
+  dataUnsubscribers = [
+    onValue(ref(db, "vehicles"), (snapshot) => {
+      state.vehicles = toArray(snapshot);
+      renderVehiclesTable();
+      updateVehicleSelects();
+      renderVehicleHistory();
+      updateDashboard(activeSectionId === "dashboard");
+      renderGeneralSearch();
+      applyPermissionUi();
+    }),
+    onValue(ref(db, "drivers"), (snapshot) => {
+      state.drivers = toArray(snapshot);
+      renderDriversTable();
+      updateDriverSelects();
+      renderScaleDriverOptions();
+      updateDashboard(activeSectionId === "dashboard");
+      renderGeneralSearch();
+      applyPermissionUi();
+    }),
+    onValue(ref(db, "missions"), (snapshot) => {
+      state.missions = toArray(snapshot);
+      renderMissionsTable();
+      renderDriversTable();
+      renderOngoingMissionsPanel();
+      updateDashboard(activeSectionId === "dashboard");
+      renderGeneralSearch();
+      applyPermissionUi();
+    }),
+    onValue(ref(db, "workOrders"), (snapshot) => {
+      state.workOrders = toArray(snapshot);
+      renderWorkOrdersTable();
+      renderOngoingMissionsPanel();
+      updateDashboard(activeSectionId === "dashboard");
+      renderGeneralSearch();
+      applyPermissionUi();
+    }),
+    onValue(ref(db, "scaleCategories"), (snapshot) => {
+      state.scaleCategories = toArray(snapshot);
+      if (!state.scaleCategories.some((category) => category.id === activeScaleCategoryId)) {
+        activeScaleCategoryId = state.scaleCategories[0]?.id || "";
+      }
+      renderScaleCategories();
+      attachScaleCategoryListeners();
+      renderScaleCalendar();
+    })
+  ];
+}
+
+onAuthStateChanged(auth, (user) => {
+  const isAuthenticated = Boolean(user);
+  if (authScreen) authScreen.hidden = isAuthenticated;
+  if (appShell) appShell.hidden = !isAuthenticated;
+  if (currentUserEmail) currentUserEmail.textContent = user?.email || "";
+
+  if (isAuthenticated) {
+    attachDataListeners();
+    attachUserAccessListener(user);
+    updateSearchStatusOptions(generalSearchType?.value || "all");
+    renderGeneralSearch();
+    renderMissionWeekly();
+    renderOngoingMissionsPanel();
+    setActiveSection("dashboard");
+  } else {
+    detachDataListeners();
+    detachUserAccessListeners();
+    state.vehicles = [];
+    state.drivers = [];
+    state.missions = [];
+    state.workOrders = [];
+    state.scaleCategories = [];
+    state.scaleMembers = [];
+    state.scaleServices = {};
+    activeScaleCategoryId = "";
+  }
 });
-
-onValue(ref(db, "drivers"), (snapshot) => {
-  state.drivers = toArray(snapshot);
-  renderDriversTable();
-  updateDriverSelects();
-  renderDriverHistory();
-  updateDashboard(activeSectionId === "dashboard");
-  renderGeneralSearch();
-});
-
-
-onValue(ref(db, "missions"), (snapshot) => {
-  state.missions = toArray(snapshot);
-  renderMissionsTable();
-  renderDriversTable();
-  renderOngoingMissionsPanel();
-  updateDashboard(activeSectionId === "dashboard");
-  renderDriverHistory();
-  renderGeneralSearch();
-});
-
-onValue(ref(db, "flowcharts"), (snapshot) => {
-  state.flowcharts = toArray(snapshot);
-  renderFlowchartsList();
-  updateDashboard(activeSectionId === "dashboard");
-});
-
-updateSearchStatusOptions(generalSearchType?.value || "all");
-renderGeneralSearch();
-renderMissionWeekly();
-renderOngoingMissionsPanel();
-setActiveSection("dashboard");
