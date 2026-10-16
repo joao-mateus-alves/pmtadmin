@@ -646,23 +646,30 @@
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #ffffff;
+      display: block;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      overscroll-behavior-x: contain;
+      -webkit-overflow-scrolling: touch;
     }
 
     #scaleCalendarGrid table {
+      width: max-content;
       min-width: max-content;
     }
 
     .scale-person-cell {
-      width: 15rem;
-      min-width: 15rem;
-      max-width: 15rem;
+      width: 12rem;
+      min-width: 12rem;
+      max-width: 12rem;
       background: #ffffff !important;
       box-shadow: 1px 0 0 var(--line);
       vertical-align: middle;
     }
 
     .scale-day-header {
-      min-width: 5.25rem;
+      min-width: 4.5rem;
       background: #f2f2f7;
       vertical-align: top;
     }
@@ -705,7 +712,7 @@
     .scale-cell-button,
     .scale-cell-static {
       display: flex;
-      min-height: 3.5rem;
+      min-height: 2.5rem;
       width: 100%;
       flex-direction: column;
       align-items: center;
@@ -752,13 +759,13 @@
       }
 
       .scale-person-cell {
-        width: 9.5rem;
-        min-width: 9.5rem;
-        max-width: 9.5rem;
+        width: 8.25rem;
+        min-width: 8.25rem;
+        max-width: 8.25rem;
       }
 
       .scale-day-header {
-        min-width: 4.25rem;
+        min-width: 3.75rem;
       }
 
       .scale-day-header.scale-today {
@@ -767,7 +774,7 @@
 
       .scale-cell-button,
       .scale-cell-static {
-        min-height: 3.75rem;
+        min-height: 2.75rem;
       }
     }
 
@@ -782,6 +789,38 @@
       font-weight: 500;
       color: #48484a;
       background: #ffffff;
+    }
+
+    .signature-panel {
+      border: 1px solid var(--line);
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+      background: #ffffff;
+    }
+
+    #inventorySignature {
+      display: block;
+      width: 100%;
+      height: 150px;
+      border: 1px dashed #cbd5e1;
+      border-radius: 0.375rem;
+      background: #fff;
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    .inventory-signature-image {
+      display: block;
+      max-width: 160px;
+      max-height: 54px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: #fff;
+    }
+
+    html[data-theme="dark"] .signature-panel {
+      background: #2c2c2e;
+      border-color: #636366;
     }
 
     #popupLayer {
@@ -1191,6 +1230,7 @@
   </style>
   <link rel="stylesheet" href="https://unpkg.com/tippy.js@6/animations/shift-away.css" />
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/signature_pad@5.0.4/dist/signature_pad.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
   <script src="https://unpkg.com/@popperjs/core@2"></script>
   <script src="https://unpkg.com/tippy.js@6"></script>
@@ -1302,6 +1342,14 @@
           <i data-lucide="calendar-range" aria-hidden="true"></i>
           Escala
         </button>
+        <button class="nav-item" data-target="inventory" data-title="Estoque">
+          <i data-lucide="boxes" aria-hidden="true"></i>
+          Estoque
+        </button>
+        <button class="nav-item" data-target="cautela" data-title="Cautela">
+          <i data-lucide="clipboard-signature" aria-hidden="true"></i>
+          Cautela
+        </button>
         <button id="usersNavItem" class="nav-item hidden" data-target="users" data-title="Usuários">
           <i data-lucide="users" aria-hidden="true"></i>
           Usuários
@@ -1350,6 +1398,8 @@
         <button class="mobile-nav-item" data-target="monthlyCalendar" aria-label="Calendário" title="Calendário"><i data-lucide="calendar-days" aria-hidden="true"></i><span>Calendário</span></button>
         <button class="mobile-nav-item" data-target="workOrders" aria-label="Operações" title="Operações"><i data-lucide="route" aria-hidden="true"></i><span>Operações</span></button>
         <button class="mobile-nav-item" data-target="scale" aria-label="Escala" title="Escala"><i data-lucide="calendar-range" aria-hidden="true"></i><span>Escala</span></button>
+        <button class="mobile-nav-item" data-target="inventory" aria-label="Estoque" title="Estoque"><i data-lucide="boxes" aria-hidden="true"></i><span>Estoque</span></button>
+        <button class="mobile-nav-item" data-target="cautela" aria-label="Cautela" title="Cautela"><i data-lucide="clipboard-signature" aria-hidden="true"></i><span>Cautela</span></button>
         <button class="mobile-nav-item" data-target="users" aria-label="Usuários" title="Usuários"><i data-lucide="users" aria-hidden="true"></i><span>Usuários</span></button>
         <button class="mobile-nav-item" data-target="account" aria-label="Minha conta" title="Minha conta"><i data-lucide="key-round" aria-hidden="true"></i><span>Conta</span></button>
       </nav>
@@ -1507,6 +1557,11 @@
                   <label class="flex items-center gap-2 text-sm text-slate-600"><input id="permissionEdit" type="checkbox" class="rounded border-slate-300 text-accent focus:ring-accent" /> Editar registros</label>
                   <label class="flex items-center gap-2 text-sm text-slate-600"><input id="permissionDelete" type="checkbox" class="rounded border-slate-300 text-accent focus:ring-accent" /> Excluir registros</label>
                   <label class="flex items-center gap-2 text-sm text-slate-600"><input id="permissionScaleEdit" type="checkbox" class="rounded border-slate-300 text-accent focus:ring-accent" /> Editar escala</label>
+                  <label class="flex items-center gap-2 text-sm text-slate-600"><input id="permissionInventoryView" type="checkbox" class="rounded border-slate-300 text-accent focus:ring-accent" /> Visualizar estoque</label>
+                  <label class="flex items-center gap-2 text-sm text-slate-600"><input id="permissionInventoryEdit" type="checkbox" class="rounded border-slate-300 text-accent focus:ring-accent" /> Cadastrar itens e entradas</label>
+                  <label class="flex items-center gap-2 text-sm text-slate-600"><input id="permissionCautelaView" type="checkbox" class="rounded border-slate-300 text-accent focus:ring-accent" /> Visualizar cautelas</label>
+                  <label class="flex items-center gap-2 text-sm text-slate-600"><input id="permissionCautelaCreate" type="checkbox" class="rounded border-slate-300 text-accent focus:ring-accent" /> Registrar cautelas</label>
+                  <label class="flex items-center gap-2 text-sm text-slate-600"><input id="permissionCautelaReturn" type="checkbox" class="rounded border-slate-300 text-accent focus:ring-accent" /> Registrar descautelas</label>
                 </fieldset>
                 <p id="userMessage" class="hidden rounded-md px-3 py-2 text-sm" role="alert"></p>
                 <button type="submit" class="w-full rounded-md bg-accent px-4 py-2 font-semibold text-white transition hover:bg-accent-dark">
@@ -1547,6 +1602,11 @@
                 <label class="flex items-center gap-2 text-sm text-slate-600"><input id="editPermissionEdit" type="checkbox" class="rounded border-slate-300 text-accent focus:ring-accent" /> Editar registros</label>
                 <label class="flex items-center gap-2 text-sm text-slate-600"><input id="editPermissionDelete" type="checkbox" class="rounded border-slate-300 text-accent focus:ring-accent" /> Excluir registros</label>
                 <label class="flex items-center gap-2 text-sm text-slate-600"><input id="editPermissionScaleEdit" type="checkbox" class="rounded border-slate-300 text-accent focus:ring-accent" /> Editar escala</label>
+                <label class="flex items-center gap-2 text-sm text-slate-600"><input id="editPermissionInventoryView" type="checkbox" class="rounded border-slate-300 text-accent focus:ring-accent" /> Visualizar estoque</label>
+                <label class="flex items-center gap-2 text-sm text-slate-600"><input id="editPermissionInventoryEdit" type="checkbox" class="rounded border-slate-300 text-accent focus:ring-accent" /> Cadastrar itens e entradas</label>
+                <label class="flex items-center gap-2 text-sm text-slate-600"><input id="editPermissionCautelaView" type="checkbox" class="rounded border-slate-300 text-accent focus:ring-accent" /> Visualizar cautelas</label>
+                <label class="flex items-center gap-2 text-sm text-slate-600"><input id="editPermissionCautelaCreate" type="checkbox" class="rounded border-slate-300 text-accent focus:ring-accent" /> Registrar cautelas</label>
+                <label class="flex items-center gap-2 text-sm text-slate-600"><input id="editPermissionCautelaReturn" type="checkbox" class="rounded border-slate-300 text-accent focus:ring-accent" /> Registrar descautelas</label>
                 <div class="flex justify-end gap-3 pt-2">
                   <button id="cancelUserPermissions" type="button" class="rounded-md border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:border-accent hover:text-accent">Cancelar</button>
                   <button type="submit" class="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-dark">Salvar permissões</button>
@@ -1605,6 +1665,90 @@
                 </div>
               </div>
               <div id="scaleCalendarGrid" class="overflow-x-auto"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="inventory" data-section class="hidden">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 class="text-2xl font-semibold">Estoque</h2>
+              <p class="text-sm text-slate-500">Cadastre itens, registre entradas e acompanhe os saldos.</p>
+            </div>
+          </div>
+
+          <div class="mt-6">
+            <div class="mb-5 flex flex-wrap gap-2 border-b border-slate-200" role="tablist" aria-label="Áreas do estoque">
+              <button id="inventoryRegisterTab" type="button" role="tab" aria-controls="inventoryRegisterPanel" aria-selected="false" data-inventory-tab="register" class="rounded-t-md border-b-2 border-transparent px-4 py-3 text-sm font-medium text-slate-600 hover:text-accent">Cadastro</button>
+              <button id="inventoryQueryTab" type="button" role="tab" aria-controls="inventoryQueryPanel" aria-selected="true" data-inventory-tab="query" class="rounded-t-md border-b-2 border-accent px-4 py-3 text-sm font-semibold text-accent">Consulta de estoque</button>
+            </div>
+            <div id="inventoryRegisterPanel" role="tabpanel" aria-labelledby="inventoryRegisterTab" class="hidden">
+              <div id="inventoryItemEditor" class="max-w-3xl rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <h3 class="mb-4 text-lg font-semibold">Cadastrar item ou dar entrada</h3>
+                <form id="inventoryItemForm" class="space-y-3">
+                  <div><label for="inventoryItemName" class="text-sm text-slate-600">Nome do item</label><input id="inventoryItemName" required maxlength="100" class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2" placeholder="Ex.: Rádio comunicador" /></div>
+                  <div class="grid grid-cols-2 gap-3"><div><label for="inventoryItemFicha" class="text-sm text-slate-600">Nº ficha</label><input id="inventoryItemFicha" maxlength="40" class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2" /></div><div><label for="inventoryItemVehicle" class="text-sm text-slate-600">Viatura</label><input id="inventoryItemVehicle" maxlength="100" class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2" /></div></div>
+                  <div class="grid grid-cols-2 gap-3"><div><label for="inventoryItemOriginal" class="text-sm text-slate-600">Nº original</label><input id="inventoryItemOriginal" maxlength="100" class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2" /></div><div><label for="inventoryItemParallel" class="text-sm text-slate-600">Nº paralelo</label><input id="inventoryItemParallel" maxlength="100" class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2" /></div></div>
+                  <div class="grid grid-cols-2 gap-3"><div><label for="inventoryItemGroup" class="text-sm text-slate-600">Grupo</label><input id="inventoryItemGroup" maxlength="100" class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2" /></div><div><label for="inventoryItemSimatEx" class="text-sm text-slate-600">SIMATEX</label><input id="inventoryItemSimatEx" maxlength="50" class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2" /></div></div>
+                  <div class="grid grid-cols-2 gap-3"><div><label for="inventoryItemLocation" class="text-sm text-slate-600">Local</label><input id="inventoryItemLocation" maxlength="100" class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2" placeholder="Ex.: Almoxarifado A" /></div><div><label for="inventoryItemQuantity" class="text-sm text-slate-600">Quantidade de entrada</label><input id="inventoryItemQuantity" type="number" min="1" step="1" value="1" required class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2" /></div></div>
+                  <div><label for="inventoryItemUnitPrice" class="text-sm text-slate-600">Valor unitário (R$)</label><input id="inventoryItemUnitPrice" type="number" min="0" step="0.01" class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2" /></div>
+                  <div><label for="inventoryItemNotes" class="text-sm text-slate-600">Observação</label><input id="inventoryItemNotes" maxlength="240" class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2" placeholder="Marca, estado ou detalhes" /></div>
+                  <button type="submit" class="w-full rounded-md bg-accent px-4 py-2 font-semibold text-white hover:bg-accent-dark">Salvar item / entrada</button>
+                </form>
+                <form id="inventoryWriteOffForm" class="mt-6 space-y-3 border-t border-slate-200 pt-5">
+                  <h3 class="text-lg font-semibold">Baixa de material</h3>
+                  <div><label for="inventoryWriteOffItem" class="text-sm text-slate-600">Item</label><select id="inventoryWriteOffItem" required class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2"></select></div>
+                  <div><label for="inventoryWriteOffQuantity" class="text-sm text-slate-600">Quantidade</label><input id="inventoryWriteOffQuantity" type="number" min="1" step="1" value="1" required class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2" /></div>
+                  <button type="submit" class="w-full rounded-md bg-accent px-4 py-2 font-semibold text-white hover:bg-accent-dark">Registrar baixa</button>
+                </form>
+              </div>
+            </div>
+            <div id="inventoryQueryPanel" role="tabpanel" aria-labelledby="inventoryQueryTab">
+              <div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-3"><div><h3 class="text-lg font-semibold">Itens em estoque</h3><p class="text-sm text-slate-500">Consulte os saldos e filtre pelas classificações dos itens</p></div><div class="flex flex-wrap items-center gap-2"><input id="inventorySearch" type="search" class="rounded-md border border-slate-200 px-3 py-2 text-sm" placeholder="Buscar item" aria-label="Buscar item no estoque" /></div></div>
+                <div class="mb-3 flex justify-end"><button id="inventoryFilterSettings" type="button" class="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-accent hover:bg-slate-50" aria-expanded="false" aria-controls="inventoryFilterSettingsPanel">Personalizar filtros</button></div>
+                <div id="inventoryFilterSettingsPanel" class="mb-4 hidden rounded-md border border-slate-200 bg-slate-50 p-4">
+                  <fieldset><legend class="mb-3 text-sm font-semibold text-slate-700">Escolha quais filtros deseja mostrar</legend><div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                    <label class="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" data-inventory-filter-toggle="group" class="rounded border-slate-300 text-accent focus:ring-accent" />Grupo</label>
+                    <label class="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" data-inventory-filter-toggle="vehicle" class="rounded border-slate-300 text-accent focus:ring-accent" />Viatura</label>
+                    <label class="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" data-inventory-filter-toggle="location" class="rounded border-slate-300 text-accent focus:ring-accent" />Prateleira</label>
+                    <label class="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" data-inventory-filter-toggle="ficha" class="rounded border-slate-300 text-accent focus:ring-accent" />Nº ficha</label>
+                    <label class="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" data-inventory-filter-toggle="originalCode" class="rounded border-slate-300 text-accent focus:ring-accent" />Nº original</label>
+                    <label class="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" data-inventory-filter-toggle="parallelCode" class="rounded border-slate-300 text-accent focus:ring-accent" />Nº paralelo</label>
+                    <label class="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" data-inventory-filter-toggle="simatEx" class="rounded border-slate-300 text-accent focus:ring-accent" />SIMATEX</label>
+                  </div></fieldset>
+                </div>
+                <div id="inventoryFilterControls" class="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-live="polite"></div>
+                <div class="overflow-x-auto"><table class="w-full min-w-[540px] text-left text-sm"><thead><tr class="border-b border-slate-200 text-xs text-slate-500"><th class="px-2 py-3">Item</th><th class="px-2 py-3">Disponível</th><th class="px-2 py-3">Cautelado</th><th class="px-2 py-3">Total</th><th class="px-2 py-3">Ação</th></tr></thead><tbody id="inventoryItemsBody"></tbody></table></div>
+              </div>
+            </div>
+          </div>        </section>
+
+        <section id="cautela" data-section class="hidden">
+          <div>
+            <h2 class="text-2xl font-semibold">Cautela</h2>
+            <p class="text-sm text-slate-500">Registre a retirada de itens com assinatura e acompanhe as cautelas em aberto.</p>
+          </div>
+          <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+            <div id="inventoryLoanEditor" class="h-fit rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+              <h3 class="mb-4 text-lg font-semibold">Registrar cautela</h3>
+              <form id="inventoryLoanForm" class="space-y-3">
+                <div class="space-y-2"><label for="inventoryLoanSearch" class="text-sm font-medium text-slate-600">Buscar item</label><input id="inventoryLoanSearch" type="search" class="w-full rounded-md border border-slate-200 px-3 py-2" placeholder="Nome, grupo, viatura, prateleira, ficha ou código" autocomplete="off" /><label for="inventoryLoanItem" class="text-sm text-slate-600">Item disponível</label><select id="inventoryLoanItem" required class="w-full rounded-md border border-slate-200 px-3 py-2"></select></div>
+                <div class="grid grid-cols-2 gap-3"><div><label for="inventoryLoanPerson" class="text-sm text-slate-600">Responsável</label><input id="inventoryLoanPerson" required maxlength="100" class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2" /></div><div><label for="inventoryLoanQuantity" class="text-sm text-slate-600">Quantidade</label><input id="inventoryLoanQuantity" type="number" min="1" step="1" value="1" required class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2" /></div></div>
+                <div><label for="inventoryLoanPurpose" class="text-sm text-slate-600">Finalidade / observação</label><input id="inventoryLoanPurpose" maxlength="240" class="mt-1 w-full rounded-md border border-slate-200 px-3 py-2" /></div>
+                <div class="signature-panel"><div class="mb-2 flex items-center justify-between"><label for="inventorySignature" class="text-sm font-medium text-slate-600">Assinatura de quem recebe</label><button id="clearInventorySignature" type="button" class="text-sm font-medium text-accent hover:underline">Limpar</button></div><canvas id="inventorySignature" aria-label="Área para assinatura de quem recebe"></canvas><p class="mt-2 text-xs text-slate-500">Assine usando o mouse, toque ou caneta.</p></div>
+                <button type="submit" class="w-full rounded-md bg-accent px-4 py-2 font-semibold text-white hover:bg-accent-dark">Salvar cautela assinada</button>
+              </form>
+            </div>
+            <div class="space-y-6">
+              <div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="mb-4"><h3 class="text-lg font-semibold">Cautelas em aberto</h3><p class="text-sm text-slate-500">Registros assinados aguardando devolução</p></div>
+                <div class="overflow-x-auto"><table class="w-full min-w-[620px] text-left text-sm"><thead><tr class="border-b border-slate-200 text-xs text-slate-500"><th class="px-2 py-3">Item / responsável</th><th class="px-2 py-3">Quantidade</th><th class="px-2 py-3">Data</th><th class="px-2 py-3">Assinatura</th><th class="px-2 py-3">Ação</th></tr></thead><tbody id="inventoryLoansBody"></tbody></table></div>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="mb-4"><h3 class="text-lg font-semibold">Histórico de cautelas</h3><p class="text-sm text-slate-500">Retiradas assinadas</p></div>
+                <div class="overflow-x-auto"><table class="w-full min-w-[560px] text-left text-sm"><thead><tr class="border-b border-slate-200 text-xs text-slate-500"><th class="px-2 py-3">Item / responsável</th><th class="px-2 py-3">Quantidade</th><th class="px-2 py-3">Data</th><th class="px-2 py-3">Assinatura</th></tr></thead><tbody id="inventoryHistoryBody"></tbody></table></div>
+              </div>
             </div>
           </div>
         </section>

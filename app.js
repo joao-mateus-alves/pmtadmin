@@ -15,7 +15,8 @@ import {
   get,
   onValue,
   update,
-  remove
+  remove,
+  runTransaction
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 const state = {
@@ -26,7 +27,10 @@ const state = {
   vehicles: [],
   drivers: [],
   missions: [],
-  workOrders: []
+  workOrders: [],
+  inventoryItems: [],
+  inventoryLoans: [],
+  inventoryMovements: []
 };
 
 let missionCalendarDate = new Date();
@@ -36,11 +40,13 @@ let missionWeeklyDate = new Date();
 missionWeeklyDate.setDate(missionWeeklyDate.getDate() - missionWeeklyDate.getDay());
 
 const dataSectionIds = ["dashboard", "search", "vehicles", "drivers", "missions", "monthlyCalendar", "workOrders"];
-const sectionIds = ["dashboard", "users", "scale", "account", "search", "vehicles", "drivers", "missions", "monthlyCalendar", "workOrders"];
+const sectionIds = ["dashboard", "users", "scale", "inventory", "cautela", "account", "search", "vehicles", "drivers", "missions", "monthlyCalendar", "workOrders"];
 const sectionTitles = {
   dashboard: "Dashboard",
   users: "Usuários",
   scale: "Escala",
+  inventory: "Estoque",
+  cautela: "Cautela",
   account: "Minha conta",
   search: "Pesquisa geral",
   vehicles: "Veículos",
@@ -113,7 +119,12 @@ const permissionInputs = {
   create: document.getElementById("permissionCreate"),
   edit: document.getElementById("permissionEdit"),
   delete: document.getElementById("permissionDelete"),
-  scaleEdit: document.getElementById("permissionScaleEdit")
+  scaleEdit: document.getElementById("permissionScaleEdit"),
+  inventoryView: document.getElementById("permissionInventoryView"),
+  inventoryEdit: document.getElementById("permissionInventoryEdit"),
+  cautelaView: document.getElementById("permissionCautelaView"),
+  cautelaCreate: document.getElementById("permissionCautelaCreate"),
+  cautelaReturn: document.getElementById("permissionCautelaReturn")
 };
 const editPermissionInputs = {
   view: document.getElementById("editPermissionView"),
@@ -121,7 +132,12 @@ const editPermissionInputs = {
   create: document.getElementById("editPermissionCreate"),
   edit: document.getElementById("editPermissionEdit"),
   delete: document.getElementById("editPermissionDelete"),
-  scaleEdit: document.getElementById("editPermissionScaleEdit")
+  scaleEdit: document.getElementById("editPermissionScaleEdit"),
+  inventoryView: document.getElementById("editPermissionInventoryView"),
+  inventoryEdit: document.getElementById("editPermissionInventoryEdit"),
+  cautelaView: document.getElementById("editPermissionCautelaView"),
+  cautelaCreate: document.getElementById("editPermissionCautelaCreate"),
+  cautelaReturn: document.getElementById("editPermissionCautelaReturn")
 };
 
 let dataUnsubscribers = [];
@@ -265,11 +281,16 @@ const permissionNames = {
   create: "adicionar",
   edit: "editar",
   delete: "excluir",
-  scaleEdit: "editar a escala"
+  scaleEdit: "editar a escala",
+  inventoryView: "visualizar o estoque",
+  inventoryEdit: "cadastrar itens e entradas",
+  cautelaView: "visualizar cautelas",
+  cautelaCreate: "registrar cautelas",
+  cautelaReturn: "registrar descautelas"
 };
 
 function hasPermission(permission) {
-  if (currentUserProfile?.role === "admin") return true;
+  if (currentUserProfile?.role === "admin" && currentUserProfile.active !== false) return true;
   if (currentUserProfile?.active === false) return false;
   if (permission === "view") {
     if (currentUserProfile?.permissions?.create === true || currentUserProfile?.permissions?.edit === true || currentUserProfile?.permissions?.delete === true) return true;
@@ -280,6 +301,8 @@ function hasPermission(permission) {
     if (currentUserProfile?.permissions?.scaleView === undefined) return currentUserProfile?.permissions?.view !== false;
     return false;
   }
+  if (permission === "inventoryView" && ["inventoryEdit", "cautelaView", "cautelaCreate", "cautelaReturn"].some((key) => currentUserProfile?.permissions?.[key] === true)) return true;
+  if (permission === "cautelaView" && (currentUserProfile?.permissions?.cautelaCreate === true || currentUserProfile?.permissions?.cautelaReturn === true)) return true;
   return currentUserProfile?.active !== false && currentUserProfile?.permissions?.[permission] === true;
 }
 
@@ -298,6 +321,8 @@ function canAccessSection(sectionId) {
   if (sectionId === "account") return true;
   if (sectionId === "users") return currentUserProfile.role === "admin" && currentUserProfile.active !== false;
   if (sectionId === "scale") return hasPermission("scaleView") || hasPermission("scaleEdit");
+  if (sectionId === "inventory") return hasPermission("inventoryView") || hasPermission("inventoryEdit");
+  if (sectionId === "cautela") return hasPermission("cautelaView") || hasPermission("cautelaCreate") || hasPermission("cautelaReturn");
   if (dataSectionIds.includes(sectionId)) return hasPermission("view");
   return true;
 }
@@ -305,6 +330,8 @@ function canAccessSection(sectionId) {
 function getDefaultSectionId() {
   if (hasPermission("view")) return "dashboard";
   if (hasPermission("scaleView") || hasPermission("scaleEdit")) return "scale";
+  if (hasPermission("inventoryView") || hasPermission("inventoryEdit")) return "inventory";
+  if (hasPermission("cautelaView") || hasPermission("cautelaCreate") || hasPermission("cautelaReturn")) return "cautela";
   return "account";
 }
 
@@ -321,6 +348,8 @@ function getPermissionsFromInputs(inputs) {
   const permissions = Object.fromEntries(Object.entries(inputs).map(([key, input]) => [key, Boolean(input?.checked)]));
   if (permissions.create || permissions.edit || permissions.delete) permissions.view = true;
   if (permissions.scaleEdit) permissions.scaleView = true;
+  if (permissions.inventoryEdit || permissions.cautelaView || permissions.cautelaCreate || permissions.cautelaReturn) permissions.inventoryView = true;
+  if (permissions.cautelaCreate || permissions.cautelaReturn) permissions.cautelaView = true;
   return permissions;
 }
 
@@ -328,7 +357,9 @@ function setPermissionInputs(inputs, permissions) {
   const normalizedPermissions = {
     ...permissions,
     view: permissions.view === true || permissions.create === true || permissions.edit === true || permissions.delete === true,
-    scaleView: permissions.scaleView === true || permissions.scaleEdit === true
+    scaleView: permissions.scaleView === true || permissions.scaleEdit === true,
+    inventoryView: permissions.inventoryView === true || permissions.inventoryEdit === true || permissions.cautelaView === true || permissions.cautelaCreate === true || permissions.cautelaReturn === true,
+    cautelaView: permissions.cautelaView === true || permissions.cautelaCreate === true || permissions.cautelaReturn === true
   };
   Object.entries(inputs).forEach(([key, input]) => {
     if (input) input.checked = normalizedPermissions[key] === true;
@@ -346,6 +377,11 @@ function applyPermissionUi() {
     const panel = form?.closest(".bg-white");
     if (panel) panel.classList.toggle("hidden", !permissions.some((permission) => hasPermission(permission)));
   });
+  document.getElementById("inventoryRegisterTab")?.classList.toggle("hidden", !hasPermission("inventoryEdit"));
+  document.getElementById("inventoryItemEditor")?.classList.toggle("hidden", !hasPermission("inventoryEdit"));
+  if (!hasPermission("inventoryEdit") && activeInventoryTab === "register") setInventoryTab("query");
+  document.getElementById("inventoryLoanEditor")?.classList.toggle("hidden", !hasPermission("cautelaCreate"));
+  document.querySelectorAll("[data-inventory-return]").forEach((button) => button.classList.toggle("hidden", !hasPermission("cautelaReturn")));
   document.querySelectorAll("[data-action=edit]").forEach((button) => button.classList.toggle("hidden", !hasPermission("edit")));
   document.querySelectorAll("[data-action=delete]").forEach((button) => button.classList.toggle("hidden", !hasPermission("delete")));
   document.querySelectorAll("[data-action=toggle], [data-action=close], [data-action=save-mission-operation], [data-action=complete-mission-operation]")
@@ -359,8 +395,8 @@ function applyPermissionUi() {
 document.getElementById("userRole")?.addEventListener("change", (event) => {
   const isAdmin = event.target.value === "admin";
   setPermissionInputs(permissionInputs, isAdmin
-    ? { view: true, scaleView: true, create: true, edit: true, delete: true, scaleEdit: true }
-    : { view: true, scaleView: true, create: false, edit: false, delete: false, scaleEdit: false });
+    ? { view: true, scaleView: true, create: true, edit: true, delete: true, scaleEdit: true, inventoryView: true, inventoryEdit: true, cautelaView: true, cautelaCreate: true, cautelaReturn: true }
+    : { view: true, scaleView: true, create: false, edit: false, delete: false, scaleEdit: false, inventoryView: false, inventoryEdit: false, cautelaView: false, cautelaCreate: false, cautelaReturn: false });
   Object.values(permissionInputs).forEach((input) => { if (input) input.disabled = isAdmin; });
 });
 
@@ -526,14 +562,19 @@ usersTableBody?.addEventListener("click", async (event) => {
     selectedPermissionsUserId = item.id;
     userPermissionsTarget.textContent = `${item.name || "Sem nome"} (${item.email || "sem e-mail"})`;
     setPermissionInputs(editPermissionInputs, item.role === "admin"
-      ? { view: true, scaleView: true, create: true, edit: true, delete: true, scaleEdit: true }
+      ? { view: true, scaleView: true, create: true, edit: true, delete: true, scaleEdit: true, inventoryView: true, inventoryEdit: true, cautelaView: true, cautelaCreate: true, cautelaReturn: true }
       : {
         view: item.permissions?.view !== false,
         scaleView: item.permissions?.scaleView === true || item.permissions?.scaleEdit === true || (item.permissions?.scaleView === undefined && item.permissions?.view !== false),
         create: item.permissions?.create === true,
         edit: item.permissions?.edit === true,
         delete: item.permissions?.delete === true,
-        scaleEdit: item.permissions?.scaleEdit === true
+        scaleEdit: item.permissions?.scaleEdit === true,
+        inventoryView: item.permissions?.inventoryView === true,
+        inventoryEdit: item.permissions?.inventoryEdit === true,
+        cautelaView: item.permissions?.cautelaView === true,
+        cautelaCreate: item.permissions?.cautelaCreate === true,
+        cautelaReturn: item.permissions?.cautelaReturn === true
       });
     Object.values(editPermissionInputs).forEach((input) => { if (input) input.disabled = false; });
     userPermissionsPanel?.classList.remove("hidden");
@@ -924,11 +965,450 @@ function setActiveSection(sectionId) {
     requestAnimationFrame(centerScaleToday);
   }
 
+  if (sectionId === "cautela") {
+    requestAnimationFrame(prepareInventorySignature);
+  }
+
   if (sectionId === "dashboard") {
     updateDashboard(true);
     animateDashboard();
   }
 }
+
+const inventoryItemsBody = document.getElementById("inventoryItemsBody");
+const inventoryLoansBody = document.getElementById("inventoryLoansBody");
+const inventoryHistoryBody = document.getElementById("inventoryHistoryBody");
+const inventoryItemForm = document.getElementById("inventoryItemForm");
+const inventoryLoanForm = document.getElementById("inventoryLoanForm");
+const inventoryLoanSearch = document.getElementById("inventoryLoanSearch");
+const inventorySearch = document.getElementById("inventorySearch");
+const inventoryFilterControls = document.getElementById("inventoryFilterControls");
+const inventoryFilterSettings = document.getElementById("inventoryFilterSettings");
+const inventoryFilterSettingsPanel = document.getElementById("inventoryFilterSettingsPanel");
+const inventoryFilterFields = {
+  group: {label: "Grupo", value: (item) => item.group},
+  vehicle: {label: "Viatura", value: (item) => item.vehicle},
+  location: {label: "Prateleira", value: (item) => item.location || item.code},
+  ficha: {label: "Nº ficha", value: (item) => item.ficha},
+  originalCode: {label: "Nº original", value: (item) => item.originalCode},
+  parallelCode: {label: "Nº paralelo", value: (item) => item.parallelCode},
+  simatEx: {label: "SIMATEX", value: (item) => item.simatEx}
+};
+const inventoryFilterFieldKeys = Object.keys(inventoryFilterFields);
+function getSavedInventoryFilters() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("pmt.inventory.visibleFilters") || "null");
+    if (Array.isArray(saved)) return saved.filter((key) => inventoryFilterFieldKeys.includes(key));
+  } catch {
+    // Use the standard classifications if browser storage is unavailable.
+  }
+  return ["group", "vehicle", "location"];
+}
+let inventoryVisibleFilters = getSavedInventoryFilters();
+const inventoryFilterValues = Object.fromEntries(inventoryFilterFieldKeys.map((key) => [key, ""]));
+const inventoryItemSelect = document.getElementById("inventoryLoanItem");
+const inventorySignatureCanvas = document.getElementById("inventorySignature");
+let inventorySignaturePad = null;
+let activeInventoryTab = "query";
+const inventoryCleanupInFlight = new Set();
+
+async function cleanupEmptyInventoryItems() {
+  if (!hasPermission("inventoryView")) return;
+  for (const item of state.inventoryItems) {
+    if (Number(item.totalQuantity) !== 0 || Number(item.loanedQuantity) !== 0 || inventoryCleanupInFlight.has(item.id)) continue;
+    inventoryCleanupInFlight.add(item.id);
+    try {
+      await runTransaction(ref(db, `inventory/items/${item.id}`), (current) =>
+        current?.totalQuantity === 0 && current?.loanedQuantity === 0 ? null : undefined);
+    } catch (error) {
+      console.warn(`Não foi possível remover o item sem saldo ${item.id}:`, error);
+    } finally {
+      inventoryCleanupInFlight.delete(item.id);
+    }
+  }
+}
+
+function setInventoryTab(tab) {
+  if (tab === "register" && !hasPermission("inventoryEdit")) tab = "query";
+  activeInventoryTab = tab;
+  const isRegister = tab === "register";
+  document.getElementById("inventoryRegisterPanel")?.classList.toggle("hidden", !isRegister);
+  document.getElementById("inventoryQueryPanel")?.classList.toggle("hidden", isRegister);
+  const registerTab = document.getElementById("inventoryRegisterTab");
+  const queryTab = document.getElementById("inventoryQueryTab");
+  registerTab?.setAttribute("aria-selected", String(isRegister));
+  queryTab?.setAttribute("aria-selected", String(!isRegister));
+  if (registerTab) registerTab.tabIndex = isRegister ? 0 : -1;
+  if (queryTab) queryTab.tabIndex = isRegister ? -1 : 0;
+  registerTab?.classList.toggle("border-accent", isRegister);
+  registerTab?.classList.toggle("border-transparent", !isRegister);
+  registerTab?.classList.toggle("text-accent", isRegister);
+  queryTab?.classList.toggle("border-accent", !isRegister);
+  queryTab?.classList.toggle("border-transparent", isRegister);
+  queryTab?.classList.toggle("text-accent", !isRegister);
+}
+
+document.querySelectorAll("[data-inventory-tab]").forEach((button) => {
+  button.addEventListener("click", () => setInventoryTab(button.dataset.inventoryTab));
+  button.addEventListener("keydown", (event) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const tabs = Array.from(document.querySelectorAll("[data-inventory-tab]"))
+      .filter((tabButton) => !tabButton.classList.contains("hidden"));
+    const currentIndex = tabs.indexOf(button);
+    const nextIndex = event.key === "Home" ? 0
+      : event.key === "End" ? tabs.length - 1
+      : (currentIndex + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+    const nextButton = tabs[nextIndex];
+    if (!nextButton) return;
+    setInventoryTab(nextButton.dataset.inventoryTab);
+    nextButton.focus();
+  });
+});
+
+function prepareInventorySignature() {
+  if (!inventorySignatureCanvas || !window.SignaturePad) return;
+  if (inventorySignaturePad) {
+    const previousData = inventorySignaturePad.toData();
+    const bounds = inventorySignatureCanvas.getBoundingClientRect();
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    if (bounds.width && (inventorySignatureCanvas.width !== Math.round(bounds.width * ratio)
+      || inventorySignatureCanvas.height !== Math.round(bounds.height * ratio))) {
+      inventorySignatureCanvas.width = Math.round(bounds.width * ratio);
+      inventorySignatureCanvas.height = Math.round(bounds.height * ratio);
+      inventorySignatureCanvas.getContext("2d").setTransform(ratio, 0, 0, ratio, 0, 0);
+      inventorySignaturePad.clear();
+      inventorySignaturePad.fromData(previousData);
+    }
+    return;
+  }
+  const ratio = Math.max(window.devicePixelRatio || 1, 1);
+  const bounds = inventorySignatureCanvas.getBoundingClientRect();
+  if (!bounds.width) return;
+  inventorySignatureCanvas.width = Math.round(bounds.width * ratio);
+  inventorySignatureCanvas.height = Math.round(bounds.height * ratio);
+  const context = inventorySignatureCanvas.getContext("2d");
+  context.setTransform(ratio, 0, 0, ratio, 0, 0);
+  inventorySignaturePad = new window.SignaturePad(inventorySignatureCanvas, {
+    minWidth: 0.7,
+    maxWidth: 2.2,
+    penColor: "#172554",
+    backgroundColor: "rgb(255, 255, 255)"
+  });
+}
+
+function renderInventoryFilterControls() {
+  if (!inventoryFilterControls) return;
+  inventoryFilterControls.innerHTML = inventoryVisibleFilters.map((key) => {
+    const field = inventoryFilterFields[key];
+    const values = [...new Set(state.inventoryItems.map((item) => String(field.value(item) || "").trim()).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, "pt-BR", {numeric: true, sensitivity: "base"}));
+    const selected = values.some((value) => normalizeText(value) === normalizeText(inventoryFilterValues[key]))
+      ? inventoryFilterValues[key]
+      : "";
+    inventoryFilterValues[key] = selected;
+    const options = values.map((value) =>
+      `<option value="${safeText(value, "")}"${value === selected ? " selected" : ""}>${safeText(value)}</option>`
+    ).join("");
+    return `<label class="block text-sm font-medium text-slate-600">${field.label}<select data-inventory-filter-value="${key}" class="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 font-normal text-slate-800"><option value="">Todos</option>${options}</select></label>`;
+  }).join("");
+}
+
+function renderInventory() {
+  const items = [...state.inventoryItems].sort((a, b) => (a.name || "").localeCompare(b.name || "", "pt-BR"));
+  const openLoans = state.inventoryLoans.filter((loan) => loan.status === "aberto" || loan.status === "processando").sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  const query = normalizeText(inventorySearch?.value || "");
+  renderInventoryFilterControls();
+  const filteredItems = items.filter((item) => {
+    const matchesQuery = normalizeText([item.name, item.ficha, item.originalCode, item.parallelCode, item.vehicle, item.group, item.location || item.code, item.simatEx].join(" ")).includes(query);
+    const matchesFilters = inventoryVisibleFilters.every((key) => {
+      const selected = inventoryFilterValues[key];
+      return !selected || normalizeText(inventoryFilterFields[key].value(item)) === normalizeText(selected);
+    });
+    return matchesQuery && matchesFilters;
+  });
+  inventoryItemsBody.innerHTML = filteredItems.length ? filteredItems.map((item) => {
+    const total = Number(item.totalQuantity || 0);
+    const loaned = Number(item.loanedQuantity || 0);
+    const details = [item.ficha && `Ficha ${item.ficha}`, item.vehicle, item.group, item.location && `Prateleira ${item.location}`, item.originalCode && `Original ${item.originalCode}`, item.parallelCode && `Paralelo ${item.parallelCode}`, item.simatEx && `SIMATEX ${item.simatEx}`, item.unitPrice && `R$ ${item.unitPrice}`].filter(Boolean).join(" · ");
+    return `<tr class="border-b border-slate-100"><td class="px-2 py-3"><span class="font-medium">${safeText(item.name, "Item")}</span><span class="block text-xs text-slate-500">${safeText(details, "Local não informado")}</span></td><td class="px-2 py-3">${Math.max(0, total - loaned)}</td><td class="px-2 py-3">${loaned}</td><td class="px-2 py-3">${total}</td><td class="px-2 py-3">${hasPermission("inventoryEdit") ? `<button type="button" class="text-accent" data-inventory-entry="${safeText(item.id, "")}">＋ Entrada</button>` : "—"}</td></tr>`;
+  }).join("") : `<tr><td colspan="5" class="px-2 py-6 text-center text-slate-500">${query ? "Nenhum item encontrado." : "Estoque vazio. Cadastre o primeiro item."}</td></tr>`;
+
+  const availableItems = items.filter((item) => Number(item.totalQuantity || 0) > Number(item.loanedQuantity || 0));
+  const loanQuery = normalizeText(inventoryLoanSearch?.value || "");
+  const searchableLoanItems = availableItems.filter((item) => normalizeText([
+    item.name, item.ficha, item.originalCode, item.parallelCode, item.vehicle,
+    item.group, item.location || item.code, item.simatEx
+  ].join(" ")).includes(loanQuery));
+  const selectedItemId = inventoryItemSelect.value;
+  inventoryItemSelect.innerHTML = searchableLoanItems.length
+    ? searchableLoanItems.map((item) => `<option value="${safeText(item.id, "")}">${safeText(item.name, "Item")} · ${Number(item.totalQuantity || 0) - Number(item.loanedQuantity || 0)} disponível(is)</option>`).join("")
+    : `<option value="">${availableItems.length ? "Nenhum item corresponde à busca" : "Nenhum item disponível"}</option>`;
+  if (searchableLoanItems.some((item) => item.id === selectedItemId)) inventoryItemSelect.value = selectedItemId;
+  inventoryItemSelect.disabled = !searchableLoanItems.length;
+  const loanSubmit = inventoryLoanForm?.querySelector('button[type="submit"]');
+  if (loanSubmit) loanSubmit.disabled = !searchableLoanItems.length;
+  const writeOffSelect = document.getElementById("inventoryWriteOffItem");
+  const selectedWriteOffId = writeOffSelect?.value;
+  if (writeOffSelect) {
+    writeOffSelect.innerHTML = availableItems.length
+      ? availableItems.map((item) => `<option value="${safeText(item.id, "")}">${safeText(item.name, "Item")} · ${Number(item.totalQuantity || 0) - Number(item.loanedQuantity || 0)} disponível(is)</option>`).join("")
+      : `<option value="">Nenhum item disponível</option>`;
+    if (availableItems.some((item) => item.id === selectedWriteOffId)) writeOffSelect.value = selectedWriteOffId;
+    writeOffSelect.disabled = !availableItems.length;
+    document.querySelector('#inventoryWriteOffForm button[type="submit"]').disabled = !availableItems.length;
+  }
+
+  inventoryLoansBody.innerHTML = openLoans.length ? openLoans.map((loan) => {
+    const signature = /^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(loan.signatureData || "")
+      ? `<img class="inventory-signature-image" src="${loan.signatureData}" alt="Assinatura de ${safeText(loan.person, "responsável")}" />`
+      : "Assinatura indisponível";
+    return `<tr class="border-b border-slate-100"><td class="px-2 py-3"><span class="font-medium">${safeText(loan.itemName, "Item")}</span><span class="block text-xs text-slate-500">${safeText(loan.person, "Responsável")}</span><span class="block text-xs text-slate-500">${safeText(loan.purpose, "")}</span></td><td class="px-2 py-3">${Number(loan.quantity || 0)}</td><td class="px-2 py-3">${safeText(new Date(loan.createdAt || Date.now()).toLocaleString("pt-BR"))}</td><td class="px-2 py-3">${signature}</td><td class="px-2 py-3">${loan.status === "aberto" && hasPermission("cautelaReturn") ? `<button type="button" class="rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-accent hover:bg-slate-50" data-inventory-return="${safeText(loan.id, "")}">Registrar descautela</button>` : loan.status === "processando" ? "Processando" : "—"}</td></tr>`;
+  }).join("") : `<tr><td colspan="5" class="px-2 py-6 text-center text-slate-500">Nenhuma cautela em aberto.</td></tr>`;
+  const movements = state.inventoryMovements.filter((movement) => movement.type === "cautela")
+    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).slice(0, 100);
+  inventoryHistoryBody.innerHTML = movements.length ? movements.map((movement) => {
+    const relatedLoan = state.inventoryLoans.find((loan) => loan.id === movement.loanId);
+    const loanSignature = movement.signatureData || relatedLoan?.signatureData || "";
+    const signature = /^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(loanSignature)
+      ? `<img class="inventory-signature-image" src="${loanSignature}" alt="Assinatura de ${safeText(movement.person, "responsável")}" />`
+      : "—";
+    return `<tr class="border-b border-slate-100"><td class="px-2 py-3"><span class="font-medium">${safeText(movement.itemName, "Item")}</span>${movement.person ? `<span class="block text-xs text-slate-500">${safeText(movement.person)}</span>` : ""}</td><td class="px-2 py-3">${Number(movement.quantity || 0)}</td><td class="px-2 py-3">${safeText(new Date(movement.createdAt || Date.now()).toLocaleString("pt-BR"))}</td><td class="px-2 py-3">${signature}</td></tr>`;
+  }).join("") : `<tr><td colspan="4" class="px-2 py-6 text-center text-slate-500">Nenhuma cautela registrada.</td></tr>`;
+  applyPermissionUi();
+}
+
+document.getElementById("clearInventorySignature")?.addEventListener("click", () => inventorySignaturePad?.clear());
+inventorySearch?.addEventListener("input", renderInventory);
+inventoryLoanSearch?.addEventListener("input", renderInventory);
+inventoryFilterSettings?.addEventListener("click", () => {
+  const expanded = inventoryFilterSettings.getAttribute("aria-expanded") === "true";
+  inventoryFilterSettings.setAttribute("aria-expanded", String(!expanded));
+  inventoryFilterSettingsPanel?.classList.toggle("hidden", expanded);
+});
+document.querySelectorAll("[data-inventory-filter-toggle]").forEach((checkbox) => {
+  checkbox.checked = inventoryVisibleFilters.includes(checkbox.dataset.inventoryFilterToggle);
+  checkbox.addEventListener("change", () => {
+    const key = checkbox.dataset.inventoryFilterToggle;
+    inventoryVisibleFilters = checkbox.checked
+      ? [...new Set([...inventoryVisibleFilters, key])]
+      : inventoryVisibleFilters.filter((visibleKey) => visibleKey !== key);
+    try { localStorage.setItem("pmt.inventory.visibleFilters", JSON.stringify(inventoryVisibleFilters)); } catch {}
+    renderInventory();
+  });
+});
+inventoryFilterControls?.addEventListener("change", (event) => {
+  const select = event.target.closest("[data-inventory-filter-value]");
+  if (!select) return;
+  inventoryFilterValues[select.dataset.inventoryFilterValue] = select.value;
+  renderInventory();
+  document.querySelector(`[data-inventory-filter-value="${select.dataset.inventoryFilterValue}"]`)?.focus();
+});
+window.addEventListener("resize", prepareInventorySignature);
+
+inventoryItemForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!requirePermission("inventoryEdit")) return;
+  const name = document.getElementById("inventoryItemName").value.trim();
+  const location = document.getElementById("inventoryItemLocation").value.trim();
+  const quantity = Number(document.getElementById("inventoryItemQuantity").value);
+  const notes = document.getElementById("inventoryItemNotes").value.trim();
+  const fields = {
+    ficha: document.getElementById("inventoryItemFicha").value.trim(),
+    originalCode: document.getElementById("inventoryItemOriginal").value.trim(),
+    parallelCode: document.getElementById("inventoryItemParallel").value.trim(),
+    vehicle: document.getElementById("inventoryItemVehicle").value.trim(),
+    group: document.getElementById("inventoryItemGroup").value.trim(),
+    simatEx: document.getElementById("inventoryItemSimatEx").value.trim(),
+    unitPrice: document.getElementById("inventoryItemUnitPrice").value.trim()
+  };
+  if (!name || !Number.isInteger(quantity) || quantity < 1) return showPopup("Informe o item e uma quantidade inteira maior que zero.", "error");
+  const match = state.inventoryItems.find((item) => item.id === inventoryItemForm.dataset.editId);
+  const itemRef = match ? ref(db, `inventory/items/${match.id}`) : push(ref(db, "inventory/items"));
+  try {
+    const result = await runTransaction(itemRef, (current) => {
+      if (match && !current) return;
+      const now = Date.now();
+      const updatedItem = {
+        ...(current || {}),
+        name,
+        location: location || current?.location || current?.code || "",
+        notes: notes || current?.notes || "",
+        ...fields,
+        totalQuantity: Number(current?.totalQuantity || 0) + quantity,
+        loanedQuantity: Number(current?.loanedQuantity || 0),
+        createdAt: current?.createdAt || now,
+        updatedAt: now
+      };
+      delete updatedItem.code;
+      return updatedItem;
+    });
+    if (!result.committed) return showPopup("O item foi alterado. Atualize a tela e tente novamente.", "error");
+    inventoryItemForm.reset();
+    delete inventoryItemForm.dataset.editId;
+    document.getElementById("inventoryItemQuantity").value = "1";
+    showPopup("Entrada de estoque registrada.", "success");
+  } catch (error) {
+    showPopup(`Não foi possível salvar a entrada: ${error.message}`, "error");
+  }
+});
+
+document.getElementById("inventoryWriteOffForm")?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!requirePermission("inventoryEdit")) return;
+  const form = event.currentTarget;
+  const itemId = document.getElementById("inventoryWriteOffItem").value;
+  const quantity = Number(document.getElementById("inventoryWriteOffQuantity").value);
+  const item = state.inventoryItems.find((entry) => entry.id === itemId);
+  if (!item || !Number.isInteger(quantity) || quantity < 1) return showPopup("Confira o item e a quantidade da baixa.", "error");
+  if (!await confirmPopup(`Baixar ${quantity} unidade(s) de ${item.name}?`)) return;
+  const itemRef = ref(db, `inventory/items/${itemId}`);
+  try {
+    const result = await runTransaction(itemRef, (current) => {
+      if (!current || Number(current.totalQuantity || 0) - Number(current.loanedQuantity || 0) < quantity) return;
+      return { ...current, totalQuantity: Number(current.totalQuantity || 0) - quantity, updatedAt: Date.now() };
+    });
+    if (!result.committed) return showPopup("Não há saldo disponível suficiente para a baixa.", "error");
+    form.reset();
+    document.getElementById("inventoryWriteOffQuantity").value = "1";
+    showPopup("Baixa registrada no estoque.", "success");
+  } catch (error) {
+    showPopup(`Não foi possível registrar a baixa: ${error.message}`, "error");
+  }
+});
+
+inventoryItemsBody?.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-inventory-entry]");
+  if (!button || !requirePermission("inventoryEdit")) return;
+  const item = state.inventoryItems.find((entry) => entry.id === button.dataset.inventoryEntry);
+  if (!item) return;
+  document.getElementById("inventoryItemName").value = item.name || "";
+  document.getElementById("inventoryItemLocation").value = item.location || item.code || "";
+  document.getElementById("inventoryItemNotes").value = item.notes || "";
+  document.getElementById("inventoryItemFicha").value = item.ficha || "";
+  document.getElementById("inventoryItemOriginal").value = item.originalCode || "";
+  document.getElementById("inventoryItemParallel").value = item.parallelCode || "";
+  document.getElementById("inventoryItemVehicle").value = item.vehicle || "";
+  document.getElementById("inventoryItemGroup").value = item.group || "";
+  document.getElementById("inventoryItemSimatEx").value = item.simatEx || "";
+  document.getElementById("inventoryItemUnitPrice").value = item.unitPrice || "";
+  inventoryItemForm.dataset.editId = item.id;
+  setInventoryTab("register");
+  document.getElementById("inventoryItemQuantity").focus();
+  document.getElementById("inventoryItemEditor").scrollIntoView({ behavior: "smooth", block: "center" });
+});
+
+inventoryLoanForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!requirePermission("cautelaCreate")) return;
+  if (!window.SignaturePad || !inventorySignaturePad) return showPopup("O campo de assinatura não carregou. Atualize a página e tente novamente.", "error");
+  if (inventorySignaturePad.isEmpty()) return showPopup("A assinatura de quem recebe é obrigatória.", "error");
+  const itemId = inventoryItemSelect.value;
+  const person = document.getElementById("inventoryLoanPerson").value.trim();
+  const purpose = document.getElementById("inventoryLoanPurpose").value.trim();
+  const quantity = Number(document.getElementById("inventoryLoanQuantity").value);
+  const item = state.inventoryItems.find((entry) => entry.id === itemId);
+  if (!item || !person || !Number.isInteger(quantity) || quantity < 1) return showPopup("Confira o item, responsável e quantidade.", "error");
+  const signatureData = inventorySignaturePad.toDataURL("image/png");
+  const itemRef = ref(db, `inventory/items/${itemId}`);
+  try {
+    const result = await runTransaction(itemRef, (current) => {
+      if (!current) return;
+      const total = Number(current.totalQuantity || 0);
+      const loaned = Number(current.loanedQuantity || 0);
+      if (total - loaned < quantity) return;
+      return { ...current, loanedQuantity: loaned + quantity, updatedAt: Date.now() };
+    });
+    if (!result.committed) return showPopup("Não há quantidade disponível suficiente para essa cautela.", "error");
+    const now = Date.now();
+    const loanRecord = {
+      itemId,
+      itemName: result.snapshot.val().name || item.name,
+      person,
+      purpose,
+      quantity,
+      signatureData,
+      signedBy: auth.currentUser?.email || "",
+      status: "aberto",
+      createdAt: now,
+      createdBy: auth.currentUser?.uid || ""
+    };
+    const loanRef = push(ref(db, "inventory/loans"));
+    const movementRef = push(ref(db, "inventory/movements"));
+    try {
+      await update(ref(db), {
+        [`inventory/loans/${loanRef.key}`]: loanRecord,
+        [`inventory/movements/${movementRef.key}`]: {
+          type: "cautela",
+          loanId: loanRef.key,
+          itemId,
+          itemName: loanRecord.itemName,
+          person,
+          quantity,
+          createdAt: now,
+          createdBy: auth.currentUser?.uid || ""
+        }
+      });
+    } catch (error) {
+      await runTransaction(itemRef, (current) => current
+        ? { ...current, loanedQuantity: Math.max(0, Number(current.loanedQuantity || 0) - quantity), updatedAt: Date.now() }
+        : current);
+      throw error;
+    }
+    inventoryLoanForm.reset();
+    document.getElementById("inventoryLoanQuantity").value = "1";
+    inventorySignaturePad.clear();
+    showPopup("Cautela assinada e registrada.", "success");
+  } catch (error) {
+    showPopup(`Não foi possível registrar a cautela: ${error.message}`, "error");
+  }
+});
+
+inventoryLoansBody?.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-inventory-return]");
+  if (!button || !requirePermission("cautelaReturn")) return;
+  const loan = state.inventoryLoans.find((entry) => entry.id === button.dataset.inventoryReturn && entry.status === "aberto");
+  if (!loan) return;
+  if (!await confirmPopup(`Registrar a descautela de ${loan.quantity} unidade(s) de ${loan.itemName}?`)) return;
+  const itemRef = ref(db, `inventory/items/${loan.itemId}`);
+  const loanRef = ref(db, `inventory/loans/${loan.id}`);
+  let claimCommitted = false;
+  let quantityReturned = false;
+  try {
+    const claim = await runTransaction(loanRef, (current) => current?.status === "aberto"
+      ? { ...current, status: "processando" }
+      : undefined);
+    if (!claim.committed) return showPopup("Esta descautela já está sendo processada.", "info");
+    claimCommitted = true;
+    const result = await runTransaction(itemRef, (current) => {
+      if (!current || Number(current.loanedQuantity || 0) < Number(loan.quantity || 0)) return;
+      return { ...current, loanedQuantity: Number(current.loanedQuantity || 0) - Number(loan.quantity || 0), updatedAt: Date.now() };
+    });
+    if (!result.committed) {
+      await update(loanRef, { status: "aberto" });
+      claimCommitted = false;
+      return showPopup("Não foi possível atualizar o saldo do item.", "error");
+    }
+    quantityReturned = true;
+    await update(loanRef, { status: "devolvido", returnedAt: Date.now() });
+    claimCommitted = false;
+    showPopup("Descautela registrada; saldo atualizado.", "success");
+  } catch (error) {
+    if (claimCommitted) {
+      try {
+        if (quantityReturned) {
+          await runTransaction(itemRef, (current) => current
+            ? { ...current, loanedQuantity: Number(current.loanedQuantity || 0) + Number(loan.quantity || 0), updatedAt: Date.now() }
+            : current);
+        }
+        await update(loanRef, { status: "aberto" });
+      } catch {
+        // O administrador pode recuperar uma cautela interrompida no banco de dados.
+      }
+    }
+    showPopup(`Não foi possível registrar a descautela: ${error.message}`, "error");
+  }
+});
 
 function toArray(snapshot) {
   const data = snapshot.val() || {};
@@ -2488,6 +2968,7 @@ function attachUserAccessListener(user) {
     }
 
     const isAdmin = currentUserProfile?.role === "admin" && currentUserProfile?.active !== false;
+    attachDataListeners();
     usersNavItem?.classList.toggle("hidden", !isAdmin);
     usersAdminContent?.classList.toggle("hidden", !isAdmin);
     usersAdminContent?.classList.toggle("grid", isAdmin);
@@ -2523,8 +3004,11 @@ function attachUserAccessListener(user) {
 
 function attachDataListeners() {
   detachDataListeners();
+  const listen = (path, permission, callback) => hasPermission(permission)
+    ? onValue(ref(db, path), callback, (error) => showPopup(`Falha ao carregar dados: ${error.message}`, "error"))
+    : () => {};
   dataUnsubscribers = [
-    onValue(ref(db, "vehicles"), (snapshot) => {
+    listen("vehicles", "view", (snapshot) => {
       state.vehicles = toArray(snapshot);
       renderVehiclesTable();
       updateVehicleSelects();
@@ -2533,7 +3017,7 @@ function attachDataListeners() {
       renderGeneralSearch();
       applyPermissionUi();
     }),
-    onValue(ref(db, "drivers"), (snapshot) => {
+    listen("drivers", "view", (snapshot) => {
       state.drivers = toArray(snapshot);
       renderDriversTable();
       updateDriverSelects();
@@ -2542,7 +3026,7 @@ function attachDataListeners() {
       renderGeneralSearch();
       applyPermissionUi();
     }),
-    onValue(ref(db, "missions"), (snapshot) => {
+    listen("missions", "view", (snapshot) => {
       state.missions = toArray(snapshot);
       renderMissionsTable();
       renderDriversTable();
@@ -2551,7 +3035,7 @@ function attachDataListeners() {
       renderGeneralSearch();
       applyPermissionUi();
     }),
-    onValue(ref(db, "workOrders"), (snapshot) => {
+    listen("workOrders", "view", (snapshot) => {
       state.workOrders = toArray(snapshot);
       renderWorkOrdersTable();
       renderOngoingMissionsPanel();
@@ -2559,7 +3043,7 @@ function attachDataListeners() {
       renderGeneralSearch();
       applyPermissionUi();
     }),
-    onValue(ref(db, "scaleCategories"), (snapshot) => {
+    listen("scaleCategories", "scaleView", (snapshot) => {
       state.scaleCategories = toArray(snapshot);
       if (!state.scaleCategories.some((category) => category.id === activeScaleCategoryId)) {
         activeScaleCategoryId = state.scaleCategories[0]?.id || "";
@@ -2567,6 +3051,19 @@ function attachDataListeners() {
       renderScaleCategories();
       attachScaleCategoryListeners();
       renderScaleCalendar();
+    }),
+    listen("inventory/items", "inventoryView", (snapshot) => {
+      state.inventoryItems = toArray(snapshot);
+      renderInventory();
+      void cleanupEmptyInventoryItems();
+    }),
+    listen("inventory/loans", "cautelaView", (snapshot) => {
+      state.inventoryLoans = toArray(snapshot);
+      renderInventory();
+    }),
+    listen("inventory/movements", "cautelaView", (snapshot) => {
+      state.inventoryMovements = toArray(snapshot);
+      renderInventory();
     })
   ];
 }
@@ -2578,7 +3075,6 @@ onAuthStateChanged(auth, (user) => {
   if (currentUserEmail) currentUserEmail.textContent = user?.email || "";
 
   if (isAuthenticated) {
-    attachDataListeners();
     attachUserAccessListener(user);
     updateSearchStatusOptions(generalSearchType?.value || "all");
     renderGeneralSearch();
@@ -2596,5 +3092,9 @@ onAuthStateChanged(auth, (user) => {
     state.scaleMembers = [];
     state.scaleServices = {};
     activeScaleCategoryId = "";
+    state.inventoryItems = [];
+    state.inventoryLoans = [];
+    state.inventoryMovements = [];
+    renderInventory();
   }
 });

@@ -1,0 +1,77 @@
+{
+  "rules": {
+    "users": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      "$userId": {
+        ".read": "auth != null && (auth.uid === $userId || (root.child('users').child(auth.uid).child('active').val() === true && root.child('users').child(auth.uid).child('role').val() === 'admin'))"
+      }
+    },
+    "vehicles": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('permissions/view').val() === true || root.child('users').child(auth.uid).child('permissions/create').val() === true || root.child('users').child(auth.uid).child('permissions/edit').val() === true || root.child('users').child(auth.uid).child('permissions/delete').val() === true)",
+      "$recordId": {
+        ".write": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'admin' || (!data.exists() && root.child('users').child(auth.uid).child('permissions/create').val() === true) || (data.exists() && newData.exists() && root.child('users').child(auth.uid).child('permissions/edit').val() === true) || (data.exists() && !newData.exists() && root.child('users').child(auth.uid).child('permissions/delete').val() === true))"
+      }
+    },
+    "drivers": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('permissions/view').val() === true || root.child('users').child(auth.uid).child('permissions/create').val() === true || root.child('users').child(auth.uid).child('permissions/edit').val() === true || root.child('users').child(auth.uid).child('permissions/delete').val() === true)",
+      "$recordId": {
+        ".write": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'admin' || (!data.exists() && root.child('users').child(auth.uid).child('permissions/create').val() === true) || (data.exists() && newData.exists() && root.child('users').child(auth.uid).child('permissions/edit').val() === true) || (data.exists() && !newData.exists() && root.child('users').child(auth.uid).child('permissions/delete').val() === true))"
+      }
+    },
+    "missions": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('permissions/view').val() === true || root.child('users').child(auth.uid).child('permissions/create').val() === true || root.child('users').child(auth.uid).child('permissions/edit').val() === true || root.child('users').child(auth.uid).child('permissions/delete').val() === true)",
+      "$recordId": {
+        ".write": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'admin' || (!data.exists() && root.child('users').child(auth.uid).child('permissions/create').val() === true) || (data.exists() && newData.exists() && root.child('users').child(auth.uid).child('permissions/edit').val() === true) || (data.exists() && !newData.exists() && root.child('users').child(auth.uid).child('permissions/delete').val() === true))"
+      }
+    },
+    "workOrders": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('permissions/view').val() === true || root.child('users').child(auth.uid).child('permissions/create').val() === true || root.child('users').child(auth.uid).child('permissions/edit').val() === true || root.child('users').child(auth.uid).child('permissions/delete').val() === true)",
+      "$recordId": {
+        ".write": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'admin' || (!data.exists() && root.child('users').child(auth.uid).child('permissions/create').val() === true) || (data.exists() && newData.exists() && root.child('users').child(auth.uid).child('permissions/edit').val() === true) || (data.exists() && !newData.exists() && root.child('users').child(auth.uid).child('permissions/delete').val() === true))"
+      }
+    },
+    "scaleCategories": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('permissions/scaleView').val() === true || root.child('users').child(auth.uid).child('permissions/scaleEdit').val() === true)",
+      "$categoryId": {
+        ".write": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('permissions/scaleEdit').val() === true)"
+      }
+    },
+    "scaleMembers": {
+      "$categoryId": {
+        ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('permissions/scaleView').val() === true || root.child('users').child(auth.uid).child('permissions/scaleEdit').val() === true)",
+        ".write": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('permissions/scaleEdit').val() === true)"
+      }
+    },
+    "scaleServices": {
+      "$categoryId": {
+        ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('permissions/scaleView').val() === true || root.child('users').child(auth.uid).child('permissions/scaleEdit').val() === true)",
+        ".write": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('permissions/scaleEdit').val() === true)"
+      }
+    },
+    "inventory": {
+      "items": {
+        ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('permissions/inventoryView').val() === true || root.child('users').child(auth.uid).child('permissions/inventoryEdit').val() === true || root.child('users').child(auth.uid).child('permissions/cautelaView').val() === true || root.child('users').child(auth.uid).child('permissions/cautelaCreate').val() === true || root.child('users').child(auth.uid).child('permissions/cautelaReturn').val() === true)",
+        "$itemId": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'admin' || (root.child('users').child(auth.uid).child('permissions/inventoryView').val() === true && data.exists() && !newData.exists() && data.child('totalQuantity').isNumber() && data.child('totalQuantity').val() === 0 && data.child('loanedQuantity').isNumber() && data.child('loanedQuantity').val() === 0) || (root.child('users').child(auth.uid).child('permissions/inventoryEdit').val() === true && newData.exists() && (newData.child('totalQuantity').isNumber() && newData.child('totalQuantity').val() >= 0 && newData.child('loanedQuantity').isNumber() && newData.child('loanedQuantity').val() >= 0 && newData.child('loanedQuantity').val() <= newData.child('totalQuantity').val()) && (!data.exists() && newData.child('loanedQuantity').val() === 0 || data.exists() && newData.child('loanedQuantity').val() === data.child('loanedQuantity').val())) || ((root.child('users').child(auth.uid).child('permissions/cautelaCreate').val() === true || root.child('users').child(auth.uid).child('permissions/cautelaReturn').val() === true) && data.exists() && newData.exists() && (newData.child('name').val() === data.child('name').val() && newData.child('ficha').val() === data.child('ficha').val() && newData.child('originalCode').val() === data.child('originalCode').val() && newData.child('parallelCode').val() === data.child('parallelCode').val() && newData.child('vehicle').val() === data.child('vehicle').val() && newData.child('group').val() === data.child('group').val() && newData.child('location').val() === data.child('location').val() && newData.child('notes').val() === data.child('notes').val() && newData.child('simatEx').val() === data.child('simatEx').val() && newData.child('baixar').val() === data.child('baixar').val() && newData.child('unitPrice').val() === data.child('unitPrice').val() && newData.child('sourceRow').val() === data.child('sourceRow').val() && newData.child('stockInSheet').val() === data.child('stockInSheet').val() && newData.child('source').val() === data.child('source').val() && newData.child('createdAt').val() === data.child('createdAt').val() && newData.child('createdBy').val() === data.child('createdBy').val() && newData.child('totalQuantity').val() === data.child('totalQuantity').val()) && (newData.child('totalQuantity').isNumber() && newData.child('totalQuantity').val() >= 0 && newData.child('loanedQuantity').isNumber() && newData.child('loanedQuantity').val() >= 0 && newData.child('loanedQuantity').val() <= newData.child('totalQuantity').val()) && ((root.child('users').child(auth.uid).child('permissions/cautelaCreate').val() === true && newData.child('loanedQuantity').val() > data.child('loanedQuantity').val()) || (root.child('users').child(auth.uid).child('permissions/cautelaReturn').val() === true && newData.child('loanedQuantity').val() < data.child('loanedQuantity').val()))))"
+        }
+      },
+      "loans": {
+        ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('permissions/cautelaView').val() === true || root.child('users').child(auth.uid).child('permissions/cautelaCreate').val() === true || root.child('users').child(auth.uid).child('permissions/cautelaReturn').val() === true)",
+        "$loanId": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'admin' || (root.child('users').child(auth.uid).child('permissions/cautelaCreate').val() === true && !data.exists() && newData.exists() && newData.child('status').val() === 'aberto' && newData.child('itemId').isString() && newData.child('quantity').isNumber() && newData.child('quantity').val() > 0 && newData.child('signatureData').isString() && newData.child('createdBy').val() === auth.uid) || (root.child('users').child(auth.uid).child('permissions/cautelaReturn').val() === true && data.exists() && newData.exists() && (data.child('status').val() === 'aberto' || data.child('status').val() === 'processando') && (newData.child('status').val() === 'processando' || newData.child('status').val() === 'devolvido') && (newData.child('itemId').val() === data.child('itemId').val() && newData.child('itemName').val() === data.child('itemName').val() && newData.child('person').val() === data.child('person').val() && newData.child('purpose').val() === data.child('purpose').val() && newData.child('quantity').val() === data.child('quantity').val() && newData.child('signatureData').val() === data.child('signatureData').val() && newData.child('signedBy').val() === data.child('signedBy').val() && newData.child('createdAt').val() === data.child('createdAt').val() && newData.child('createdBy').val() === data.child('createdBy').val()) && (newData.child('status').val() !== 'devolvido' || newData.child('returnedAt').isNumber())))"
+        }
+      },
+      "movements": {
+        ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('permissions/cautelaView').val() === true || root.child('users').child(auth.uid).child('permissions/cautelaCreate').val() === true || root.child('users').child(auth.uid).child('permissions/cautelaReturn').val() === true)",
+        "$movementId": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && !data.exists() && newData.exists() && (root.child('users').child(auth.uid).child('role').val() === 'admin' || (newData.child('type').val() === 'entrada' && root.child('users').child(auth.uid).child('permissions/inventoryEdit').val() === true) || (newData.child('type').val() === 'cautela' && root.child('users').child(auth.uid).child('permissions/cautelaCreate').val() === true)) && newData.child('itemId').isString() && newData.child('quantity').isNumber() && newData.child('quantity').val() > 0 && newData.child('createdBy').val() === auth.uid"
+        }
+      }
+    },
+    "flowcharts": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('active').val() === true && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+    }
+  }
+}
